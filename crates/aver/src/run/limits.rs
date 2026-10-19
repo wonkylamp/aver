@@ -211,6 +211,13 @@ pub fn markdown(scope: &Scope, body: &ReceiptBody, diagnostics: Option<&Diagnost
             sensitive.join(", ")
         ));
     }
+    if let Some(scope::Necessity::NotChecked { hunks, why }) = &scope.necessity {
+        blind.push(format!(
+            "whether a test needs each of {} (hunk ablation skipped: {})",
+            count(*hunks as usize, "changed code part", "changed code parts"),
+            why.reason()
+        ));
+    }
     let _ = writeln!(
         out,
         "- What Aver could not check: {}.",
@@ -631,6 +638,28 @@ mod tests {
         let (_, section, _) = render(&body(Verdict::Pass, LOCAL), &diagnostics(&[], 0, 0));
         assert_eq!(section.lines().count(), 2, "{section}");
         assert!(!section.contains("rust"), "{section}");
+    }
+
+    /// Defect: a change past the hunk cap skipped hunk ablation, and the
+    /// pull request's summary did not say so.
+    #[test]
+    fn a_skipped_ablation_is_something_aver_could_not_check() {
+        let b = body(Verdict::Pass, LOCAL);
+        let (scope, _, _) = render(&b, &diagnostics(&[], 0, 0));
+        let scope = scope.with_necessity(Some(scope::Necessity::NotChecked {
+            hunks: 12,
+            why: scope::NotChecked::TooManyHunks,
+        }));
+        let md = markdown(&scope, &b, None);
+        let line = md
+            .lines()
+            .find(|l| l.starts_with("- What Aver could not check:"))
+            .unwrap_or_else(|| panic!("{md}"));
+        assert_eq!(
+            line,
+            "- What Aver could not check: whether a test needs each of 12 changed code parts \
+             (hunk ablation skipped: the change has more than 8 of them); a person should look at these."
+        );
     }
 
     /// Repository names appear only inside the fence, escaped to one line,

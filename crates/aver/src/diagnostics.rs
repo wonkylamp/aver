@@ -141,8 +141,7 @@ pub enum NotChecked {
     TooManyHunks,
 }
 
-/// The most hunks the phase reverts, one run each.
-pub const MAX_HUNKS: usize = 8;
+pub use aver_core::scope::MAX_HUNKS;
 
 /// What reverting one hunk did.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

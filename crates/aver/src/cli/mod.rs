@@ -230,7 +230,7 @@ impl Finish for ExitCode {
     }
 }
 
-/// Version control and collaboration infrastructure for AI agents.
+/// Catches AI agents that game their tests, in copy-on-write workspaces.
 ///
 /// Data lives in $AVER_HOME (default ~/.aver).
 ///

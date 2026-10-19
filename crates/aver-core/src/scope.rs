@@ -96,6 +96,9 @@ pub enum Necessity {
     },
 }
 
+/// The most hunks the necessity phase reverts, one run each.
+pub const MAX_HUNKS: usize = 8;
+
 /// Why hunk necessity was not tried.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -103,6 +106,17 @@ pub enum NotChecked {
     NoProvingTests,
     NoSelection,
     TooManyHunks,
+}
+
+impl NotChecked {
+    /// Why, as the end of a sentence.
+    pub fn reason(self) -> String {
+        match self {
+            Self::NoProvingTests => "no test proves the change".into(),
+            Self::NoSelection => "a proving test's check cannot run tests by name".into(),
+            Self::TooManyHunks => format!("the change has more than {MAX_HUNKS} of them"),
+        }
+    }
 }
 
 /// A check that ran, and whether its result was read from the exit code
@@ -321,14 +335,10 @@ impl Scope {
                 ));
             }
             Some(Necessity::NotChecked { hunks, why }) => {
-                let why = match why {
-                    NotChecked::NoProvingTests => "no test proves the change",
-                    NotChecked::NoSelection => "a proving test's check cannot run tests by name",
-                    NotChecked::TooManyHunks => "the change has more than 8 of them",
-                };
                 out.push(format!(
-                    "Necessity: not checked for {}, because {why}.",
-                    count(*hunks as usize, "changed code part", "changed code parts")
+                    "Necessity: not checked for {}, because {}.",
+                    count(*hunks as usize, "changed code part", "changed code parts"),
+                    why.reason()
                 ));
             }
             None => {}

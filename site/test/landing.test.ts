@@ -98,7 +98,7 @@ test("what your agent sees: a verify that fails on the agent's own break, then o
 test("[crit:site-positioning] the hero, title and description carry the locked headline and description, and say proven, not sandboxed", () => {
   const { document } = page();
   assert.equal(document.querySelector("h1")!.textContent, "Your agent says \u201cdone\u201d. Aver checks.");
-  const subline = "Aver is version control built for AI agents. Agents work entirely in Aver, and a change only counts once it\u2019s proven. Your team keeps Git: Aver hands it finished work.";
+  const subline = "Aver catches AI agents that game their tests. It runs the original tests on the change, makes new tests fail on the original code, and reverts each changed hunk to see whether a test notices, in copy-on-write workspaces. Your team keeps Git: Aver hands it verified work.";
   assert.equal(document.querySelector(".hero .lede")!.textContent, subline);
   assert.match(document.querySelector("title")!.textContent!, /Aver checks/);
   assert.ok(document.querySelector('meta[name="description"]')!.getAttribute("content")!.includes(subline));
