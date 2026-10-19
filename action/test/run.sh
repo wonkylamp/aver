@@ -717,7 +717,8 @@ test_run_native_keeps_credentials_away() {
   rm -f "$AVER_LOG"
   OUT_DIR="$W/out" WORKING_DIRECTORY="$W/repo" BASE_REV=b HEAD_REV=h bash "$ACTION/run.sh" >"$W/log"
   equals "$(out exit-code)" 0
-  contains "$W/log" "from $W/credentials.config, which config includes"
+  # Whichever including configuration find lists first removes it.
+  contains "$W/log" "from $W/credentials.config, which "
   if grep -qi extraheader "$W/credentials.config"; then die "the token is still in the included file"; fi
   [ -f "$AVER_LOG" ] || die "aver did not run"
 

@@ -2050,3 +2050,154 @@ async fn b13d_a_comment_beside_the_fix_is_not_a_hunk() {
     };
     assert_eq!(hunks.len(), 1, "{}", report(&v));
 }
+
+// B16: an editable install (`pip install -e .`, `uv pip install -e .`)
+// names the checkout's absolute path in `.venv`'s site-packages, so a slot
+// cloned with that `.venv` imports the checkout's code, not its own.
+
+const B16_LIB: &str = "def add(a, b):\n    return a + b\n";
+
+/// Runs `calc.add` through `.venv`'s site-packages only (`-I`: no
+/// `PYTHONPATH`, no current directory), as an installed package is found.
+const B16_CHECK: &str = "#!/bin/sh\nhere=$(cd \"$(dirname \"$0\")/..\" && pwd)\nexec python3 -I -c 'import site, sys; site.addsitedir(sys.argv[1]); import calc; sys.exit(0 if calc.add(2, 3) == 5 else 1)' \"$here/lib/site-packages\"\n";
+
+/// The repository of B16 with `.venv` installed editable from `repo/src`
+/// the way `install` names (hatchling's `.pth`, or setuptools' finder),
+/// and a head that breaks `add`.
+fn b16_repo(root: &std::path::Path, install: &str) -> (std::path::PathBuf, String, String) {
+    let toml = "[[check]]\nid = \"tool\"\nrun = \".venv/bin/calc-check\"\nreport = \"exit\"\n";
+    let (repo, _, _) = b14_repo(
+        root,
+        &[
+            ("aver.toml", toml),
+            ("pyproject.toml", "[project]\nname = \"calc\"\n"),
+            (".gitignore", ".venv\n"),
+        ],
+    );
+    std::fs::create_dir_all(repo.join("src/calc")).unwrap();
+    std::fs::write(repo.join("src/calc/__init__.py"), B16_LIB).unwrap();
+    b9_git(&repo, &["add", "-A"]);
+    b9_git(&repo, &["commit", "-q", "-m", "calc"]);
+    let rev = || {
+        let out = std::process::Command::new("git")
+            .args(["rev-parse", "HEAD"])
+            .current_dir(&repo)
+            .output()
+            .unwrap();
+        String::from_utf8(out.stdout).unwrap().trim().to_owned()
+    };
+    let base = rev();
+    std::fs::write(
+        repo.join("src/calc/__init__.py"),
+        "def add(a, b):\n    return a - b\n",
+    )
+    .unwrap();
+    b9_git(&repo, &["commit", "-q", "-am", "regression"]);
+    let head = rev();
+    // The checkout is back at the base: what the user installed from.
+    b9_git(&repo, &["checkout", "-q", &base]);
+    let bin = repo.join(".venv/bin");
+    let site = repo.join(".venv/lib/site-packages");
+    std::fs::create_dir_all(&bin).unwrap();
+    std::fs::create_dir_all(&site).unwrap();
+    std::fs::write(bin.join("calc-check"), B16_CHECK).unwrap();
+    use std::os::unix::fs::PermissionsExt;
+    std::fs::set_permissions(
+        bin.join("calc-check"),
+        std::fs::Permissions::from_mode(0o755),
+    )
+    .unwrap();
+    let src = repo.join("src");
+    match install {
+        "pth" => std::fs::write(
+            site.join("_editable_impl_calc.pth"),
+            format!("{}\n", src.display()),
+        )
+        .unwrap(),
+        _ => {
+            std::fs::write(
+                site.join("__editable__.calc-0.0.0.pth"),
+                "import __editable___calc_0_0_0_finder; __editable___calc_0_0_0_finder.install()\n",
+            )
+            .unwrap();
+            std::fs::write(
+                site.join("__editable___calc_0_0_0_finder.py"),
+                format!(
+                    "import importlib.abc, importlib.util, sys\n\
+                     MAPPING = {{'calc': '{}'}}\n\
+                     class _Finder(importlib.abc.MetaPathFinder):\n    \
+                     def find_spec(self, name, path=None, target=None):\n        \
+                     if name in MAPPING:\n            \
+                     return importlib.util.spec_from_file_location(name, MAPPING[name] + '/__init__.py', submodule_search_locations=[MAPPING[name]])\n        \
+                     return None\n\
+                     def install():\n    \
+                     sys.meta_path.append(_Finder())\n",
+                    src.join("calc").display()
+                ),
+            )
+            .unwrap();
+        }
+    }
+    (repo, base, head)
+}
+
+/// B16: a regression under an editable install is `FAIL_OWN` in place and
+/// in slots, for a `.pth` path (hatchling, uv) and a setuptools finder;
+/// never `PASS` from both sides importing the checkout.
+#[test]
+fn b16_an_editable_install_tests_each_sides_own_code() {
+    for install in ["pth", "finder"] {
+        let dir = tempfile::tempdir().unwrap();
+        let root = std::fs::canonicalize(dir.path()).unwrap();
+        let (repo, base, head) = b16_repo(&root, install);
+        for extra in [&[][..], &["--slots"][..]] {
+            let (code, receipt) = b14_ci(&root, &repo, &base, &head, extra);
+            let tool = receipt.body.checks.get("tool").expect("the tool entry");
+            assert_eq!(
+                (tool.base, tool.cause, receipt.body.verdict),
+                (BaseStatus::Pass, Some(Cause::New), Verdict::FailOwn),
+                "{install} {extra:?}: {tool:?}"
+            );
+            assert_eq!(code, 1, "{install} {extra:?}");
+        }
+    }
+}
+
+/// B16 in place (the checkout at the head, swapped between the trees) and
+/// in a workspace directory of `aver workspace new`, whose `.venv` is
+/// seeded from the checkout: the regression is still the agent's.
+#[test]
+fn b16_an_editable_install_in_place_and_in_a_workspace_is_fail_own() {
+    for install in ["pth", "finder"] {
+        let dir = tempfile::tempdir().unwrap();
+        let root = std::fs::canonicalize(dir.path()).unwrap();
+        let (repo, base, head) = b16_repo(&root, install);
+        b9_git(&repo, &["checkout", "-q", &head]);
+        let (code, receipt) = b14_ci(&root, &repo, &base, &head, &[]);
+        assert_eq!(
+            (receipt.body.verdict, code),
+            (Verdict::FailOwn, 1),
+            "{install} in place: {:?}",
+            receipt.body.checks.get("tool")
+        );
+        b9_git(&repo, &["checkout", "-q", &base]);
+        let home = root.join("home");
+        let out = b9_aver(
+            &home,
+            &repo,
+            &["workspace", "new", "--label", "b16", "--json"],
+        );
+        assert!(out.status.success(), "{out:?}");
+        let created: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+        let ws = std::path::PathBuf::from(created["workspaces"][0]["dir"].as_str().unwrap());
+        std::fs::write(
+            ws.join("src/calc/__init__.py"),
+            "def add(a, b):\n    return a - b\n",
+        )
+        .unwrap();
+        let out = b9_aver(&home, &ws, &["verify"]);
+        let text = String::from_utf8_lossy(&out.stdout);
+        assert_eq!(out.status.code(), Some(1), "{install} workspace: {out:?}");
+        assert!(text.contains("FAIL_OWN"), "{install} workspace: {text}");
+    }
+}

@@ -899,10 +899,14 @@ pub fn seed_workspace(
 }
 
 /// Text files inside kept directories that name the source directory by
-/// its absolute path, and are read at run time to find code.
+/// its absolute path, and are read at run time to find code. A `.py`
+/// module at the top of `site-packages` is an editable install's finder
+/// (setuptools' `__editable___*_finder.py`, scikit-build-core's and
+/// meson-python's loaders), whose mapping names the checkout.
 fn relocatable(rel: &str) -> bool {
-    let name = rel.rsplit('/').next().unwrap_or(rel);
+    let (dir, name) = rel.rsplit_once('/').unwrap_or(("", rel));
     name.ends_with(".pth")
+        || (name.ends_with(".py") && dir.ends_with("site-packages"))
         || name.ends_with(".egg-link")
         || name == "direct_url.json"
         || name == ".modules.yaml"
