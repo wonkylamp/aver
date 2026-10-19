@@ -65,6 +65,8 @@ pub fn stripped(name: &str) -> bool {
 /// tag and a private `TMPDIR` (concurrent sides of one suite would collide
 /// on fixed names in a shared one). A `CARGO_TARGET_DIR` outside the slot
 /// becomes `<slot>/target`, so the sides never share build outputs.
+/// `CARGO_TERM_COLOR` is `never`: Aver reads cargo's output, and colored
+/// `Running` lines and compiler errors would not parse.
 pub fn inherit(
     caller: impl IntoIterator<Item = (String, String)>,
     out: &FsPath,
@@ -77,6 +79,7 @@ pub fn inherit(
     vars.insert("AVER_OUT".into(), out.to_string_lossy().into_owned());
     vars.insert(RUN_TAG_VAR.into(), tag.to_owned());
     vars.insert("TMPDIR".into(), tmp.to_string_lossy().into_owned());
+    vars.insert("CARGO_TERM_COLOR".into(), "never".into());
     if let Some(target) = vars.get("CARGO_TARGET_DIR") {
         if !FsPath::new(target).starts_with(slot) {
             vars.insert(

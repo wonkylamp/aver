@@ -38,6 +38,7 @@ pub fn parse(
     locations: &mut BTreeMap<String, Location>,
 ) -> Result<Set<TestResult>, JunitError> {
     let text = String::from_utf8_lossy(text);
+    let text = plain(&text);
     let mut binary = String::from("tests");
     let mut listing = false;
     let mut seen_binary = false;
@@ -151,7 +152,7 @@ pub fn parse(
 pub fn binaries(text: &str) -> Option<std::collections::BTreeSet<String>> {
     let mut done = std::collections::BTreeSet::new();
     let mut open: Option<String> = None;
-    for line in text.lines().map(str::trim_end) {
+    for line in plain(text).lines().map(str::trim_end) {
         let trimmed = line.trim_start();
         let label = match trimmed.strip_prefix("Running ") {
             Some(rest) => running_label(rest),
@@ -206,6 +207,31 @@ fn build_error(text: &str) -> Option<String> {
 /// The binary label of a `Running …` line: `<binary name> <target>` from
 /// `<target> (<path>/<name>-<hash>)`, or the binary name alone from an
 /// older cargo's bare path. `None` for a line that is not cargo's.
+/// `text` without ANSI escape sequences. Under `CARGO_TERM_COLOR=always`
+/// cargo colors its `Running` and `Doc-tests` lines, which would otherwise
+/// not match and leave every binary unlabeled.
+fn plain(text: &str) -> std::borrow::Cow<'_, str> {
+    if !text.contains('\x1b') {
+        return std::borrow::Cow::Borrowed(text);
+    }
+    let mut out = String::with_capacity(text.len());
+    let mut chars = text.chars().peekable();
+    while let Some(c) = chars.next() {
+        if c != '\x1b' {
+            out.push(c);
+            continue;
+        }
+        if chars.next_if_eq(&'[').is_some() {
+            for c in chars.by_ref() {
+                if ('@'..='~').contains(&c) {
+                    break;
+                }
+            }
+        }
+    }
+    std::borrow::Cow::Owned(out)
+}
+
 fn running_label(rest: &str) -> Option<String> {
     let rest = rest.trim();
     let (target, path) = match rest.rsplit_once(" (") {
@@ -287,6 +313,22 @@ error: could not compile `aver-core` (lib) due to 1 previous error\n";
             parse(&check, b"nothing ran\n", &mut BTreeMap::new()),
             Err(JunitError::Text(_))
         ));
+    }
+
+    #[test]
+    fn colored_cargo_lines_still_name_their_binaries() {
+        let out = "\x1b[1m\x1b[92m     Running\x1b[0m tests/sub.rs (target/debug/deps/sub-0123456789abcdef)\n\
+                   running 1 test\ntest sub_works ... ok\n\n\
+                   test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n";
+        assert_eq!(
+            binaries(out).map(|b| b.into_iter().collect::<Vec<_>>()),
+            Some(vec!["sub tests/sub.rs".to_owned()])
+        );
+        let check: CheckId = "rust".parse().unwrap();
+        let results = parse(&check, out.as_bytes(), &mut BTreeMap::new()).unwrap();
+        assert!(results
+            .iter()
+            .all(|t| t.id.test_path().starts_with("sub tests/sub.rs")));
     }
 
     #[test]

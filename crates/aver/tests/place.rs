@@ -117,6 +117,20 @@ fn gone_within(needle: &str, limit: Duration) -> bool {
 
 /// Defect: a timed-out check's background children run on after the run
 /// ends and write into the next run.
+/// Catches a caller's `CARGO_TERM_COLOR=always` (CI sets it) reaching a
+/// run: cargo then colors the lines Aver parses and no binary is found.
+#[test]
+fn a_run_never_inherits_colored_cargo_output() {
+    let root = tempfile::tempdir().unwrap();
+    let caller = [
+        ("CARGO_TERM_COLOR".to_owned(), "always".to_owned()),
+        ("HOME".to_owned(), "/home/u".to_owned()),
+    ];
+    let vars = proc::inherit(caller, root.path(), root.path(), root.path(), "t");
+    assert_eq!(vars["CARGO_TERM_COLOR"], "never");
+    assert_eq!(vars["HOME"], "/home/u");
+}
+
 #[test]
 fn a_timed_out_run_and_its_background_children_are_killed() {
     let d = dirs();
