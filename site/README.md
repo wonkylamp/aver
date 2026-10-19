@@ -18,7 +18,7 @@ Both scripts are committed. `build.ts` builds them with esbuild:
 | Command | What it does |
 |---|---|
 | `make site` | Installs the `site/` dependencies if missing and rebuilds `viewer.js` and `landing.js`. Commit the result. |
-| `cd site && npm test` | Rules, explorer, verification, rendering, bundle and landing-page content tests (`node:test`). `test/landing.test.ts` checks the install commands against README.md and docs/, the Git to Aver table's commands against `crates/aver/src/cli`, the section links, the locked positioning and the `{{NUM:…}}` benchmark placeholders. `test/drafts.test.ts` checks the launch drafts in `../launch-drafts/` (lengths, sections, no dollar amounts). |
+| `cd site && npm test` | Rules, explorer, verification, rendering, bundle and landing-page content tests (`node:test`). `test/landing.test.ts` checks the install commands against README.md and docs/, the Git to Aver table's commands against `crates/aver/src/cli`, the section links, the locked positioning and the `{{NUM:…}}` benchmark placeholders. |
 | `cd site && npm run typecheck` | `tsc --noEmit` over the site sources. |
 | `python3 -m http.server -d site 8000` | Serves the site at `http://127.0.0.1:8000`. Open it over HTTP: browsers block ES modules on `file://`. This server does not apply `_headers` or serve `404.html` for unknown paths. |
 

@@ -2,7 +2,9 @@ name: CI
 
 # Every pull request, every push to main and every merge-queue group, plus
 # a manual run on any ref: running it on a release tag gives that commit the
-# ci-ok check run release.yml requires (docs/RELEASING.md).
+# ci-ok check run release.yml requires (docs/RELEASING.md). A push to main
+# runs only changes, lint and test: docs, eval and test-native already ran
+# on its pull request, and a manual run runs them all.
 on:
   pull_request:
   push:
@@ -65,6 +67,7 @@ jobs:
   # Runs on every change: the site's tests check the commands README.md and
   # docs/ show, and site/install.sh is the installer packaging/test exercises.
   docs:
+    if: github.event_name != 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -109,7 +112,7 @@ jobs:
   # The eval harness with scripted agents and a stub aver: Node and Git only.
   eval:
     needs: changes
-    if: needs.changes.outputs.code == 'true'
+    if: needs.changes.outputs.code == 'true' && github.event_name != 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -125,7 +128,7 @@ jobs:
   # one cache, and only `rest`, which builds every test target, saves it.
   test-native:
     needs: changes
-    if: needs.changes.outputs.code == 'true'
+    if: needs.changes.outputs.code == 'true' && github.event_name != 'push'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

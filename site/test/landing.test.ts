@@ -22,7 +22,7 @@ test("the Claude Code tab adds the plugin, then installs aver, then runs aver se
   assert.deepEqual(commands(panel), [
     "/plugin marketplace add wonkylamp/aver",
     "/plugin install aver@aver",
-    "curl -fsSL https://aver.build/install.sh | sh",
+    "curl -fsSL https://raw.githubusercontent.com/wonkylamp/aver/main/site/install.sh | sh",
     "aver setup",
   ]);
   const tabs = [...document.querySelectorAll('.setup-box [role="tab"]')];
@@ -41,7 +41,7 @@ test("every other tool's tab installs aver, then runs aver integrate for that to
   for (const [id, tool] of Object.entries(tools)) {
     const panel = document.getElementById(id);
     assert.ok(panel, `the install box has the panel ${id}`);
-    assert.deepEqual(commands(panel), ["curl -fsSL https://aver.build/install.sh | sh", `aver integrate ${tool}`], id);
+    assert.deepEqual(commands(panel), ["curl -fsSL https://raw.githubusercontent.com/wonkylamp/aver/main/site/install.sh | sh", `aver integrate ${tool}`], id);
   }
 });
 

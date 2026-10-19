@@ -551,14 +551,14 @@ equals "$(results)" "verify=skipped approve=success" "jobs"
 contains "$STUB_LOG" "aver ci approve"
 passed
 
+# This repository's aver.yml skips pushes to main to save runner minutes.
+# action/test/e2e-local.sh still covers the action on a push that records
+# the base.
 FLOW=aver-push-main
 jq -n --arg before "$(git -C "$ORIGIN" rev-parse "$MAIN^")" --arg after "$MAIN" \
   '{ref: "refs/heads/main", before: $before, after: $after, repository: {full_name: "o/r", default_branch: "main"}}' >"$T/push.json"
 aver_workflow push refs/heads/main "$MAIN" "$T/push.json"
-equals "$(cat "$J/exit")" 0 "exit"
-equals "$(results)" "verify=success approve=skipped" "jobs"
-contains "$STUB_LOG" "--record"
-equals "$(count POST 'comments')" 0 "comments on a push"
+equals "$(jq -r .triggered "$J/result.json")" false "triggered"
 passed
 
 FLOW=aver-push-elsewhere

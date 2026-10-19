@@ -3,9 +3,10 @@
 #
 # verify, on a pull request: runs the checks on the base and the head and
 # posts Aver as success, failure, or action_required when a maintainer has
-# to look (REVIEW or UNPROVEN). On a push to main it records its runs,
-# so pull requests based on that commit do not run the base again. In a
-# merge queue it fails only on a regression.
+# to look (REVIEW or UNPROVEN). In a merge queue it fails only on a
+# regression. Unlike the workflow `aver init --ci` writes, this one does not
+# run on pushes to main, to save runner minutes, so each pull request runs
+# its base itself.
 # approve, on a review: when a person other than the author approved the
 # pull request's head commit, posts Aver as success on it.
 #
@@ -18,8 +19,6 @@ on:
   pull_request:
   pull_request_review:
     types: [submitted, dismissed]
-  push:
-    branches: [main]
   merge_group:
 
 permissions:
