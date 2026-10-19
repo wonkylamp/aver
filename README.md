@@ -30,7 +30,7 @@ Your agent says "done". Aver checks, with three tests of the evidence. **Frozen 
 
 `FAIL_OWN` means the change broke a test. `REVIEW` means it rewrote tests or harness, which a person must approve. `UNPROVEN` means nothing proved the change. None of the 8 cheats got `PASS`; the 3 honest changes got `PASS` and the honest regression `FAIL_OWN`. The [full table](docs/BENCHMARKS.md#plain-ci-against-aver-on-cheating-commits) adds the no-evidence cases, and `bench/ci-vs-aver.sh` reruns all of it.
 
-**Workspaces at scale.** On date-fns, 100 Aver workspaces with `node_modules` in place took 28.8 s and 210 MiB. 5 `git worktree add` plus `npm ci` took 671 MiB, and 5 with `pnpm install` from a warm store took 154 MiB and 92.7 s (pnpm installs date-fns's whole monorepo). Measured once on one Mac (APFS clones, warm npm cache). Verifying Rust costs far more, about 3.3 GiB per verify slot, because the slot rebuilds `target/` ([details](docs/BENCHMARKS.md#workspaces-at-scale)).
+**Workspaces at scale.** On date-fns, 100 Aver workspaces with `node_modules` in place took 28.8 s and 210 MiB. 5 `git worktree add` plus `npm ci` took 671 MiB, and 5 with `pnpm install` from a warm store took 154 MiB and 92.7 s (pnpm installs date-fns's whole monorepo). Measured once on one Mac (APFS clones, warm npm cache). Linux was not measured: there Aver clones with reflink on XFS or btrfs and falls back to a plain copy on ext4, where files are copied instead of sharing blocks. Verifying Rust costs far more, about 3.3 GiB per verify slot, because the slot rebuilds `target/` ([details](docs/BENCHMARKS.md#workspaces-at-scale)).
 
 ## 1. Quickstart
 
