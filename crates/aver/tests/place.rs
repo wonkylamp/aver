@@ -1,4 +1,4 @@
-//! Execution places (REDESIGN.md §3, docs/redesign/wp2-plan.md §5.1): a
+//! Execution places: a
 //! run's processes ([`aver::place::proc`]), its directory
 //! ([`aver::place::workdir`]), the slots of a verification
 //! ([`aver::place::sides`]) and the executor running checks in them
@@ -1156,7 +1156,7 @@ fn released_and_stale_slots_go_and_snapshot_runs_never_touch_a_base_slot() {
 }
 
 // ---------------------------------------------------------------------
-// The executor on slots (wp2-plan.md §1.3-1.4).
+// The executor on slots.
 
 mod slots {
     use std::collections::BTreeMap;
@@ -1838,7 +1838,7 @@ fn a_seeded_file_that_differs_from_the_checkout_is_newer_than_every_build_output
 }
 
 // ---------------------------------------------------------------------
-// Commands in process, side by side (wp2-plan.md §5.1, tests 21 and 24),
+// Commands in process, side by side,
 // natively on `fixtures/sh-calc`: no Node, no Docker.
 
 #[allow(dead_code)]
@@ -2109,7 +2109,7 @@ mod in_process {
     }
 }
 
-// ---- aver ci in place (REDESIGN.md §3.1) ----
+// ---- aver ci in place (ARCHITECTURE.md §2.9) ----
 
 mod in_place {
     use super::*;

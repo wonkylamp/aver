@@ -529,7 +529,7 @@ fn write(dir: &Path, name: &str, contents: &str) -> anyhow::Result<()> {
     std::fs::write(&path, contents).with_context(|| format!("writing {}", path.display()))
 }
 
-/// The checkout to run the checks in (REDESIGN.md §3.1), or `None` for
+/// The checkout to run the checks in (ARCHITECTURE.md §2.9), or `None` for
 /// slots: `--repo` must be the top of a local checkout at `--head` with no
 /// changes to tracked files, holding no Aver home. Says on stderr why not,
 /// unless `--slots` asked for slots. A checkout an interrupted run left

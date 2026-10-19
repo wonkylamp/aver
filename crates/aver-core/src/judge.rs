@@ -1,5 +1,5 @@
 //! The cause of one receipt entry as one decision over what each side
-//! showed (ARCHITECTURE.md §1.9.3, REDESIGN.md §4). Every input is a small
+//! showed (ARCHITECTURE.md §1.9.3). Every input is a small
 //! enum and every `match` names each variant, so a new variant does not
 //! compile until it is judged.
 //!

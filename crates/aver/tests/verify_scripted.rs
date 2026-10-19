@@ -1284,7 +1284,7 @@ async fn a_transplant_runs_once_and_only_where_its_tests_run() {
     assert_eq!(transplant_runs(&v, "integration").1, 0);
 }
 
-/// REDESIGN.md B3: the head breaks the code and its build step rewrites
+/// Verdict-integrity scenario B3: the head breaks the code and its build step rewrites
 /// the compiled test file, so the tests that run are no longer the base's.
 /// Both sides compiled the same frozen test sources, so the file's other
 /// content is a `built::` entry, `CHANGED`, and the verdict `REVIEW`.
@@ -1396,7 +1396,7 @@ fn report_of(v: &aver::verify::Verified) -> String {
 }
 
 /// The report leads with the verdict, then each side's test counts, then
-/// the one pushback (REDESIGN.md §5.1, §5.2); an assertion two tests fail
+/// the one pushback; an assertion two tests fail
 /// the same way is printed once.
 #[tokio::test]
 async fn the_report_leads_with_counts_and_one_pushback() {

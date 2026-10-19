@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Rust verify speed against plain cargo, on a scratch clone of this
-# repository at HEAD (ARCHITECTURE.md §2.4.2, bench/dogfood/LOG.md round 12).
+# repository at HEAD (ARCHITECTURE.md §2.4.2).
 # Times, in order:
 #
 #   1. cargo test --workspace, cold (an empty target) and warm (after a

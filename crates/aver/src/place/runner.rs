@@ -64,7 +64,7 @@ pub struct RunnerConfig {
     /// checkout, say.
     pub source: Option<PathBuf>,
     /// Run in this checkout instead of slots once [`SlotRunner::adopt`]
-    /// takes it over (`aver ci` in place, REDESIGN.md §3.1).
+    /// takes it over (`aver ci` in place, ARCHITECTURE.md §2.9).
     pub in_place: Option<PathBuf>,
 }
 

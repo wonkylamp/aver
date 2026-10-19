@@ -1,4 +1,5 @@
-# Aver's own verification environment (dogfooding; see docs/DOGFOODING.md).
+# Aver's own verification environment: the checks `aver verify` and
+# `aver ci` run on this repository.
 #
 # Two dependency layers, one per lockfile: the Node packages of site/ (the
 # environment's own lockfile), linked as node_modules beside its lockfile in

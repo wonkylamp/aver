@@ -1629,8 +1629,7 @@ summary.group-head {
   font-size: 0.74rem;
 }
 
-/* Numbers: every figure links to the file it comes from. A {{NUM:...}}
-   placeholder sits in a .num span until docs/BENCHMARKS.md is final. */
+/* Numbers: every figure links to its section of docs/BENCHMARKS.md. */
 
 .num {
   font-variant-numeric: tabular-nums;

@@ -1,7 +1,6 @@
-//! Verdict tests WP1b deleted with the Docker sandbox, rebuilt where
-//! nothing else covers them (REDESIGN.md §8, "Tests to rebuild in WP3"):
-//! natively in slots, `#[ignore]`d where they need a toolchain beyond the
-//! shell, or scripted where the invariant is the judge's alone.
+//! Verdict tests that nothing else covers, run natively in slots,
+//! `#[ignore]`d where they need a toolchain beyond the shell, or scripted
+//! where the invariant is the judge's alone.
 
 mod common;
 mod scripted;

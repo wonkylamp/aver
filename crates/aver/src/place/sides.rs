@@ -1,4 +1,4 @@
-//! Local slots (REDESIGN.md §3.2): one directory per side of a
+//! Local slots (ARCHITECTURE.md §1.8.5): one directory per side of a
 //! verification, cloned copy-on-write from a directory that already has
 //! the repository's dependencies installed (the agent's workspace, the
 //! user's checkout, a CI checkout), then swapped to the side's tree by
@@ -706,8 +706,8 @@ pub fn remove_slot(dir: &FsPath) -> io::Result<bool> {
 
 /// Copies of the change's files in the kept directories of `source` (a
 /// non-editable install's `site-packages`): every slot cloned from it
-/// shares them, so its runs would test the copy, not the tree (REDESIGN.md
-/// §4.1, `StaleCopy`).
+/// shares them, so its runs would test the copy, not the tree
+/// (`StaleCopy`).
 pub fn stale_copies(
     store: &Store,
     source: &SlotSource<'_>,

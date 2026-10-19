@@ -1,4 +1,4 @@
-//! Ctrl-C (wp2-plan.md §3.6): the one SIGINT and SIGTERM handler, for
+//! Ctrl-C: the one SIGINT and SIGTERM handler, for
 //! every command. A run's process group lives outside the terminal's, so a
 //! signal to `aver` alone never reaches it; the handler signals each group
 //! [`LIVE`] holds instead. The first signal ends a command with no group

@@ -1,4 +1,4 @@
-//! The names a change defines or edits (REDESIGN.md §4.6), read the way
+//! The names a change defines or edits (ARCHITECTURE.md §1.9.4), read the way
 //! `git diff` finds a hunk's function: the definition each changed region
 //! sits under, and every definition on an added line. Kept to a line-based
 //! heuristic per language; a name it misses only leaves a weak proof to the

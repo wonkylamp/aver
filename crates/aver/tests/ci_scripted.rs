@@ -1298,7 +1298,7 @@ async fn a_base_whose_runs_all_end_in_infra_fails_the_default() {
 }
 
 /// A check that fails as a whole shows the last lines of its output under
-/// the headline, slot paths taken out (REDESIGN.md §5.1).
+/// the headline, slot paths taken out.
 #[tokio::test]
 async fn a_check_failing_as_a_whole_shows_its_output_tail() {
     let repo = Repo::new();

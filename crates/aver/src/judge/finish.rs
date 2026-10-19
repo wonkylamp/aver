@@ -258,7 +258,7 @@ impl Verifier {
     }
 
     /// One `ENV` entry per stale copy of a changed file in the kept
-    /// dependency directories of `dir` (REDESIGN.md §4.1), under the first
+    /// dependency directories of `dir`, under the first
     /// check: every head run read the copy, not the change.
     fn stale_entries(
         &self,
@@ -566,7 +566,7 @@ impl Verifier {
 
     /// The names the change defines or edits in its source files (not its
     /// test files), for telling a proof that fails on the original code
-    /// only because one of them is missing there (REDESIGN.md §4.6).
+    /// only because one of them is missing there (ARCHITECTURE.md §1.9.4).
     pub(super) fn changed_names(&self, plan: &Plan) -> Result<BTreeSet<String>, VerifyError> {
         let text = |entry: Option<FileEntry>| -> Result<Option<String>, VerifyError> {
             let Some(entry) = entry else {
@@ -786,7 +786,8 @@ fn path_entry_id(check: &CheckId, path: &str) -> EntryId {
 }
 
 /// One `built::<path>` entry per built test file whose content differs
-/// between a check's base runs and its judged head runs (REDESIGN.md §4.3).
+/// between a check's base runs and its judged head runs (ARCHITECTURE.md
+/// §1.9.3).
 /// Both sides compiled the same frozen test sources, so a difference is the
 /// head's build rewriting what the tests are: judged by the table as
 /// `BuiltArtifactModified`, `CHANGED` unless the check's head failed (`NEW`)
@@ -1683,7 +1684,7 @@ fn setup_entries(
     Ok(out)
 }
 
-/// The test path prefix of a blocker's entry (REDESIGN.md §4.1): what
+/// The test path prefix of a blocker's entry (ARCHITECTURE.md §1.9.7): what
 /// keeps a check's evidence from counting.
 pub const EVIDENCE_TEST_PATH: &str = "(evidence)";
 

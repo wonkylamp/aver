@@ -98,7 +98,7 @@ eval:
 	node bench/eval/run.ts $(ARGS)
 
 # Native verify against the tests themselves: fixtures/calc and a one-line
-# edit in this repository's aver-core (bench/native/results.md). CASES=calc
+# edit in this repository's aver-core (docs/BENCHMARKS.md). CASES=calc
 # runs one case.
 bench-native:
 	cargo build --release --quiet -p aver

@@ -1,5 +1,5 @@
 //! Test ids that differ between runs only in a parameter or subtest suffix
-//! (REDESIGN.md §4.5): a pytest parameter built from the clock
+//! (ARCHITECTURE.md §1.9.3, stable test ids): a pytest parameter built from the clock
 //! (`test_at[2026-10-17T10:01]`), a Go subtest named after a pointer
 //! (`TestX/0xc000123`). The verifier pairs such ids across sides, so a test
 //! the head left alone does not read as missing from the head's report.

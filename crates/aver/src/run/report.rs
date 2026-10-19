@@ -198,7 +198,7 @@ pub(crate) fn thousands(n: usize) -> String {
     out
 }
 
-/// The test counts on each side (REDESIGN.md §5.1), from the receipt's
+/// The test counts on each side, from the receipt's
 /// entries: `Base: 1,204 passed, 0 failed | Yours: 1,206 passed, 0 failed`.
 /// A test the base lacks counts only on your side; an infrastructure
 /// failure is not a test result. With no test result at all, `0 tests ran`
@@ -212,7 +212,7 @@ pub fn counts_line(body: &aver_core::ReceiptBody) -> Option<String> {
         .collect();
     if tests.is_empty() {
         // A side that ran no test is a blocker with no test entry; the
-        // line still says so, first (REDESIGN.md B1).
+        // line still says so, first (verdict-integrity scenario B1).
         let none_ran = format!("{} no tests on", crate::verify::EVIDENCE_TEST_PATH);
         return body
             .checks
@@ -260,7 +260,7 @@ pub fn frozen_base_tests(body: &aver_core::ReceiptBody) -> usize {
 }
 
 /// The last [`MAX_TAIL_LINES`] lines of the output of each check that
-/// failed as a whole (REDESIGN.md §5.1): an infrastructure failure, a
+/// failed as a whole: an infrastructure failure, a
 /// blocker, or a check without per-test results that failed. Each is its
 /// entry id and the lines, slot paths taken out; identical tails are
 /// shown once, and at most [`MAX_TAILS`].
@@ -299,7 +299,7 @@ pub fn output_tails(
     tails
 }
 
-/// The one pushback (REDESIGN.md §5.2) the receipt and diagnostics support,
+/// The one pushback (ARCHITECTURE.md §1.9.7) the receipt and diagnostics support,
 /// as a line: none when a blocker stands, whose own sentence the output
 /// tail and the infrastructure section carry.
 pub fn pushback_line(

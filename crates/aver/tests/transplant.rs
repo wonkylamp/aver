@@ -174,7 +174,7 @@ async fn a_test_absent_from_the_transplant_proves() {
 }
 
 /// A proof that fails on the original code only because a name the change
-/// adds is missing there is weak (REDESIGN.md §4.6), whatever words the
+/// adds is missing there is weak (ARCHITECTURE.md §1.9.4), whatever words the
 /// compiler uses; one that names the added type in an assertion is not.
 #[tokio::test]
 async fn a_proof_failing_only_on_a_name_the_change_adds_is_weak() {

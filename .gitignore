@@ -5,15 +5,19 @@ bench/repos/
 *.log
 .claude/worktrees/
 .claude/
-# Private benchmark material, kept out of the public repository. Files
-# already tracked stay tracked until they are removed from the index.
-bench/trials/
+# Private working notes, kept out of the public repository.
+bench/trial*/
 bench/dogfood/
+bench/replay/findings*
+# Benchmark output. The scripts write it here; docs/BENCHMARKS.md summarizes it.
+bench/results/
+bench/results.md
+bench/native/results.md
+bench/parallel/
+bench/workspace-disk.md
+bench/replay/results*
+bench/replay/triage*.json
 bench/eval/results/
 bench/eval/results.md
-bench/replay/results*
-bench/replay/findings.md
-bench/replay/triage*.json
-bench/replay/manifest.json
 /dist/
 repomix-*.xml

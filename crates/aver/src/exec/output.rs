@@ -1,10 +1,6 @@
 //! What a check run produces and the limits it runs under, shared by native
 //! runs (`exec::native`) and the scripted runner of `exec::seam`: the exit,
 //! the bounded output and result files, and how a full disk reads.
-//!
-//! These types and helpers lived in the Docker sandbox's module until Aver
-//! 0.4 deleted the sandbox (REDESIGN.md §1.2.2); WP2's in-process runner
-//! replaces them.
 
 use std::collections::BTreeMap;
 use std::time::Duration;

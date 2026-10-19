@@ -1,4 +1,4 @@
-//! One directory swapped between trees (REDESIGN.md §3.1): a slot's
+//! One directory swapped between trees: a slot's
 //! checkout, or a CI job's own checkout adopted for the length of a
 //! verification and restored after.
 //!

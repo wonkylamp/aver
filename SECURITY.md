@@ -39,7 +39,7 @@ Out of scope:
 
 Aver treats code under test and repository content as hostile, and registered agents as authenticated but fallible and possibly adversarial. The user's own `aver` processes are trusted and hold the key that signs receipts. Aver opens no network listener.
 
-Every check runs natively, in a slot cloned for its side and swapped to the tree under test, never in an agent's directory. It gets the caller's environment minus the CI tokens and job files `place::proc::STRIPPED` names, with a private `TMPDIR` per run, and the network on. Whatever a run leaves running is killed when it ends. In CI, `aver ci --run-as` runs the checks as a separate user. Aver 0.4 deleted the Docker sandbox (REDESIGN.md §1.2).
+Every check runs natively, in a slot cloned for its side and swapped to the tree under test, never in an agent's directory. It gets the caller's environment minus the CI tokens and job files `place::proc::STRIPPED` names, with a private `TMPDIR` per run, and the network on. Whatever a run leaves running is killed when it ends. In CI, `aver ci --run-as` runs the checks as a separate user.
 
 The head of a change runs with the base's copy of the harness, so a change cannot make its own tests easier to pass.
 

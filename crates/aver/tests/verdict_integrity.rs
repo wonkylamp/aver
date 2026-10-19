@@ -1,5 +1,6 @@
-//! The verdict-integrity gate (REDESIGN.md §6, B1 to B12): one test per
-//! benchmark, each the smallest repository that shows its invariant.
+//! The verdict-integrity gate (docs/BENCHMARKS.md, "Verdict-integrity
+//! scenarios"): one test per scenario, each the smallest repository that
+//! shows its invariant.
 //! Scripted where the scripted runner can express the invariant; native
 //! (`#[ignore]`, `make test-native`) where it needs a real toolchain.
 //!
@@ -619,8 +620,7 @@ fn b12b_an_issue_cannot_close_the_repo_data_fence() {
     );
 }
 
-// B9: workspace speed, rewind and fixture secrets (REDESIGN.md §5.3 items 1
-// and 2). Driven through the CLI on `fixtures/sh-calc` (shell checks).
+// B9: workspace speed, rewind and fixture secrets. Driven through the CLI on `fixtures/sh-calc` (shell checks).
 
 fn b9_aver(home: &std::path::Path, cwd: &std::path::Path, args: &[&str]) -> std::process::Output {
     std::process::Command::new(env!("CARGO_BIN_EXE_aver"))
@@ -1232,7 +1232,7 @@ async fn wp6_a_narrowed_run_proves_the_fix_and_misses_no_regression() {
     }
 }
 
-// B14: no green without a run (WP6 matrix JS-2, JS-5). `aver ci` in the
+// B14: no green without a run. `aver ci` in the
 // checkout on a shell repository whose check runs a tool from
 // `node_modules/.bin`: a tool missing on both sides is `ENV` and exits 1,
 // and an installed `node_modules` no npm lockfile describes (pnpm here) is
@@ -1696,8 +1696,8 @@ fn b14c_an_installed_venv_is_kept() {
     }
 }
 
-// B15: a test module that does not import gives no evidence (WP6 matrix
-// PY-8, `black`). pytest with `--continue-on-collection-errors` reports
+// B15: a test module that does not import gives no evidence (as in
+// `black`). pytest with `--continue-on-collection-errors` reports
 // each module it could not import as one failing entry named after the
 // module; the module's own tests ran on neither side.
 

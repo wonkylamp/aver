@@ -1,7 +1,5 @@
 # Aver: product requirements
 
-> Aver was previously codenamed Strata.
-
 ## 1. Vision
 
 In the near future nearly all code is written by many agents working in parallel. The tools they inherited were built for humans: a clone per contributor, branches as a negotiation protocol, pull requests as a review queue, CI as something you poll, logs as something you scroll. Each of those costs an agent tokens, wall-clock time and correctness, and none of them answers the only question that matters when a change lands: **is there machine-verifiable evidence that this change does what was asked and breaks nothing?**
@@ -59,7 +57,7 @@ There is no clone, branch, pull request, CI poll or log reading anywhere in that
 
 ## 6. Requirements for this build (M1 and M2)
 
-This section records what M1 and M2 required. Aver 0.4 deleted the MCP server and the Docker sandbox (REDESIGN.md §1.2): agents use the `aver` CLI, and checks run natively (ARCHITECTURE.md §2.4.6). F5, F9, S2 and the definition of done describe the build as it shipped then.
+This section records what M1 and M2 required. Agents now use the `aver` CLI, and checks run natively (ARCHITECTURE.md §2.4.6), so the MCP server and Docker sandbox that F5, F9, S2 and the definition of done name are not part of Aver.
 
 ### Functional
 
@@ -119,7 +117,7 @@ Also out of scope: replacing Git hosting, human code review UX, Windows hosts, m
 - **Coarse checks mask regressions.** One `npm test` that already fails on base hides any new failure inside it. v0 mitigation: per-test results from JUnit reports, so attribution is per test, not per command.
 - **Timeouts are ENV by rule.** An agent-introduced infinite loop times out and is classified ENV, not NEW. Followed as specified; M3 can reclassify head timeouts as NEW when base passed well inside the limit.
 - **Dependency install needs the network.** Installs run in a separate, scripts-disabled step; checks run with the network off where the system allows. Restricting install egress to the registry only is an M7 item.
-- **Checks are not sandboxed.** Since Aver 0.4 they run natively, as the user, in a cleaned environment (ARCHITECTURE.md §2.4.6).
+- **Checks are not sandboxed.** They run natively, as the user, in a cleaned environment (ARCHITECTURE.md §2.4.6).
 
 ## 10. North star and roadmap after M2
 

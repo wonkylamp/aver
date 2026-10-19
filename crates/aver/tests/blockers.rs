@@ -1,4 +1,4 @@
-//! Zero evidence is never PASS (REDESIGN.md §4.1, ARCHITECTURE.md §1.9.3):
+//! Zero evidence is never PASS (ARCHITECTURE.md §1.9.3):
 //! a check whose base or judged head ran no test, whose base passed no
 //! test, whose pytest stopped on its own error, whose Go package a panic
 //! cut off, or whose setup command failed gets an `ENV` entry

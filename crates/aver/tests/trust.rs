@@ -478,7 +478,7 @@ async fn a_new_finding_of_a_failing_setup_command_is_new() {
     assert_eq!(receipt.body.verdict, Verdict::FailOwn);
 
     // The same findings on both sides: the setup command failed on the
-    // base, which blocks the verdict (REDESIGN.md §4.1).
+    // base, which blocks the verdict.
     let receipt = c
         .verify(&[
             ("test/calc.test.json", r#"{"adds": "pass"}"#),

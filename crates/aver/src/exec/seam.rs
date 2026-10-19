@@ -1,9 +1,8 @@
 //! The executor's in-process runner seam: [`Executor::new`] takes a
 //! [`Sandbox`], which gets each run's command, environment, limits and the
-//! snapshot's files, and returns how it ended. Since Aver 0.4 deleted the
-//! Docker sandbox (REDESIGN.md §1.2.2) the test suite's scripted runner is
-//! its only implementation, so verification can be tested without running
-//! commands. WP3's judge replaces it.
+//! snapshot's files, and returns how it ended. The test suite's scripted
+//! runner is its only implementation, so verification can be tested
+//! without running commands.
 //!
 //! [`Executor::new`]: super::Executor::new
 

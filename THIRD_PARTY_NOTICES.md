@@ -18,9 +18,9 @@ The rest of `site/viewer.js` and all of `site/landing.js` are built from this re
 
 | Data | Where | License | Source |
 |---|---|---|---|
-| AIDev dataset: the list of agent-authored pull requests replayed by the replay study | `bench/replay/manifest.json`, and the results and triage derived from it in `bench/replay/` | CC-BY-4.0 | Hao Li, Haoxiang Zhang, Ahmed E. Hassan, AIDev, https://huggingface.co/datasets/hao-li/AIDev |
+| AIDev dataset: the list of agent-authored pull requests replayed by the replay study | `bench/replay/manifest.json` | CC-BY-4.0 | Hao Li, Haoxiang Zhang, Ahmed E. Hassan, AIDev, https://huggingface.co/datasets/hao-li/AIDev |
 
-The replay study records repository names, pull request numbers and commit ids of public GitHub repositories, and short notes on how their tests behaved. It does not copy their code: `bench/replay/replay.ts` fetches each repository read-only when it runs.
+The replay study lists repository names, pull request numbers and commit ids of public GitHub repositories. It does not copy their code: `bench/replay/replay.ts` fetches each repository read-only when it runs.
 
 ## Fetched at run time, not shipped
 

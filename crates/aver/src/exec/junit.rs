@@ -59,7 +59,7 @@ pub const TMP_ROOT: &str = "<tmp>";
 /// A `format` report with each root (an absolute path, and what it reads
 /// as) replaced, as given and resolved, longest first: a test
 /// parameterized with `__file__` or a temporary path then has the same id
-/// in every slot (REDESIGN.md §4.5). In an XML report the name is escaped,
+/// in every slot. In an XML report the name is escaped,
 /// so it stays text. The report is rewritten before it is stored or parsed,
 /// so every reading of it agrees. A Cargo probe's stream names no tests and
 /// is read for real paths, so it is left as it is.

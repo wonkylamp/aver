@@ -1,4 +1,4 @@
-//! A run's processes (REDESIGN.md §3): one check's commands started in
+//! A run's processes: one check's commands started in
 //! their own process group with their output to a log, bounded by a
 //! deadline, recorded while they run so a later process can kill what a
 //! killed one left, and reaped afterwards, including what left the group.
@@ -60,7 +60,7 @@ pub fn stripped(name: &str) -> bool {
     STRIPPED.contains(&name) || STRIPPED_PREFIXES.iter().any(|p| name.starts_with(p))
 }
 
-/// A run's environment (REDESIGN.md §3): the caller's own, minus
+/// A run's environment (CLAUDE.md rule 10): the caller's own, minus
 /// [`STRIPPED`], plus `AVER_OUT` (the run's result directory), the run's
 /// tag and a private `TMPDIR` (concurrent sides of one suite would collide
 /// on fixed names in a shared one). A `CARGO_TARGET_DIR` outside the slot

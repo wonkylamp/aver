@@ -688,7 +688,7 @@ impl Ci {
         })
     }
 
-    /// Hands the checkout to the runner at the head (REDESIGN.md §3.1),
+    /// Hands the checkout to the runner at the head (ARCHITECTURE.md §2.9),
     /// keeping what either side's environment installs, when the runner was
     /// set up to run in place.
     async fn adopt(&self, base: &Imported, head: &Imported) -> Result<CiPlace, CiError> {

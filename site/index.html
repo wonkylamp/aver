@@ -304,7 +304,7 @@
           <tr role="row">
             <th scope="row" role="rowheader" data-label="With Git you&hellip;">branch / worktree</th>
             <td role="cell" data-label="Aver gives agents&hellip;">workspace: ready in milliseconds, dependencies already installed</td>
-            <td role="cell" data-label="Why agents need it">50 agents is normal; 50 worktrees with <code>npm ci</code> each is not</td>
+            <td role="cell" data-label="Why agents need it">Many agents at once, without a worktree and <code>npm ci</code> each</td>
           </tr>
           <tr role="row">
             <th scope="row" role="rowheader" data-label="With Git you&hellip;">commit (&ldquo;here&rsquo;s what I changed&rdquo;)</th>
@@ -543,46 +543,38 @@ Took 15.4 s: sync 22 ms, plan 16 ms, original code cached, your code 1 run in 15
   </section>
 
   <section class="wrap section" id="numbers" aria-labelledby="numbers-title">
-    <h2 id="numbers-title">Measured, with the files to prove it</h2>
+    <h2 id="numbers-title">Measured, with the command to rerun it</h2>
     <dl class="facts-list facts-grid">
       <div>
-        <dt><span class="num">{{NUM:ws-create-aver-p50}}</span></dt>
-        <dd>to create an agent's workspace on date-fns, <code>node_modules</code> included (p50), against <span class="num">{{NUM:ws-create-worktree-p50}}</span> for <code>git worktree add</code> before any install. <a href="https://github.com/wonkylamp/aver/blob/main/bench/workspace-disk.md">Workspace benchmark</a></dd>
+        <dt><span class="num">28.8 s</span></dt>
+        <dd>to create 100 agent workspaces on date-fns, <code>node_modules</code> included, against about 2 minutes for <code>git worktree add</code> and <code>npm ci</code> (extrapolated from 5). <a href="https://github.com/wonkylamp/aver/blob/main/docs/BENCHMARKS.md#workspaces-at-scale">Workspaces at scale</a></dd>
       </div>
       <div>
-        <dt><span class="num">{{NUM:ws-disk-aver}}</span></dt>
-        <dd>of disk per workspace on date-fns, against <span class="num">{{NUM:ws-disk-worktree}}</span> for a worktree before any install. <a href="https://github.com/wonkylamp/aver/blob/main/bench/workspace-disk.md">Workspace benchmark</a></dd>
-      </div>
-      <div>
-        <dt><span class="num">{{NUM:parallel-ready-aver}}</span></dt>
-        <dd>until <span class="num">{{NUM:parallel-n}}</span> agents can run a React app's checks, against <span class="num">{{NUM:parallel-ready-worktree}}</span> with a worktree and <code>npm ci</code> for each. <a href="https://github.com/wonkylamp/aver/blob/main/bench/parallel/results.md">Parallel benchmark</a></dd>
+        <dt><span class="num">210 MiB</span></dt>
+        <dd>of disk for those 100 workspaces, against 671 MiB for 5 worktrees with <code>npm ci</code>. <a href="https://github.com/wonkylamp/aver/blob/main/docs/BENCHMARKS.md#workspaces-at-scale">Workspaces at scale</a></dd>
       </div>
       <div>
         <dt><span class="num">87.5 ms</span></dt>
-        <dd>median for a warm <code>aver workspace new</code>, the repository already imported, over 10 runs. <a href="https://github.com/wonkylamp/aver/blob/main/bench/results/verify-10-of-10.md">verify-10-of-10</a></dd>
+        <dd>median for a warm <code>aver workspace new</code>, the repository already imported, over 10 runs. <a href="https://github.com/wonkylamp/aver/blob/main/docs/BENCHMARKS.md#same-verdict-every-time">verify-10-of-10</a></dd>
       </div>
       <div>
-        <dt><span class="num">about 32 ms</span></dt>
-        <dd>for <code>aver restore --last-green</code> to rewind a workspace to its last state that broke nothing (medians of 31.5 to 33.5 ms). <a href="https://github.com/wonkylamp/aver/blob/main/bench/results/verify-10-of-10.md">verify-10-of-10</a></dd>
+        <dt><span class="num">33.5 ms</span></dt>
+        <dd>median for <code>aver restore --last-green</code> to rewind a workspace to its last state that broke nothing, over 10 runs. <a href="https://github.com/wonkylamp/aver/blob/main/docs/BENCHMARKS.md#same-verdict-every-time">verify-10-of-10</a></dd>
       </div>
       <div>
         <dt><span class="num">15 of 15</span></dt>
-        <dd>sabotage scenarios judged right, 10 of 10 runs each: a deleted test, a rewritten built test, a test command that runs nothing, an agent approving its own review, an untested hunk and more. <a href="https://github.com/wonkylamp/aver/blob/main/bench/results/verify-10-of-10.md">verify-10-of-10</a></dd>
+        <dd>sabotage scenarios judged right, 10 of 10 runs each: a deleted test, a rewritten built test, a test command that runs nothing, an agent approving its own review, an untested hunk and more. <a href="https://github.com/wonkylamp/aver/blob/main/docs/BENCHMARKS.md#same-verdict-every-time">verify-10-of-10</a></dd>
       </div>
       <div>
-        <dt><span class="num">{{NUM:check-latency}}</span></dt>
-        <dd>for <code>aver check</code> to tell an agent whether its test proves a criterion. <a href="https://github.com/wonkylamp/aver/blob/main/docs/BENCHMARKS.md">Benchmarks</a></dd>
+        <dt><span class="num">8 of 8</span></dt>
+        <dd>cheating commits on small fixtures that a plain CI test run passed, and that <code>aver ci</code> refused to call <span class="v-PASS">PASS</span>. <a href="https://github.com/wonkylamp/aver/blob/main/docs/BENCHMARKS.md#plain-ci-against-aver-on-cheating-commits">Plain CI against Aver</a></dd>
       </div>
       <div>
-        <dt><span class="num">{{NUM:trial-time}}</span></dt>
-        <dd>for each of two Claude Code agents to reach <span class="v-PASS">PASS</span> on a small task. <a href="https://github.com/wonkylamp/aver/blob/main/docs/BENCHMARKS.md">Benchmarks</a></dd>
-      </div>
-      <div>
-        <dt><span class="num">{{NUM:replay-complete}}</span> of <span class="num">{{NUM:replay-total}}</span></dt>
-        <dd>real agent pull requests (Copilot, Codex, Claude Code, Devin, Jules and Cursor), replayed through <code>aver ci</code>, produced a complete receipt, with a cause for every test. <a href="https://github.com/wonkylamp/aver/blob/main/bench/replay/results.md">Replay study</a>, on pull requests from the <a href="https://huggingface.co/datasets/hao-li/AIDev">AIDev</a> dataset (CC-BY-4.0).</dd>
+        <dt><span class="num">0 of 23</span></dt>
+        <dd>attempts picked under <code>aver run</code> that deleted a test or rewrote an assertion, against 2 of 23 for the same agents in a plain worktree. <a href="https://github.com/wonkylamp/aver/blob/main/docs/BENCHMARKS.md#ab-evaluation-with-real-agents">A/B evaluation</a></dd>
       </div>
     </dl>
-    <p class="caption">Every number comes from a file in the repository, and <a href="https://github.com/wonkylamp/aver/blob/main/docs/BENCHMARKS.md">docs/BENCHMARKS.md</a> lists them with the machine they ran on.</p>
+    <p class="caption"><a href="https://github.com/wonkylamp/aver/blob/main/docs/BENCHMARKS.md">docs/BENCHMARKS.md</a> lists every number with the machine it ran on and the command that reproduces it.</p>
   </section>
 
   <section class="wrap section" id="rules" aria-labelledby="rules-title">
@@ -842,7 +834,7 @@ protected: test/**
       </details>
       <details>
         <summary>Is it ready for production?</summary>
-        <p>No. Aver is a prototype. So far it has run on <span class="num">{{NUM:replay-total}}</span> real pull requests and in two by-hand trials with real agents on a small package, and the evaluation on hard tasks is in progress. There is no hosted service.</p>
+        <p>No. Aver is an early release. So far it has been measured on small fixtures, on date-fns, and in an A/B evaluation with real agents on <span class="num">23</span> tasks. There is no hosted service.</p>
       </details>
     </div>
     <p class="section-after">Something else? <a href="https://github.com/wonkylamp/aver/issues">Open an issue on GitHub</a>.</p>

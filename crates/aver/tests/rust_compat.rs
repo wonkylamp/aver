@@ -325,7 +325,7 @@ fn feature_pair(w: &World, default: &str, base: &str, head: &str) -> (SnapshotId
     )
 }
 
-/// REDESIGN.md B7(b): the head adds a field to a public struct and updates
+/// Verdict-integrity scenario B7(b): the head adds a field to a public struct and updates
 /// the struct literal in the inline test that builds one. The base's copy
 /// of that test no longer compiles on the head, which is the API change,
 /// not a regression: the test is CHANGED and the verdict REVIEW, never a

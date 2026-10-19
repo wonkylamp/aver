@@ -1,6 +1,6 @@
 #!/bin/sh
-# bench/verify-10-of-10.sh: whether Aver gives the verdict REDESIGN.md §6
-# promises every time. Each scenario is a base and a head commit on a
+# bench/verify-10-of-10.sh: whether Aver gives the verdict each
+# verdict-integrity scenario (docs/BENCHMARKS.md) expects every time. Each scenario is a base and a head commit on a
 # scratch copy of fixtures/sh-calc (shell checks: no Node, no Docker);
 # `aver ci --fresh` verifies the head against the base N times (default 10),
 # each in its own throwaway home, and the scenario passes only when all N
@@ -65,6 +65,7 @@ AVER=${AVER:-$ROOT/target/release/aver}
 N=${N:-10}
 SCENARIOS=${SCENARIOS:-"pass regression b1 b2 b3 b4 b5 b8 b9 b10 b11 sensitive b13 b14 b15"}
 OUT=${OUT:-$ROOT/bench/results/verify-10-of-10.md}
+mkdir -p "$(dirname "$OUT")"
 WORK=$(mktemp -d "${TMPDIR:-/tmp}/aver-10-of-10.XXXXXX")
 trap 'rm -rf "$WORK"' EXIT
 export AVER_HOME="$WORK/home"
