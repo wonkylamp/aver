@@ -228,12 +228,13 @@ async fn a_dependency_the_head_adds_is_on_its_side_only() {
 /// `verify_docker.rs`, `a_test_keyed_to_the_run_index_is_stable_on_both_sides`:
 /// no rerun index reaches the code under test (`AVER_RUN`, the reaping
 /// tag, is new for every run and names none), so a check that fails when
-/// one does passes on both sides, natively.
+/// one does passes on both sides, natively. The CI job's own
+/// `GITHUB_RUN_ATTEMPT` is the same on both sides, so it is left out.
 #[tokio::test]
 async fn no_run_index_reaches_the_code_under_test() {
     let w = World::new();
     let toml = format!(
-        "[env]\nimage = \"{PINNED_IMAGE}\"\n\n[[check]]\nid = \"index\"\nrun = [\"sh\", \"-c\", \"! env | grep -i -e attempt -e run_index\"]\n"
+        "[env]\nimage = \"{PINNED_IMAGE}\"\n\n[[check]]\nid = \"index\"\nrun = [\"sh\", \"-c\", \"! env | grep -i -e attempt -e run_index | grep -v ^GITHUB_\"]\n"
     );
     let base = w.snapshot(&[("aver.toml", &toml), ("a", "1")]);
     let head = w.snapshot(&[("aver.toml", &toml), ("a", "2")]);

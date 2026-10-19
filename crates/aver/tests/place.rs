@@ -2628,7 +2628,7 @@ if grep -q HANG calc.sh && [ -n "$HANG_MARK" ]; then touch "$HANG_MARK"; sleep 6
         let repo = repo(|_| {}, add_sub);
         let out = tempfile::tempdir().unwrap();
         let mut cmd = ci(&repo, out.path(), &[]);
-        for name in [
+        let planted = [
             "GITHUB_OUTPUT",
             "GITHUB_ENV",
             "GITHUB_PATH",
@@ -2641,7 +2641,8 @@ if grep -q HANG calc.sh && [ -n "$HANG_MARK" ]; then touch "$HANG_MARK"; sleep 6
             "ACTIONS_CACHE_URL",
             "ACTIONS_ID_TOKEN_REQUEST_URL",
             "ACTIONS_ID_TOKEN_REQUEST_TOKEN",
-        ] {
+        ];
+        for name in planted {
             cmd.env(name, "secret");
         }
         let run = cmd.env("RUNNER_CONTROL", "seen").output().unwrap();
@@ -2649,9 +2650,15 @@ if grep -q HANG calc.sh && [ -n "$HANG_MARK" ]; then touch "$HANG_MARK"; sleep 6
         let logs = logs(out.path());
         assert!(logs.contains("env:RUNNER_CONTROL=seen"), "{logs}");
         assert!(logs.contains(&format!("cwd={}", repo.path().display())));
+        // The job's other variables (`GITHUB_SHA`, `GITHUB_RUN_ID`) are
+        // not credentials and stay.
         let leaked: Vec<&str> = logs
             .lines()
-            .filter(|l| l.starts_with("env:GITHUB_") || l.starts_with("env:ACTIONS_"))
+            .filter(|l| {
+                planted
+                    .iter()
+                    .any(|name| l.starts_with(&format!("env:{name}=")))
+            })
             .collect();
         assert!(leaked.is_empty(), "{leaked:?}");
     }

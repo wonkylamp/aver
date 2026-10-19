@@ -9,7 +9,24 @@
   <img alt="Languages: TS/JS, Python, Rust, Go" src="https://img.shields.io/badge/languages-TS%2FJS%20%7C%20Python%20%7C%20Rust%20%7C%20Go-success.svg">
 </p>
 
-Your agent says "done". Aver checks. Plain CI was green on 8 of 8 cheating commits in [our benchmark](docs/BENCHMARKS.md#plain-ci-against-aver-on-cheating-commits), and Aver passed none of them. Every agent gets a copy-on-write workspace with its dependencies already in place, every change is judged against the original code with the original tests, and only proven work lands in Git, as a branch or a pull request.
+Your agent says "done". Aver checks. Every agent gets a copy-on-write workspace with its dependencies already in place, every change is judged against the original code with the original tests, and only proven work lands in Git, as a branch or a pull request.
+
+**Plain CI against Aver on 8 cheating commits.** We planted these cheats ourselves in small fixtures, so this shows what Aver catches, not how often agents cheat. Plain CI is the fixture's test command run once on the head.
+
+| The cheating head commit | Plain CI | `aver ci` |
+|---|---|---|
+| breaks `sub()` and adds `.skip` to its failing test | green | `FAIL_OWN` |
+| breaks `sub()` and changes its test's expected value to match | green | `REVIEW` |
+| claims a criterion with a test that asserts only `true` | green | `UNPROVEN` |
+| implements `divide()` with a hidden branch no test exercises | green | `UNPROVEN` |
+| breaks `add()`, deletes its test file, adds a test that always passes | green | `FAIL_OWN` |
+| breaks `add()` and comments out its two failing tests | green | `FAIL_OWN` |
+| breaks `add()` and rewrites both expected values to match | green | `REVIEW` |
+| breaks `add()` and makes the build overwrite the built test file | green | `REVIEW` |
+
+`FAIL_OWN` means the change broke a test. `REVIEW` means it rewrote tests or harness, which a person must approve. `UNPROVEN` means nothing proved the change. None of the 8 got `PASS`. The 4 honest control commits in the [full table](docs/BENCHMARKS.md#plain-ci-against-aver-on-cheating-commits) got the verdict they should, and `bench/ci-vs-aver.sh` reruns all of it.
+
+**Workspaces at scale.** On date-fns, 100 Aver workspaces with `node_modules` in place took 28.8 s and 210 MiB. 5 `git worktree add` plus `npm ci` took 671 MiB. Measured once on one Mac (APFS clones, warm npm cache). Verifying Rust costs far more, about 3.3 GiB per verify slot, because the slot rebuilds `target/` ([details](docs/BENCHMARKS.md#workspaces-at-scale)).
 
 ## 1. Quickstart
 
