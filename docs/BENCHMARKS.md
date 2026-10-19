@@ -44,6 +44,7 @@ Aver workspaces against `git worktree add` plus `npm ci`, on [date-fns](https://
 | 50 Aver workspaces | 11.9 s | 232 / 271 ms | 104 MiB | 2.1 MiB | measured |
 | 100 Aver workspaces | **28.8 s** | 286 / 337 ms | **210 MiB** | 2.1 MiB | measured |
 | 5 worktrees with `npm ci` | 6.0 s | 1.1 to 1.3 s | **671 MiB** | 134 MiB | measured |
+| 5 worktrees with `pnpm install`, warm store | 92.7 s | 13.7 to 27.2 s | 154 MiB | 31 MiB | measured |
 | 100 worktrees with `npm ci` | about 2 min | | about 13 GiB | | extrapolated from 5 |
 
 - Each Aver row is `aver workspace new --count N` after one first workspace in a fresh `AVER_HOME`. The worktree row ran with npm's download cache warm.
@@ -51,9 +52,10 @@ Aver workspaces against `git worktree add` plus `npm ci`, on [date-fns](https://
 - Three `aver verify` runs, each in its own workspace with a different one-line change, took 8.3 to 9.7 s and gave `PASS`. Each verify adds one slot of 7.6 MiB private size.
 - **This slot cost does not carry over to Rust.** A Node slot is a clone of the tree and its `node_modules`. A Rust slot rebuilds `target/`. A separate measurement on Aver's own repository found about 3.3 GiB per slot. `bench/rust-verify-speed.sh` measures it.
 - **One unexplained run.** In an earlier full run, three verifies right after the 100-workspace step all printed `FAIL_OWN`. Their logs were lost with the disk image, so the cause is unknown. The script now gives each workspace a different change and keeps the logs. The rerun passed 3 of 3.
+- **The pnpm row installs more.** date-fns is a pnpm monorepo, so `pnpm install --frozen-lockfile --offline` (pnpm 9, `--ignore-scripts`) installs its own lockfile, every workspace package included: 25,454 files against the npm rows' 1,252. A store warmed by one install first (63.5 s, 520 MiB) is not counted. pnpm clones from its store on APFS, so each worktree's disk is mostly its checkout and links. Measured on 2026-10-19 with `bench/pnpm-worktrees.sh`, on a sparse APFS image of its own.
 - These were not measured: 100 worktrees, verification in many workspaces at once, a cold npm cache, Linux, and agents working in the workspaces.
 
-Reproduce with `bench/scale.sh` (`NS="20 50"`, `VERIFY=0`, `AVER=<binary>`). It needs about 12 GiB free and macOS, and writes its raw numbers to `$OUT`.
+Reproduce with `bench/scale.sh` (`NS="20 50"`, `VERIFY=0`, `AVER=<binary>`). It needs about 12 GiB free and macOS, and writes its raw numbers to `$OUT`. The pnpm row is `bench/pnpm-worktrees.sh` (`WORKTREES=3`), which needs about 8 GiB free, macOS and network for pnpm and the store.
 
 ## Same verdict every time
 

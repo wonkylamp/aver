@@ -30,7 +30,7 @@ Your agent says "done". Aver checks, with three tests of the evidence. **Frozen 
 
 `FAIL_OWN` means the change broke a test. `REVIEW` means it rewrote tests or harness, which a person must approve. `UNPROVEN` means nothing proved the change. None of the 8 cheats got `PASS`; the 3 honest changes got `PASS` and the honest regression `FAIL_OWN`. The [full table](docs/BENCHMARKS.md#plain-ci-against-aver-on-cheating-commits) adds the no-evidence cases, and `bench/ci-vs-aver.sh` reruns all of it.
 
-**Workspaces at scale.** On date-fns, 100 Aver workspaces with `node_modules` in place took 28.8 s and 210 MiB. 5 `git worktree add` plus `npm ci` took 671 MiB. Measured once on one Mac (APFS clones, warm npm cache). Verifying Rust costs far more, about 3.3 GiB per verify slot, because the slot rebuilds `target/` ([details](docs/BENCHMARKS.md#workspaces-at-scale)).
+**Workspaces at scale.** On date-fns, 100 Aver workspaces with `node_modules` in place took 28.8 s and 210 MiB. 5 `git worktree add` plus `npm ci` took 671 MiB, and 5 with `pnpm install` from a warm store took 154 MiB and 92.7 s (pnpm installs date-fns's whole monorepo). Measured once on one Mac (APFS clones, warm npm cache). Verifying Rust costs far more, about 3.3 GiB per verify slot, because the slot rebuilds `target/` ([details](docs/BENCHMARKS.md#workspaces-at-scale)).
 
 ## 1. Quickstart
 
@@ -97,7 +97,8 @@ Aver against `git worktree add` plus `npm ci`, on [date-fns](https://github.com/
 |---|---:|---:|
 | 100 workspaces, dependencies in place | **28.8 s, 210 MiB** (measured) | about 2 min, about 13 GiB (extrapolated from 5) |
 | 5 worktrees, dependencies in place | | 6.0 s, 671 MiB (measured) |
-| Disk per workspace | **2.1 MiB** (measured) | 134 MiB (measured) |
+| 5 worktrees with `pnpm install`, warm store | | 92.7 s, 154 MiB (measured; the whole monorepo) |
+| Disk per workspace | **2.1 MiB** (measured) | 134 MiB with npm, 31 MiB with pnpm (measured) |
 | Rewind to the last passing state | **33.5 ms** median (`aver restore --last-green`, measured) | `git stash` / `reset`, if you committed |
 | Four agents append tests to one file | **merged and verified** (`aver combine`, measured) | `CONFLICT (content)` |
 
