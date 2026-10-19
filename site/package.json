@@ -15,7 +15,7 @@
   "devDependencies": {
     "@noble/ed25519": "3.2.0",
     "@noble/hashes": "2.4.0",
-    "@types/node": "25.9.9",
+    "@types/node": "26.6.5",
     "esbuild": "0.28.2",
     "linkedom": "0.18.13",
     "typescript": "7.0.2"
