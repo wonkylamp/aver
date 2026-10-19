@@ -1,13 +1,18 @@
 #!/usr/bin/env bash
-# The pnpm baseline for bench/scale.sh: `git worktree add` plus
-# `pnpm install --frozen-lockfile --offline` on date-fns at the same REV,
-# with the pnpm version its package.json pins (pnpm 9 when none) and a store warmed by one
-# install first (not counted). date-fns is a pnpm monorepo, so this installs
-# its own lockfile, every workspace package included, where scale.sh's npm
-# rows install only the root devDependencies.
+# The pnpm and bun baselines for bench/scale.sh: `git worktree add` plus a
+# frozen-lockfile install on date-fns at the same REV, from a store or cache
+# warmed by one install first (not counted). date-fns is a pnpm monorepo, so
+# this installs every workspace package, where scale.sh's npm rows install
+# only the root devDependencies.
 #
-#   bench/pnpm-worktrees.sh               # 5 worktrees
-#   WORKTREES=3 KEEP=1 bench/pnpm-worktrees.sh
+# PM=pnpm (default): `pnpm install --frozen-lockfile --offline`, with the
+# pnpm version package.json pins (pnpm 9 when none).
+# PM=bun: the warm-up `bun install` resolves afresh (bun 1.3 hangs migrating
+# date-fns's pnpm-lock.yaml), and its bun.lock is committed so each worktree
+# runs `bun install --frozen-lockfile`.
+#
+#   bench/worktree-baseline.sh               # pnpm, 5 worktrees
+#   PM=bun WORKTREES=3 KEEP=1 bench/worktree-baseline.sh
 #
 # Like scale.sh it runs on a sparse APFS image of its own and measures disk
 # as the image's free-space delta, which counts what pnpm cloned or
@@ -16,14 +21,15 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 REV="717ce0a807ea4c6b540d015b5c408723175b2838"
+PM="${PM:-pnpm}"
 WORKTREES="${WORKTREES:-5}"
 MIN_FREE_GIB="${MIN_FREE_GIB:-8}"
-HOST="${HOST:-$(mktemp -d "${TMPDIR:-/tmp}/aver-pnpm.XXXXXX")}"
-OUT="${OUT:-$HOST/pnpm.tsv}"
+HOST="${HOST:-$(mktemp -d "${TMPDIR:-/tmp}/aver-$PM.XXXXXX")}"
+OUT="${OUT:-$HOST/$PM.tsv}"
 
-hdiutil create -quiet -size "${IMAGE_GIB:-6}g" -type SPARSE -fs APFS -volname aver-pnpm "$HOST/pnpm"
+hdiutil create -quiet -size "${IMAGE_GIB:-6}g" -type SPARSE -fs APFS -volname "aver-$PM" "$HOST/image"
 mkdir -p "$HOST/mnt"
-hdiutil attach -quiet -nobrowse -mountpoint "$HOST/mnt" "$HOST/pnpm.sparseimage"
+hdiutil attach -quiet -nobrowse -mountpoint "$HOST/mnt" "$HOST/image.sparseimage"
 SCRATCH="$HOST/mnt"
 REPO="$SCRATCH/date-fns"
 cleanup() {
@@ -54,15 +60,37 @@ emit() { printf '%s\n' "$*" | tee -a "$OUT"; }
 git init -q "$REPO"
 git -C "$REPO" fetch -q --depth 1 https://github.com/date-fns/date-fns "$REV"
 git -C "$REPO" checkout -q FETCH_HEAD
-pin=$(node -p 'require(process.argv[1]).packageManager || ""' "$REPO/package.json")
-case "$pin" in pnpm@*) PNPM="${pin%%+*}" ;; *) PNPM="pnpm@9" ;; esac # date-fns at REV pins none
-export npm_config_store_dir="$SCRATCH/pnpm-store"
-pnpm() { npx -y "$PNPM" "$@"; }
-emit "# $PNPM, node $(node --version), $(sysctl -n machdep.cpu.brand_string 2>/dev/null || uname -m), macOS $(sw_vers -productVersion), sparse APFS image"
+case "$PM" in
+  pnpm)
+    pin=$(node -p 'require(process.argv[1]).packageManager || ""' "$REPO/package.json")
+    case "$pin" in pnpm@*) TOOL="${pin%%+*}" ;; *) TOOL="pnpm@9" ;; esac # date-fns at REV pins none
+    export npm_config_store_dir="$SCRATCH/pnpm-store"
+    warm() { npx -y "$TOOL" install --frozen-lockfile --ignore-scripts >/dev/null; }
+    install() { npx -y "$TOOL" install --frozen-lockfile --offline --ignore-scripts >/dev/null; }
+    ;;
+  bun)
+    TOOL="bun@$(bun --version)"
+    export BUN_INSTALL_CACHE_DIR="$SCRATCH/bun-cache"
+    # bun 1.3 reads date-fns's `jsr:` specifier as a git URL, so the docs
+    # package takes @deno/doc through JSR's npm registry instead.
+    printf '[install.scopes]\n"@jsr" = "https://npm.jsr.io/"\n' > "$REPO/bunfig.toml"
+    sed -i '' 's|"@deno/doc": "jsr:|"@deno/doc": "npm:@jsr/deno__doc@|' "$REPO/pkgs/docs/package.json"
+    git -C "$REPO" rm -q pnpm-lock.yaml
+    node -e 'const f=process.argv[1],p=require(f);p.workspaces=["pkgs/*","pkgs/tz/test/engines"];require("fs").writeFileSync(f,JSON.stringify(p,null,2)+"\n")' "$REPO/package.json" # pnpm-workspace.yaml's packages
+    warm() { bun install --ignore-scripts >/dev/null; }
+    install() { bun install --frozen-lockfile --ignore-scripts >/dev/null; }
+    ;;
+  *) echo "PM is pnpm or bun" >&2; exit 2 ;;
+esac
+emit "# $TOOL, node $(node --version), $(sysctl -n machdep.cpu.brand_string 2>/dev/null || uname -m), macOS $(sw_vers -productVersion), sparse APFS image"
 
 f0=$(free_kib); t0=$(now)
-(cd "$REPO" && pnpm install --frozen-lockfile --ignore-scripts >/dev/null)
+(cd "$REPO" && warm)
 t1=$(now); f1=$(free_kib)
+if [ "$PM" = bun ]; then
+  git -C "$REPO" add bun.lock bunfig.toml package.json pkgs/docs/package.json
+  git -C "$REPO" -c user.name=bench -c user.email=bench@example.invalid commit -qm "bun.lock"
+fi
 emit "warm	install_s=$(echo "$t1 - $t0" | bc)	df_kib=$((f0 - f1))	node_modules_files=$(find "$REPO/node_modules" "$REPO"/pkgs/*/node_modules -type f 2>/dev/null | wc -l | tr -d ' ')"
 
 f0=$(free_kib); t0=$(now)
@@ -71,7 +99,7 @@ while [ "$i" -lt "$WORKTREES" ]; do
   i=$((i + 1))
   ts=$(now)
   git -C "$REPO" worktree add -q --detach "$SCRATCH/wt-$i" HEAD
-  (cd "$SCRATCH/wt-$i" && pnpm install --frozen-lockfile --offline --ignore-scripts >/dev/null)
+  (cd "$SCRATCH/wt-$i" && install)
   te=$(now)
   emit "worktree	i=$i	s=$(echo "$te - $ts" | bc)"
 done
