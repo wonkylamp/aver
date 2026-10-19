@@ -1,0 +1,58 @@
+{
+  "base": {
+    "files": 2000,
+    "snapshot": "snap_i7qzu32s6uateut4lqyf2jzg5op2uzfup6ajnhzxjoibpdu3otvq",
+    "synthetic": true
+  },
+  "benchmark": "workspaces",
+  "edit_one_file": {
+    "new_objects_mean": 1.0,
+    "time": {
+      "max_us": 429.0,
+      "mean_us": 101.4,
+      "n": 100,
+      "p50_us": 85.6,
+      "p95_us": 211.2,
+      "p99_us": 296.4
+    },
+    "workspaces": 100
+  },
+  "open_http": {
+    "max_us": 13860.8,
+    "mean_us": 479.8,
+    "n": 1000,
+    "p50_us": 311.9,
+    "p95_us": 1312.1,
+    "p99_us": 3442.7
+  },
+  "open_in_process": {
+    "max_us": 1512.5,
+    "mean_us": 35.4,
+    "n": 1000,
+    "p50_us": 29.5,
+    "p95_us": 53.3,
+    "p99_us": 111.8
+  },
+  "profile": "release",
+  "snapshot_after_edit": {
+    "new_objects_max": 5.0,
+    "new_objects_mean": 5.0,
+    "time": {
+      "max_us": 5553.4,
+      "mean_us": 474.7,
+      "n": 100,
+      "p50_us": 303.1,
+      "p95_us": 958.1,
+      "p99_us": 2951.8
+    },
+    "workspaces": 100
+  },
+  "storage": {
+    "bytes_delta": 258048,
+    "bytes_per_workspace": 258.048,
+    "http_bytes_delta": 708608,
+    "http_bytes_per_workspace": 708.608,
+    "note": "database + WAL size after a TRUNCATE checkpoint; the HTTP figure includes the signed-request audit row",
+    "workspaces": 1000
+  }
+}

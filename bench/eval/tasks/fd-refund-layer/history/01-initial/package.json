@@ -1,0 +1,13 @@
+{
+  "name": "shopstats",
+  "version": "1.4.0",
+  "description": "Sales numbers for the shop: the monthly report, the dashboard API and the finance export",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}

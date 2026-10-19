@@ -1,0 +1,89 @@
+# Aver verifies every pull request against its base and posts a check run
+# named Aver. Written by `aver init --ci`; docs/CI.md explains it.
+#
+# verify, on a pull request: runs the checks on the base and the head and
+# posts Aver as success, failure, or action_required when a maintainer has
+# to look (REVIEW or UNPROVEN). On a push to trunk it records its runs,
+# so pull requests based on that commit do not run the base again. In a
+# merge queue it fails only on a regression.
+# approve, on a review: when a person other than the author approved the
+# pull request's head commit, posts Aver as success on it.
+name: Aver
+
+on:
+  pull_request:
+  pull_request_review:
+    types: [submitted, dismissed]
+  push:
+    branches: [trunk]
+  merge_group:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aver-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  verify:
+    if: github.event_name != 'pull_request_review'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+    steps:
+      # The pull request's head, not GitHub's merge commit, so the checks
+      # run in this checkout with the dependencies installed below. The
+      # full history means no fetch, so no token stays in .git/config.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: '.nvmrc'
+      - name: Enable pnpm and Yarn
+        run: corepack enable
+      - name: Install the Node dependencies
+        run: npm install
+      - name: Install the Node dependencies in web
+        working-directory: web
+        run: pnpm install --frozen-lockfile
+      - name: Install uv
+        run: pipx install uv
+      - name: Install the Python dependencies in tools
+        working-directory: tools
+        run: |
+          uv venv
+          echo "$PWD/.venv/bin" >>"$GITHUB_PATH"
+      - name: Install Rust
+        run: rustup toolchain install
+      - name: Fetch the Rust dependencies
+        run: cargo fetch --locked
+      - name: Download the Go modules in svc
+        working-directory: svc
+        run: go mod download
+      - uses: wonkylamp/aver/action@{{ACTION_SHA}} # v0.4.1
+        with:
+          review: approve
+
+  approve:
+    if: github.event_name == 'pull_request_review'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: wonkylamp/aver/action@{{ACTION_SHA}} # v0.4.1
+        with:
+          mode: approve

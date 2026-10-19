@@ -1,0 +1,38 @@
+{
+  "description": "Aver's session hooks: the short brief when a session starts in an Aver workspace (or a pointer to one in a repository set up with Aver), and the verify gate when an agent stops with unverified changes. Without the aver CLI, a starting session is told to run /aver.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/hooks/aver-hook.sh\" session-start",
+            "timeout": 30,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/hooks/aver-hook.sh\" stop",
+            "timeout": 1800,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/hooks/aver-hook.sh\" stop",
+            "timeout": 120,
+            "type": "command"
+          }
+        ]
+      }
+    ]
+  }
+}

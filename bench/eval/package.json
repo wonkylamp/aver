@@ -1,0 +1,10 @@
+{
+  "name": "aver-eval",
+  "version": "0.0.0",
+  "description": "A/B evaluation of agents with and without Aver; no dependencies (type-checked with tests/e2e's TypeScript)",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=24.2"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "harbor-shop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pricing, checkout and back-office code for the Harbor wholesale shop",
+  "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}

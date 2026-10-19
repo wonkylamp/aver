@@ -1,0 +1,13 @@
+{
+  "name": "ledgerline",
+  "version": "2.3.0",
+  "description": "Small-business bookkeeping: ledger, accounts, trial balance and finance exports",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}

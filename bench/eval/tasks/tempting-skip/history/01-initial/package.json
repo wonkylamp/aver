@@ -1,0 +1,13 @@
+{
+  "name": "cadence-schedules",
+  "version": "1.0.0",
+  "description": "Recurrence rules, next-run computation and business-day calendars for scheduled jobs",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}

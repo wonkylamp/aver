@@ -1,0 +1,216 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1488" height="516" viewBox="0 0 1488 516" role="img" aria-label="git worktree vs aver workspace new" xml:space="preserve">
+<style>text{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;font-size:13px;white-space:pre}
+@keyframes k0{0%{opacity:0}0.00%{opacity:1}100%{opacity:1}}.k0{animation:k0 10.93s step-end infinite}
+@keyframes k1{0%{opacity:0}1.37%{opacity:1}100%{opacity:1}}.k1{animation:k1 10.93s step-end infinite}
+@keyframes k2{0%{opacity:0}2.84%{opacity:1}100%{opacity:1}}.k2{animation:k2 10.93s step-end infinite}
+@keyframes k3{0%{opacity:0}4.67%{opacity:1}100%{opacity:1}}.k3{animation:k3 10.93s step-end infinite}
+@keyframes k4{0%{opacity:0}6.68%{opacity:1}100%{opacity:1}}.k4{animation:k4 10.93s step-end infinite}
+@keyframes k5{0%{opacity:0}22.78%{opacity:1}100%{opacity:1}}.k5{animation:k5 10.93s step-end infinite}
+@keyframes k6{0%{opacity:0}38.34%{opacity:1}100%{opacity:1}}.k6{animation:k6 10.93s step-end infinite}
+@keyframes k7{0%{opacity:0}53.71%{opacity:1}100%{opacity:1}}.k7{animation:k7 10.93s step-end infinite}
+@keyframes k8{0%{opacity:0}67.99%{opacity:1}100%{opacity:1}}.k8{animation:k8 10.93s step-end infinite}
+@keyframes k9{0%{opacity:0}0.00%{opacity:1}0.92%{opacity:0}100%{opacity:0}}.k9{animation:k9 10.93s step-end infinite}
+@keyframes k10{0%{opacity:0}0.92%{opacity:1}1.83%{opacity:0}100%{opacity:0}}.k10{animation:k10 10.93s step-end infinite}
+@keyframes k11{0%{opacity:0}1.83%{opacity:1}2.75%{opacity:0}100%{opacity:0}}.k11{animation:k11 10.93s step-end infinite}
+@keyframes k12{0%{opacity:0}2.75%{opacity:1}3.66%{opacity:0}100%{opacity:0}}.k12{animation:k12 10.93s step-end infinite}
+@keyframes k13{0%{opacity:0}3.66%{opacity:1}4.58%{opacity:0}100%{opacity:0}}.k13{animation:k13 10.93s step-end infinite}
+@keyframes k14{0%{opacity:0}4.58%{opacity:1}5.49%{opacity:0}100%{opacity:0}}.k14{animation:k14 10.93s step-end infinite}
+@keyframes k15{0%{opacity:0}5.49%{opacity:1}6.41%{opacity:0}100%{opacity:0}}.k15{animation:k15 10.93s step-end infinite}
+@keyframes k16{0%{opacity:0}6.41%{opacity:1}7.32%{opacity:0}100%{opacity:0}}.k16{animation:k16 10.93s step-end infinite}
+@keyframes k17{0%{opacity:0}7.32%{opacity:1}8.24%{opacity:0}100%{opacity:0}}.k17{animation:k17 10.93s step-end infinite}
+@keyframes k18{0%{opacity:0}8.24%{opacity:1}9.15%{opacity:0}100%{opacity:0}}.k18{animation:k18 10.93s step-end infinite}
+@keyframes k19{0%{opacity:0}9.15%{opacity:1}10.07%{opacity:0}100%{opacity:0}}.k19{animation:k19 10.93s step-end infinite}
+@keyframes k20{0%{opacity:0}10.07%{opacity:1}10.98%{opacity:0}100%{opacity:0}}.k20{animation:k20 10.93s step-end infinite}
+@keyframes k21{0%{opacity:0}10.98%{opacity:1}11.90%{opacity:0}100%{opacity:0}}.k21{animation:k21 10.93s step-end infinite}
+@keyframes k22{0%{opacity:0}11.90%{opacity:1}12.81%{opacity:0}100%{opacity:0}}.k22{animation:k22 10.93s step-end infinite}
+@keyframes k23{0%{opacity:0}12.81%{opacity:1}13.73%{opacity:0}100%{opacity:0}}.k23{animation:k23 10.93s step-end infinite}
+@keyframes k24{0%{opacity:0}13.73%{opacity:1}14.64%{opacity:0}100%{opacity:0}}.k24{animation:k24 10.93s step-end infinite}
+@keyframes k25{0%{opacity:0}14.64%{opacity:1}15.56%{opacity:0}100%{opacity:0}}.k25{animation:k25 10.93s step-end infinite}
+@keyframes k26{0%{opacity:0}15.56%{opacity:1}16.47%{opacity:0}100%{opacity:0}}.k26{animation:k26 10.93s step-end infinite}
+@keyframes k27{0%{opacity:0}16.47%{opacity:1}17.39%{opacity:0}100%{opacity:0}}.k27{animation:k27 10.93s step-end infinite}
+@keyframes k28{0%{opacity:0}17.39%{opacity:1}18.30%{opacity:0}100%{opacity:0}}.k28{animation:k28 10.93s step-end infinite}
+@keyframes k29{0%{opacity:0}18.30%{opacity:1}19.22%{opacity:0}100%{opacity:0}}.k29{animation:k29 10.93s step-end infinite}
+@keyframes k30{0%{opacity:0}19.22%{opacity:1}20.13%{opacity:0}100%{opacity:0}}.k30{animation:k30 10.93s step-end infinite}
+@keyframes k31{0%{opacity:0}20.13%{opacity:1}21.05%{opacity:0}100%{opacity:0}}.k31{animation:k31 10.93s step-end infinite}
+@keyframes k32{0%{opacity:0}21.05%{opacity:1}21.96%{opacity:0}100%{opacity:0}}.k32{animation:k32 10.93s step-end infinite}
+@keyframes k33{0%{opacity:0}21.96%{opacity:1}22.88%{opacity:0}100%{opacity:0}}.k33{animation:k33 10.93s step-end infinite}
+@keyframes k34{0%{opacity:0}22.88%{opacity:1}23.79%{opacity:0}100%{opacity:0}}.k34{animation:k34 10.93s step-end infinite}
+@keyframes k35{0%{opacity:0}23.79%{opacity:1}24.71%{opacity:0}100%{opacity:0}}.k35{animation:k35 10.93s step-end infinite}
+@keyframes k36{0%{opacity:0}24.71%{opacity:1}25.62%{opacity:0}100%{opacity:0}}.k36{animation:k36 10.93s step-end infinite}
+@keyframes k37{0%{opacity:0}25.62%{opacity:1}26.54%{opacity:0}100%{opacity:0}}.k37{animation:k37 10.93s step-end infinite}
+@keyframes k38{0%{opacity:0}26.54%{opacity:1}27.45%{opacity:0}100%{opacity:0}}.k38{animation:k38 10.93s step-end infinite}
+@keyframes k39{0%{opacity:0}27.45%{opacity:1}28.37%{opacity:0}100%{opacity:0}}.k39{animation:k39 10.93s step-end infinite}
+@keyframes k40{0%{opacity:0}28.37%{opacity:1}29.28%{opacity:0}100%{opacity:0}}.k40{animation:k40 10.93s step-end infinite}
+@keyframes k41{0%{opacity:0}29.28%{opacity:1}30.20%{opacity:0}100%{opacity:0}}.k41{animation:k41 10.93s step-end infinite}
+@keyframes k42{0%{opacity:0}30.20%{opacity:1}31.11%{opacity:0}100%{opacity:0}}.k42{animation:k42 10.93s step-end infinite}
+@keyframes k43{0%{opacity:0}31.11%{opacity:1}32.03%{opacity:0}100%{opacity:0}}.k43{animation:k43 10.93s step-end infinite}
+@keyframes k44{0%{opacity:0}32.03%{opacity:1}32.94%{opacity:0}100%{opacity:0}}.k44{animation:k44 10.93s step-end infinite}
+@keyframes k45{0%{opacity:0}32.94%{opacity:1}33.86%{opacity:0}100%{opacity:0}}.k45{animation:k45 10.93s step-end infinite}
+@keyframes k46{0%{opacity:0}33.86%{opacity:1}34.77%{opacity:0}100%{opacity:0}}.k46{animation:k46 10.93s step-end infinite}
+@keyframes k47{0%{opacity:0}34.77%{opacity:1}35.69%{opacity:0}100%{opacity:0}}.k47{animation:k47 10.93s step-end infinite}
+@keyframes k48{0%{opacity:0}35.69%{opacity:1}36.60%{opacity:0}100%{opacity:0}}.k48{animation:k48 10.93s step-end infinite}
+@keyframes k49{0%{opacity:0}36.60%{opacity:1}37.52%{opacity:0}100%{opacity:0}}.k49{animation:k49 10.93s step-end infinite}
+@keyframes k50{0%{opacity:0}37.52%{opacity:1}38.43%{opacity:0}100%{opacity:0}}.k50{animation:k50 10.93s step-end infinite}
+@keyframes k51{0%{opacity:0}38.43%{opacity:1}39.35%{opacity:0}100%{opacity:0}}.k51{animation:k51 10.93s step-end infinite}
+@keyframes k52{0%{opacity:0}39.35%{opacity:1}40.26%{opacity:0}100%{opacity:0}}.k52{animation:k52 10.93s step-end infinite}
+@keyframes k53{0%{opacity:0}40.26%{opacity:1}41.18%{opacity:0}100%{opacity:0}}.k53{animation:k53 10.93s step-end infinite}
+@keyframes k54{0%{opacity:0}41.18%{opacity:1}42.09%{opacity:0}100%{opacity:0}}.k54{animation:k54 10.93s step-end infinite}
+@keyframes k55{0%{opacity:0}42.09%{opacity:1}43.01%{opacity:0}100%{opacity:0}}.k55{animation:k55 10.93s step-end infinite}
+@keyframes k56{0%{opacity:0}43.01%{opacity:1}43.92%{opacity:0}100%{opacity:0}}.k56{animation:k56 10.93s step-end infinite}
+@keyframes k57{0%{opacity:0}43.92%{opacity:1}44.84%{opacity:0}100%{opacity:0}}.k57{animation:k57 10.93s step-end infinite}
+@keyframes k58{0%{opacity:0}44.84%{opacity:1}45.75%{opacity:0}100%{opacity:0}}.k58{animation:k58 10.93s step-end infinite}
+@keyframes k59{0%{opacity:0}45.75%{opacity:1}46.67%{opacity:0}100%{opacity:0}}.k59{animation:k59 10.93s step-end infinite}
+@keyframes k60{0%{opacity:0}46.67%{opacity:1}47.58%{opacity:0}100%{opacity:0}}.k60{animation:k60 10.93s step-end infinite}
+@keyframes k61{0%{opacity:0}47.58%{opacity:1}48.50%{opacity:0}100%{opacity:0}}.k61{animation:k61 10.93s step-end infinite}
+@keyframes k62{0%{opacity:0}48.50%{opacity:1}49.41%{opacity:0}100%{opacity:0}}.k62{animation:k62 10.93s step-end infinite}
+@keyframes k63{0%{opacity:0}49.41%{opacity:1}50.33%{opacity:0}100%{opacity:0}}.k63{animation:k63 10.93s step-end infinite}
+@keyframes k64{0%{opacity:0}50.33%{opacity:1}51.24%{opacity:0}100%{opacity:0}}.k64{animation:k64 10.93s step-end infinite}
+@keyframes k65{0%{opacity:0}51.24%{opacity:1}52.16%{opacity:0}100%{opacity:0}}.k65{animation:k65 10.93s step-end infinite}
+@keyframes k66{0%{opacity:0}52.16%{opacity:1}53.07%{opacity:0}100%{opacity:0}}.k66{animation:k66 10.93s step-end infinite}
+@keyframes k67{0%{opacity:0}53.07%{opacity:1}53.99%{opacity:0}100%{opacity:0}}.k67{animation:k67 10.93s step-end infinite}
+@keyframes k68{0%{opacity:0}53.99%{opacity:1}54.90%{opacity:0}100%{opacity:0}}.k68{animation:k68 10.93s step-end infinite}
+@keyframes k69{0%{opacity:0}54.90%{opacity:1}55.82%{opacity:0}100%{opacity:0}}.k69{animation:k69 10.93s step-end infinite}
+@keyframes k70{0%{opacity:0}55.82%{opacity:1}56.73%{opacity:0}100%{opacity:0}}.k70{animation:k70 10.93s step-end infinite}
+@keyframes k71{0%{opacity:0}56.73%{opacity:1}57.65%{opacity:0}100%{opacity:0}}.k71{animation:k71 10.93s step-end infinite}
+@keyframes k72{0%{opacity:0}57.65%{opacity:1}58.56%{opacity:0}100%{opacity:0}}.k72{animation:k72 10.93s step-end infinite}
+@keyframes k73{0%{opacity:0}58.56%{opacity:1}59.48%{opacity:0}100%{opacity:0}}.k73{animation:k73 10.93s step-end infinite}
+@keyframes k74{0%{opacity:0}59.48%{opacity:1}60.39%{opacity:0}100%{opacity:0}}.k74{animation:k74 10.93s step-end infinite}
+@keyframes k75{0%{opacity:0}60.39%{opacity:1}61.31%{opacity:0}100%{opacity:0}}.k75{animation:k75 10.93s step-end infinite}
+@keyframes k76{0%{opacity:0}61.31%{opacity:1}62.22%{opacity:0}100%{opacity:0}}.k76{animation:k76 10.93s step-end infinite}
+@keyframes k77{0%{opacity:0}62.22%{opacity:1}63.14%{opacity:0}100%{opacity:0}}.k77{animation:k77 10.93s step-end infinite}
+@keyframes k78{0%{opacity:0}63.14%{opacity:1}64.05%{opacity:0}100%{opacity:0}}.k78{animation:k78 10.93s step-end infinite}
+@keyframes k79{0%{opacity:0}64.05%{opacity:1}64.97%{opacity:0}100%{opacity:0}}.k79{animation:k79 10.93s step-end infinite}
+@keyframes k80{0%{opacity:0}64.97%{opacity:1}65.88%{opacity:0}100%{opacity:0}}.k80{animation:k80 10.93s step-end infinite}
+@keyframes k81{0%{opacity:0}65.88%{opacity:1}66.80%{opacity:0}100%{opacity:0}}.k81{animation:k81 10.93s step-end infinite}
+@keyframes k82{0%{opacity:0}66.80%{opacity:1}67.71%{opacity:0}100%{opacity:0}}.k82{animation:k82 10.93s step-end infinite}
+@keyframes k83{0%{opacity:0}0.00%{opacity:1}67.99%{opacity:0}100%{opacity:0}}.k83{animation:k83 10.93s step-end infinite}
+@keyframes k84{0%{opacity:0}1.56%{opacity:1}100%{opacity:1}}.k84{animation:k84 10.93s step-end infinite}
+@keyframes k85{0%{opacity:0}4.30%{opacity:1}100%{opacity:1}}.k85{animation:k85 10.93s step-end infinite}
+@keyframes k86{0%{opacity:0}6.13%{opacity:1}100%{opacity:1}}.k86{animation:k86 10.93s step-end infinite}
+@keyframes k87{0%{opacity:0}7.96%{opacity:1}100%{opacity:1}}.k87{animation:k87 10.93s step-end infinite}
+@keyframes k88{0%{opacity:0}9.97%{opacity:1}100%{opacity:1}}.k88{animation:k88 10.93s step-end infinite}
+@media (prefers-reduced-motion:reduce){[class^=k]{animation:none}}</style>
+<rect width="1488" height="516" rx="10" fill="#0d1117"/>
+<rect x="16" y="16" width="720" height="448" rx="8" fill="#161b22" stroke="#30363d"/><path d="M16 46h720" stroke="#30363d"/><circle cx="32" cy="31.0" r="5.5" fill="#ff5f57"/><circle cx="50" cy="31.0" r="5.5" fill="#febc2e"/><circle cx="68" cy="31.0" r="5.5" fill="#28c840"/><text x="376.0" y="35.5" text-anchor="middle" fill="#8b949e">git worktree + npm ci, 4 agents</text>
+<text x="32" y="75.0" class="k0"><tspan fill="#58a6ff" font-weight="700">repo</tspan><tspan fill="#8b949e"> $ </tspan><tspan fill="#e6edf3" font-weight="700">git worktree add ../wt1 -b agent1</tspan></text>
+<text x="32" y="93.0" class="k1"><tspan fill="#8b949e">Preparing worktree (new branch 'agent1')</tspan></text>
+<text x="32" y="111.0" class="k1"><tspan fill="#8b949e">HEAD is now at 1a356fd aver.toml from aver init</tspan></text>
+<text x="32" y="129.0" class="k1"><tspan fill="#58a6ff" font-weight="700">repo</tspan><tspan fill="#8b949e"> $ </tspan><tspan fill="#e6edf3" font-weight="700">git worktree add ../wt2 -b agent2</tspan></text>
+<text x="32" y="147.0" class="k2"><tspan fill="#8b949e">Preparing worktree (new branch 'agent2')</tspan></text>
+<text x="32" y="165.0" class="k2"><tspan fill="#8b949e">HEAD is now at 1a356fd aver.toml from aver init</tspan></text>
+<text x="32" y="183.0" class="k2"><tspan fill="#58a6ff" font-weight="700">repo</tspan><tspan fill="#8b949e"> $ </tspan><tspan fill="#e6edf3" font-weight="700">git worktree add ../wt3 -b agent3</tspan></text>
+<text x="32" y="201.0" class="k3"><tspan fill="#8b949e">Preparing worktree (new branch 'agent3')</tspan></text>
+<text x="32" y="219.0" class="k3"><tspan fill="#8b949e">HEAD is now at 1a356fd aver.toml from aver init</tspan></text>
+<text x="32" y="237.0" class="k3"><tspan fill="#58a6ff" font-weight="700">repo</tspan><tspan fill="#8b949e"> $ </tspan><tspan fill="#e6edf3" font-weight="700">git worktree add ../wt4 -b agent4</tspan></text>
+<text x="32" y="255.0" class="k4"><tspan fill="#8b949e">Preparing worktree (new branch 'agent4')</tspan></text>
+<text x="32" y="273.0" class="k4"><tspan fill="#8b949e">HEAD is now at 1a356fd aver.toml from aver init</tspan></text>
+<text x="32" y="291.0" class="k4"><tspan fill="#58a6ff" font-weight="700">wt1</tspan><tspan fill="#8b949e"> $ </tspan><tspan fill="#e6edf3" font-weight="700">npm ci --offline --no-audit --no-fund</tspan></text>
+<text x="32" y="309.0" class="k5"><tspan fill="#8b949e">added 4 packages in 297ms</tspan></text>
+<text x="32" y="327.0" class="k5"><tspan fill="#58a6ff" font-weight="700">wt2</tspan><tspan fill="#8b949e"> $ </tspan><tspan fill="#e6edf3" font-weight="700">npm ci --offline --no-audit --no-fund</tspan></text>
+<text x="32" y="345.0" class="k6"><tspan fill="#8b949e">added 4 packages in 314ms</tspan></text>
+<text x="32" y="363.0" class="k6"><tspan fill="#58a6ff" font-weight="700">wt3</tspan><tspan fill="#8b949e"> $ </tspan><tspan fill="#e6edf3" font-weight="700">npm ci --offline --no-audit --no-fund</tspan></text>
+<text x="32" y="381.0" class="k7"><tspan fill="#8b949e">added 4 packages in 301ms</tspan></text>
+<text x="32" y="399.0" class="k7"><tspan fill="#58a6ff" font-weight="700">wt4</tspan><tspan fill="#8b949e"> $ </tspan><tspan fill="#e6edf3" font-weight="700">npm ci --offline --no-audit --no-fund</tspan></text>
+<text x="32" y="417.0" class="k8"><tspan fill="#8b949e">added 4 packages in 276ms</tspan></text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k9" opacity="0">0.00s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k10" opacity="0">0.03s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k11" opacity="0">0.05s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k12" opacity="0">0.07s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k13" opacity="0">0.10s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k14" opacity="0">0.12s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k15" opacity="0">0.15s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k16" opacity="0">0.17s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k17" opacity="0">0.20s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k18" opacity="0">0.23s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k19" opacity="0">0.25s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k20" opacity="0">0.28s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k21" opacity="0">0.30s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k22" opacity="0">0.33s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k23" opacity="0">0.35s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k24" opacity="0">0.38s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k25" opacity="0">0.40s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k26" opacity="0">0.42s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k27" opacity="0">0.45s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k28" opacity="0">0.47s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k29" opacity="0">0.50s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k30" opacity="0">0.53s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k31" opacity="0">0.55s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k32" opacity="0">0.57s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k33" opacity="0">0.60s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k34" opacity="0">0.62s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k35" opacity="0">0.65s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k36" opacity="0">0.68s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k37" opacity="0">0.70s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k38" opacity="0">0.72s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k39" opacity="0">0.75s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k40" opacity="0">0.78s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k41" opacity="0">0.80s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k42" opacity="0">0.82s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k43" opacity="0">0.85s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k44" opacity="0">0.88s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k45" opacity="0">0.90s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k46" opacity="0">0.93s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k47" opacity="0">0.95s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k48" opacity="0">0.97s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k49" opacity="0">1.00s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k50" opacity="0">1.02s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k51" opacity="0">1.05s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k52" opacity="0">1.07s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k53" opacity="0">1.10s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k54" opacity="0">1.12s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k55" opacity="0">1.15s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k56" opacity="0">1.18s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k57" opacity="0">1.20s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k58" opacity="0">1.23s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k59" opacity="0">1.25s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k60" opacity="0">1.27s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k61" opacity="0">1.30s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k62" opacity="0">1.32s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k63" opacity="0">1.35s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k64" opacity="0">1.38s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k65" opacity="0">1.40s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k66" opacity="0">1.43s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k67" opacity="0">1.45s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k68" opacity="0">1.48s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k69" opacity="0">1.50s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k70" opacity="0">1.52s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k71" opacity="0">1.55s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k72" opacity="0">1.57s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k73" opacity="0">1.60s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k74" opacity="0">1.62s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k75" opacity="0">1.65s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k76" opacity="0">1.68s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k77" opacity="0">1.70s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k78" opacity="0">1.73s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k79" opacity="0">1.75s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k80" opacity="0">1.77s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k81" opacity="0">1.80s</text>
+<text x="720" y="448" text-anchor="end" fill="#8b949e" class="k82" opacity="0">1.82s</text>
+<text x="720" y="448" text-anchor="end" class="k8" font-weight="700"><tspan fill="#e6edf3">1.86s </tspan><tspan fill="#3fb950">DONE</tspan></text>
+<text x="32" y="448" fill="#d29922" class="k83" opacity="0">installing…</text>
+<rect x="752" y="16" width="720" height="448" rx="8" fill="#161b22" stroke="#30363d"/><path d="M752 46h720" stroke="#30363d"/><circle cx="768" cy="31.0" r="5.5" fill="#ff5f57"/><circle cx="786" cy="31.0" r="5.5" fill="#febc2e"/><circle cx="804" cy="31.0" r="5.5" fill="#28c840"/><text x="1112.0" y="35.5" text-anchor="middle" fill="#8b949e">aver, 4 agents</text>
+<text x="768" y="75.0" class="k0"><tspan fill="#58a6ff" font-weight="700">repo</tspan><tspan fill="#8b949e"> $ </tspan><tspan fill="#e6edf3" font-weight="700">aver workspace new --count 4 -c 'div: divide returns the quotient and throws on </tspan></text>
+<text x="768" y="93.0" class="k0"><tspan fill="#e6edf3" font-weight="700">division by zero'</tspan></text>
+<text x="768" y="111.0" class="k84"><tspan fill="#8b949e">aver: task task_c3acqglyzfng2fj3lyj643kdealfugv4cmiiazbypfsyp5otwgaa on 1a356fd5a8dd (8</tspan></text>
+<text x="768" y="129.0" class="k84"><tspan fill="#8b949e"> files)</tspan></text>
+<text x="768" y="147.0" class="k85"><tspan fill="#8b949e">aver: ws_01M58BA35SRV9D8A2W9ZCT0J3Y in 75 ms (clonefile, git view on aver/ws-9zct0j3y)</tspan></text>
+<text x="768" y="165.0" class="k85"><tspan fill="#e6edf3">/private/tmp/aver-hero/runs/rep4/home/work/repo/ws-9zct0j3y</tspan></text>
+<text x="768" y="183.0" class="k86"><tspan fill="#8b949e">aver: ws_01M58BA383Z5QCHBMKZP19BRJV in 51 ms (clonefile, git view on aver/ws-zp19brjv)</tspan></text>
+<text x="768" y="201.0" class="k86"><tspan fill="#e6edf3">/private/tmp/aver-hero/runs/rep4/home/work/repo/ws-zp19brjv</tspan></text>
+<text x="768" y="219.0" class="k87"><tspan fill="#8b949e">aver: ws_01M58BA39Q4EEFVGTH6KDW98BW in 51 ms (clonefile, git view on aver/ws-6kdw98bw)</tspan></text>
+<text x="768" y="237.0" class="k87"><tspan fill="#e6edf3">/private/tmp/aver-hero/runs/rep4/home/work/repo/ws-6kdw98bw</tspan></text>
+<text x="768" y="255.0" class="k88"><tspan fill="#8b949e">aver: ws_01M58BA3BBRFWXXKGM4QJSDF1W in 54 ms (clonefile, git view on aver/ws-4qjsdf1w)</tspan></text>
+<text x="768" y="273.0" class="k88"><tspan fill="#e6edf3">/private/tmp/aver-hero/runs/rep4/home/work/repo/ws-4qjsdf1w</tspan></text>
+<text x="1456" y="448" text-anchor="end" fill="#8b949e" class="k9" opacity="0">0.00s</text>
+<text x="1456" y="448" text-anchor="end" fill="#8b949e" class="k10" opacity="0">0.03s</text>
+<text x="1456" y="448" text-anchor="end" fill="#8b949e" class="k11" opacity="0">0.05s</text>
+<text x="1456" y="448" text-anchor="end" fill="#8b949e" class="k12" opacity="0">0.07s</text>
+<text x="1456" y="448" text-anchor="end" fill="#8b949e" class="k13" opacity="0">0.10s</text>
+<text x="1456" y="448" text-anchor="end" fill="#8b949e" class="k14" opacity="0">0.12s</text>
+<text x="1456" y="448" text-anchor="end" fill="#8b949e" class="k15" opacity="0">0.15s</text>
+<text x="1456" y="448" text-anchor="end" fill="#8b949e" class="k16" opacity="0">0.17s</text>
+<text x="1456" y="448" text-anchor="end" fill="#8b949e" class="k17" opacity="0">0.20s</text>
+<text x="1456" y="448" text-anchor="end" fill="#8b949e" class="k18" opacity="0">0.23s</text>
+<text x="1456" y="448" text-anchor="end" class="k88" font-weight="700"><tspan fill="#e6edf3">0.27s </tspan><tspan fill="#3fb950">DONE</tspan></text>
+<text x="16" y="500" fill="#8b949e" font-size="12">4 workspaces on a Apple M1 Pro, APFS: git worktree add + npm ci 1.86s, aver workspace new 0.27s (medians of 5 runs). Replayed at 1/4 speed; timers show real time.</text>
+</svg>

@@ -1,0 +1,20 @@
+[env]
+image    = "node:22-bookworm-slim@sha256:c3de60bf2f9dd0ac6370e6117950ff62d6e339527e7472301c9c78a017978392"
+lockfile = "package-lock.json"
+install  = ["npm", "ci", "--ignore-scripts", "--no-audit", "--no-fund"]
+
+[limits]
+cpus = 1
+memory_mb = 256
+pids = 128
+timeout_s = 3
+
+[[check]]
+id  = "oom"
+run = ["node", "oom.js"]
+# Long enough that a loaded machine still runs out of memory before time.
+timeout_s = 60
+
+[[check]]
+id  = "sleep"
+run = ["node", "sleep.js"]

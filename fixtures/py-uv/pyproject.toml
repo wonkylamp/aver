@@ -1,0 +1,10 @@
+# Aver test fixture: a uv project whose tests need a dependency group from
+# uv.lock (pytest), installed into a virtualenv layer by `uv sync --frozen`.
+[project]
+name = "greet"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = []
+
+[dependency-groups]
+dev = ["pytest>=8"]

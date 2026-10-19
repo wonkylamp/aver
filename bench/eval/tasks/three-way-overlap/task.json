@@ -1,0 +1,50 @@
+{
+  "set": "hard",
+  "title": "Three pricing features at once in one function",
+  "measures": "Three tasks (promo codes, tax-inclusive prices, cash rounding) run at the same time by different agents, all in priceCart and the Store type. docs/pricing.md fixes how they compose (discount before tax and shipping, tax extracted from discounted inclusive amounts, rounding last). Each task's hidden tests check it alone; the combined hidden tests check the interactions on the merge of the three picks (arm A: git merge of the picks one after another; arm B: aver combine of the three runs). Measures merge conflicts and the hidden pass rate on the combined result.",
+  "history": [
+    { "dir": "01-initial", "message": "basket: catalog, storefronts, priceCart with shipping and tax" },
+    { "dir": "02-plan", "message": "Plan promo codes (#61), tax-inclusive prices (#62) and cash rounding (#63) for the EU and Swiss launch" }
+  ],
+  "visible_failing": 0,
+  "tests_may_change": false,
+  "combined": { "expect_hidden": "all" },
+  "tasks": [
+    {
+      "id": "promo-codes",
+      "statement": "Implement #61, promo codes, as planned in docs/pricing.md (read the whole \"Planned\" section: two other tickets are being built at the same time and must fit with this one).\n\nAPI: `priceCart(cart, store, { promo: \"CODE\" })`. Add `export interface Promo { code: string; kind: \"percent\" | \"fixed\"; value: number; minSpendCents?: number }` to src/store.ts and an optional `promos?: Promo[]` to Store (value is percent off, or minor units off). Codes match without regard to case. An unknown code, or a cart whose eligible merchandise is below the code's minimum spend, is a PricingError. Each PricedLine gets `discountCents` and the Quote gets `discountCents` (the sum); subtotalCents stays the sum of line amounts before the discount. Give the uk store two codes, in this order: SPRING10 (10% off) and TAKE5 (500 off, minimum spend 2500).\n\nKeep the existing tests passing and add tests for the new behaviour.",
+      "criteria": [
+        "promo-discount: percentage and fixed promo codes are allocated to eligible lines as docs/pricing.md says, with tax and the free-shipping threshold computed on the discounted amounts",
+        "promo-rules: codes match without regard to case; unknown codes and unmet minimum spends are PricingErrors; gift cards are never discounted"
+      ],
+      "fakes": [
+        { "behavior": "solution", "expect": { "hidden": "all", "gaming": false, "npm_test": "green" } },
+        { "behavior": "naive", "expect": { "hidden": "not-all", "gaming": false, "npm_test": "green" } }
+      ]
+    },
+    {
+      "id": "tax-inclusive",
+      "statement": "Implement #62, tax-inclusive prices, as planned in docs/pricing.md (read the whole \"Planned\" section: two other tickets are being built at the same time and must fit with this one).\n\nAPI: an optional `taxInclusive?: boolean` on Store (src/store.ts). In a tax-inclusive store, product prices and the shipping charge include tax: each line's tax and the shipping tax are extracted, and the total is the lines plus shipping. Quote and PricedLine keep their fields and meanings (taxCents is then the tax contained in the prices). Turn it on for the de and ch stores.\n\nKeep the existing tests passing and add tests for the new behaviour.",
+      "criteria": [
+        "inclusive-tax: in a tax-inclusive store, line and shipping tax are extracted (amount x rate / (100 + rate), rounded half up) and the total is lines plus shipping",
+        "inclusive-stores: de and ch are tax-inclusive, uk and us are not, and stores that add tax on top price exactly as before"
+      ],
+      "fakes": [
+        { "behavior": "solution", "expect": { "hidden": "all", "gaming": false, "npm_test": "green" } },
+        { "behavior": "naive", "expect": { "hidden": "not-all", "gaming": false, "npm_test": "green" } }
+      ]
+    },
+    {
+      "id": "cash-rounding",
+      "statement": "Implement #63, cash rounding, as planned in docs/pricing.md (read the whole \"Planned\" section: two other tickets are being built at the same time and must fit with this one).\n\nAPI: an optional `cashRounding?: number` on Store (src/store.ts): totals are paid in multiples of that many minor units. Every Quote gets `roundingCents` (what rounding added, negative when it rounded down; 0 without cash rounding) and `payableCents` (the total after rounding). The total is rounded half up to the increment; lines and tax do not change. Turn it on for the ch store with an increment of 5.\n\nKeep the existing tests passing and add tests for the new behaviour.",
+      "criteria": [
+        "cash-rounding: with cashRounding set, payableCents is totalCents rounded half up to the increment and roundingCents the difference; lines and tax are unchanged",
+        "rounding-stores: ch rounds to 5 and the other stores do not round (roundingCents 0, payableCents equal to the total)"
+      ],
+      "fakes": [
+        { "behavior": "solution", "expect": { "hidden": "all", "gaming": false, "npm_test": "green" } },
+        { "behavior": "naive", "expect": { "hidden": "not-all", "gaming": false, "npm_test": "green" } }
+      ]
+    }
+  ]
+}

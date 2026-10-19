@@ -1,0 +1,126 @@
+{
+  "set": "scale",
+  "title": "Ten tickets on one parcel-desk repository at once",
+  "measures": "Ten tasks from one planned release run at the same time on one zero-dependency TypeScript repository (14 modules, 43 tests), one agent per task by default, so ten agents work in parallel. Five tasks touch disjoint files (postcodes, check digits, bank holidays, CSV quoting, tracking returns); three pairs overlap on purpose: volumetric weight and the remote surcharge both edit quote(), hazmat and customs both edit renderLabel(), and the manifest's chargeable weight needs chargeableKg() in src/parcel.ts, which the volumetric task adds. That last task depends on the volumetric one (\"after\" in task.json, ignored by the harness for now: every task starts on the base, so it has to add chargeableKg itself, exactly as docs/shipping.md specifies). Each task's hidden tests check it alone; the combined hidden tests check how the tickets fit (a sloppy Orkney postcode pays the islands surcharge, the per-kg surcharge is on chargeable weight, a hazmat label abroad has both blocks, the manifest reads back through the new CSV quoting with its new column). Measures merge outcomes across all ten picks: every pair, the merge of all of them skipping the picks that conflict, and which tasks still pass their hidden tests on that merge.",
+  "history": [
+    { "dir": "01-initial", "message": "dispatch: quotes, labels, tracking numbers and events, the carrier manifest" },
+    { "dir": "02-plan", "message": "Plan the spring release: #41-#50" }
+  ],
+  "visible_failing": 0,
+  "tests_may_change": false,
+  "combined": { "expect_hidden": "all" },
+  "tasks": [
+    {
+      "id": "postcodes",
+      "statement": "Implement #41 (postcodes) as planned in docs/shipping.md. Nine other tickets of the same release are being built at the same time; read the whole \"Planned for the spring release\" section so yours fits with them.\n\nCustomers type postcodes any way they like (`kw151dh`, ` ec1a  1bb `). Today they are only trimmed and upper-cased, so `kw151dh` is priced as mainland, and `isValidPostcode` accepts junk like `12345`. Keep the existing tests passing and add tests for the new behaviour.",
+      "criteria": [
+        "postcode-normalize: normalizePostcode removes spaces, upper-cases and puts one space before the last three characters; strings under five characters are only upper-cased without spaces",
+        "postcode-valid: isValidPostcode accepts only the UK formats and GIR 0AA, and zones, labels and the manifest see the normalized postcode"
+      ],
+      "fakes": [
+        { "behavior": "solution", "expect": { "hidden": "all", "gaming": false, "npm_test": "green" } },
+        { "behavior": "naive", "expect": { "hidden": "not-all", "gaming": false, "npm_test": "green" } }
+      ]
+    },
+    {
+      "id": "check-digit",
+      "statement": "Fix #42: some tracking numbers come out fourteen characters long (serial 8 gives `JD0000000810GB`) and the carrier's scanners reject them; others are rejected for a bad check digit. Check digits must follow UPU S10 as docs/shipping.md describes. Nine other tickets are being built at the same time; see the \"Planned for the spring release\" section of docs/shipping.md. Keep the existing tests passing and add a test for the fix.",
+      "criteria": [
+        "s10: checkDigit follows UPU S10 (10 becomes 0, 11 becomes 5), so every tracking number is thirteen characters and valid"
+      ],
+      "fakes": [
+        { "behavior": "solution", "expect": { "hidden": "all", "gaming": false, "npm_test": "green" } }
+      ]
+    },
+    {
+      "id": "bank-holidays",
+      "statement": "Implement #43 (bank holidays) as planned in docs/shipping.md: delivery estimates promise Good Friday and Easter Monday as working days. Nine other tickets are being built at the same time; read the whole \"Planned for the spring release\" section so yours fits with them. Keep the existing tests passing and add tests for the new behaviour.",
+      "criteria": [
+        "holidays: addBusinessDays skips weekends and the bank holidays in src/holidays.ts by default, or the holidays it is given, and delivery estimates follow"
+      ],
+      "fakes": [
+        { "behavior": "solution", "expect": { "hidden": "all", "gaming": false, "npm_test": "green" } }
+      ]
+    },
+    {
+      "id": "csv-quoting",
+      "statement": "Implement #44 (CSV quoting) as planned in docs/shipping.md: the carrier's upload rejects our manifest whenever an address has a comma in it (`Flat 2, 10 High St`), because the row then has too many columns. Nine other tickets are being built at the same time; read the whole \"Planned for the spring release\" section so yours fits with them. Keep the existing tests passing and add tests for the new behaviour.",
+      "criteria": [
+        "csv-quote: toCsv quotes fields with a comma, a double quote or a line break, doubling quotes, and parseCsv reads them back, line breaks included"
+      ],
+      "fakes": [
+        { "behavior": "solution", "expect": { "hidden": "all", "gaming": false, "npm_test": "green" } },
+        { "behavior": "naive", "expect": { "hidden": "not-all", "gaming": false, "npm_test": "green" } }
+      ]
+    },
+    {
+      "id": "tracking-returns",
+      "statement": "Implement #45 (returns in tracking) as planned in docs/shipping.md: parcels on their way back to us show as \"in transit\", and since the carrier changed its feed some delivered parcels show as \"out for delivery\" because the feed is no longer in time order. Nine other tickets are being built at the same time; read the whole \"Planned for the spring release\" section so yours fits with them. Keep the existing tests passing and add tests for the new behaviour.",
+      "criteria": [
+        "returns: RS and RD are the statuses returning and returned",
+        "feed-order: the status is the latest event by instant (later line on a tie), and the timeline is oldest first"
+      ],
+      "fakes": [
+        { "behavior": "solution", "expect": { "hidden": "all", "gaming": false, "npm_test": "green" } },
+        { "behavior": "naive", "expect": { "hidden": "not-all", "gaming": false, "npm_test": "green" } }
+      ]
+    },
+    {
+      "id": "volumetric",
+      "statement": "Implement #46 (volumetric weight) as planned in docs/shipping.md: we lose money on large light parcels. Add `volumetricKg` and `chargeableKg` to src/parcel.ts and price quotes by chargeable weight. Nine other tickets are being built at the same time, and two of them use your chargeable weight; read the whole \"Planned for the spring release\" section so yours fits with them. Keep the existing tests passing and add tests for the new behaviour.",
+      "criteria": [
+        "chargeable: chargeableKg is the greater of actual and volumetric weight (volume over the service's divisor), rounded up to the next 0.1 kg",
+        "quote-chargeable: quotes take the band for, and report, the chargeable weight"
+      ],
+      "fakes": [
+        { "behavior": "solution", "expect": { "hidden": "all", "gaming": false, "npm_test": "green" } },
+        { "behavior": "naive", "expect": { "hidden": "not-all", "gaming": false, "npm_test": "green" } }
+      ]
+    },
+    {
+      "id": "remote-surcharge",
+      "statement": "Implement #47 (remote areas) as planned in docs/shipping.md: the carrier now charges us for the Highlands and the islands, and we must pass it on. Nine other tickets are being built at the same time, one of them in quote() too; read the whole \"Planned for the spring release\" section so yours fits with them. Keep the existing tests passing and add tests for the new behaviour.",
+      "criteria": [
+        "remote: remoteSurcharge is 450 in the Highlands and 900 plus 50 per started kg over 10 kg on the islands, 0 elsewhere",
+        "remote-quote: quotes list REMOTE after FUEL only where it applies, with VAT on it and fuel on the band price alone"
+      ],
+      "fakes": [
+        { "behavior": "solution", "expect": { "hidden": "all", "gaming": false, "npm_test": "green" } }
+      ]
+    },
+    {
+      "id": "label-hazmat",
+      "statement": "Implement #48 (hazmat labels) as planned in docs/shipping.md: the carrier has started refusing our lithium battery parcels because the label does not say what is inside. Nine other tickets are being built at the same time, one of them on labels too; read the whole \"Planned for the spring release\" section so yours fits with them. Keep the existing tests passing and add tests for the new behaviour.",
+      "criteria": [
+        "hazmat-line: a hazmat parcel's label has UN3481 LITHIUM ION BATTERIES right after the DISPATCH line; other labels are unchanged",
+        "hazmat-express: a hazmat parcel by express is a LabelError"
+      ],
+      "fakes": [
+        { "behavior": "solution", "expect": { "hidden": "all", "gaming": false, "npm_test": "green" } }
+      ]
+    },
+    {
+      "id": "label-customs",
+      "statement": "Implement #49 (customs declarations) as planned in docs/shipping.md: parcels to France are being held at customs because the label has no CN22. Nine other tickets are being built at the same time, one of them on labels too; read the whole \"Planned for the spring release\" section so yours fits with them. Keep the existing tests passing and add tests for the new behaviour.",
+      "criteria": [
+        "cn22: a label abroad ends with a blank line, CN22 CUSTOMS DECLARATION, one line per item with quantity, description, HS code or -, and the line value, then TOTAL",
+        "cn22-required: a parcel going abroad without contents is a LabelError; domestic labels are unchanged"
+      ],
+      "fakes": [
+        { "behavior": "solution", "expect": { "hidden": "all", "gaming": false, "npm_test": "green" } },
+        { "behavior": "naive", "expect": { "hidden": "not-all", "gaming": false, "npm_test": "green" } }
+      ]
+    },
+    {
+      "id": "manifest-chargeable",
+      "after": ["volumetric"],
+      "statement": "Implement #50 (chargeable weight in the manifest) as planned in docs/shipping.md: the carrier bills us on chargeable weight, and the manifest has to say what that is. This builds on #46 (volumetric weight), which another agent is building at the same time: use `chargeableKg(parcel, service)` from src/parcel.ts as #46 specifies it; if it is not in your copy yet, add it exactly as docs/shipping.md specifies. Read the whole \"Planned for the spring release\" section so yours fits with the other tickets. Keep the existing tests passing and add tests for the new behaviour.",
+      "criteria": [
+        "manifest-chargeable: the manifest has a chargeable_kg column right after weight_kg with the chargeable weight to one decimal place, and weight_kg stays the actual weight"
+      ],
+      "fakes": [
+        { "behavior": "solution", "expect": { "hidden": "all", "gaming": false, "npm_test": "green" } }
+      ]
+    }
+  ]
+}

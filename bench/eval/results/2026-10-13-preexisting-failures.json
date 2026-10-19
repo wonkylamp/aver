@@ -1,0 +1,329 @@
+{
+  "schema": "aver.eval/v0",
+  "label": "2026-10-13",
+  "scenario": "preexisting-failures",
+  "title": "Discount tax bug in a suite that is already red",
+  "measures": "A real billing bug to fix in a repository whose suite already has 3 unrelated failing tests. A plain-checkout agent never sees npm test go green and may spend time on, or skip, failures that are not its own; a picker that selects by a green npm test has nothing honest to choose.",
+  "dry_run": false,
+  "config": {
+    "agents": 2,
+    "timeout_ms": 1200000,
+    "max_budget_usd": 5,
+    "model": null,
+    "aver_commit": "6310a895845f",
+    "claude_version": "2.1.287 (Claude Code)"
+  },
+  "hidden_totals": {
+    "discount-tax": 14
+  },
+  "arms": {
+    "A": {
+      "arm": "A",
+      "complete": true,
+      "wall_ms": 81568,
+      "attempts": [
+        {
+          "task": "discount-tax",
+          "diff": {
+            "files": 4,
+            "added": 138,
+            "removed": 12,
+            "paths": [
+              "src/discount.ts",
+              "src/invoice.ts",
+              "test/discount.test.ts",
+              "test/invoice.test.ts"
+            ]
+          },
+          "gaming": [],
+          "gamed": false,
+          "npm_test": {
+            "exit": 1,
+            "ms": 1159,
+            "timedOut": false,
+            "tests": 60,
+            "pass": 57,
+            "fail": 3,
+            "failing": [
+              "csvField doubles embedded double quotes",
+              "isoWeek assigns days around New Year to the right ISO year",
+              "quarterlySummary groups by calendar quarter and currency"
+            ]
+          },
+          "hidden": [
+            {
+              "set": "discount-tax",
+              "exit": 0,
+              "ms": 541,
+              "timedOut": false,
+              "tests": 14,
+              "pass": 14,
+              "fail": 0,
+              "failing": []
+            }
+          ],
+          "hidden_rate": 1,
+          "correct": true,
+          "index": 1,
+          "dir": "preexisting-failures/A/discount-tax-1",
+          "wall_ms": 79036,
+          "timed_out": false,
+          "state": null,
+          "place": null,
+          "log": {
+            "tool_calls": 15,
+            "edits": 5,
+            "test_runs": 5,
+            "verifies": 0,
+            "checks": 0,
+            "coordination": 0,
+            "baseline_by_hand": 0,
+            "permission_denials": 1,
+            "sessions": 1,
+            "turns": 16,
+            "cost_usd": 0.6241686,
+            "session_id": "9781a331-12ef-4adc-a728-bcd1c792117e",
+            "ended": "success",
+            "final": "Invoices with a discount code now follow `docs/billing.md`. The ticket's example now comes out as subtotal 100.00, discount −10.00, VAT 17.10, total 107.10.\n\n**What was wrong**\n- `computeInvoice` took the discount off the subtotal once, but worked out each line's tax on the full, undiscounted amount. Every line showed a discount of 0 and a taxable amount equal to its full price, so the printed invoice and the VAT return were wrong too.\n- `discountAmount` didn't cap fixed vouchers, so a voucher worth more than the order made the total negative.\n\n**Fix**\n- `src/invoice.ts`: the discount total is now split across the lines in proportion to their amounts, using the existing `allocate` in `src/money.ts`, which already does the largest-remainder rule. Each line then gets `discount`, `taxable = amount − discount`, and tax on the taxable amount, rounded half up. The tax total is still the sum of the line taxes.\n- `src/discount.ts`: fixed codes are capped at the subtotal (`Math.min(amount, subtotal)`).\n- The public API hasn't changed: same exports, signatures and invoice shape.\n\n**Tests:** I added regression tests for:\n- the ticket's example\n- the \"percent code across two rates\" worked example from the doc\n- the leftover cent going to the first line (334/333/333)\n- a voucher larger than the order (discount total 3,000, tax 0, total 0)\n- a zero-amount line getting no share\n- a voucher on an order worth nothing\n- the cap in `discountAmount`\n\n`npm test`: 57 pass, 3 fail. The 3 failures were already there before I changed anything and have nothing to do with invoices, so I left them alone:\n- `csvField doubles embedded double quotes`\n- `isoWeek assigns days around New Year to the right ISO year`\n- `quarterlySummary groups by calendar quarter and currency`: `quarterlySummary` isn't written yet; the last commit added its test ahead of #230.\n\nInvoices issued with a discount code before this fix were overcharged and their VAT was overstated, so finance may need to correct them.\n\nThe "
+          },
+          "feedback": {
+            "rating": 4,
+            "answer": "**1. What helped and what was friction**\n\nHelped:\n- **`docs/billing.md` was a precise spec.** It gave the rule (largest-remainder, `floor((taxable × rateBps + 5000) / 10000)`) and worked examples with exact numbers (\"Shares: 334, 333, 333\", \"Subtotal 10,000, discount 2,500, tax total 1,050, total 8,550\"). I turned those straight into tests, so I didn't have to guess what \"done\" meant.\n- **The helper I needed already existed.** `allocate` in `src/money.ts` already implemented the rule, and the doc pointed to it (\"`allocate` in `src/money.ts` implements this rule\"). The fix was mostly wiring.\n- **The source comment pointed at the bug.** `src/invoice.ts` said \"it comes off the subtotal once rather than being spread over the lines\", which is exactly the wrong behaviour.\n- **The suite was fast.** `ℹ duration_ms 360.475417` for 53 tests, with no build step (`node --test` on `.ts` files). Running it red, then green, was cheap.\n\nFriction:\n- **The suite was already failing before I started.** The baseline was `ℹ pass 50 / ℹ fail 3`: `csvField doubles embedded double quotes`, `isoWeek assigns days around New Year…` and `quarterlySummary … Error: quarterlySummary is not implemented yet`. To tell my regressions apart from existing failures, I had to record the baseline by hand and diff the `✖` lines with `grep -E \"^✖|^ℹ (pass|fail)\" | sort -u`. Nothing marked those three as known or expected; I only found the hint \"quarterly summary test ahead of #230\" in a commit message.\n- **A heredoc was blocked.** My first attempt to append tests with `cat >> … <<'EOF'` was rejected: `Contains brace with quote character (expansion obfuscation)`. I lost a round trip and switched to Edit.\n- **Small slip:** a `grep --include=*.ts` under zsh gave `no matches found: --include=*.ts`.\n- **Prompts I couldn't use.** Session-start hooks told me to invoke several process skills (superpowers, pstack) in a non-interactive run, which added noise. Plan mode was also switched on for this final question.\n\n**2. How it would hold up on hard tasks**\n\nIt's adequate for a single agent on a small, well-specified library, but weak beyond that:\n- **Failures that were already there:** there's no baseline record, quarantine list or `todo`/`skip` marking, so every agent has to rediscover which failures were already there. In a large or slow suite that gets costly and error-prone. An agent could also \"fix\" an unrelated test to get a green run, or wrongly report its own regression as pre-existing.\n- **Flaky tests:** there's no re-run tooling, history or flake data. I'd have to run things repeatedly by hand to tell flaky from broken.\n- **Unclear done criteria:** this task was fine only because `docs/billing.md` was explicit. Without that, nothing (acceptance tests, ticket links) defines \"done\".\n- **Other agents editing the same code:** the worktree isolates files, but the shared stash stack is a hazard; the environment notes warned about it. I had no way to see who else was touching `src/invoice.ts`, and no lock or ownership signal.\n\n**3. Rating**\n\nRATING: 4/10\n\nThe clear spec and fast suite made this task smooth, but that came from the repository's quality, not the environment. On harder tasks, the environment adds little beyond a plain checkout.\n\n**4. The one change that would raise my rating most**\n\nA machine-readable baseline of the test suite at the start of the task: which tests already fail, and why. With it, `npm test` could report \"new failures vs. pre-existing\" directly. That would remove the manual diffing and the risk of misattributing failures, and it extends naturally to flaky tests."
+          }
+        },
+        {
+          "task": "discount-tax",
+          "diff": {
+            "files": 4,
+            "added": 114,
+            "removed": 12,
+            "paths": [
+              "src/discount.ts",
+              "src/invoice.ts",
+              "test/discount.test.ts",
+              "test/invoice.test.ts"
+            ]
+          },
+          "gaming": [],
+          "gamed": false,
+          "npm_test": {
+            "exit": 1,
+            "ms": 1440,
+            "timedOut": false,
+            "tests": 59,
+            "pass": 56,
+            "fail": 3,
+            "failing": [
+              "csvField doubles embedded double quotes",
+              "isoWeek assigns days around New Year to the right ISO year",
+              "quarterlySummary groups by calendar quarter and currency"
+            ]
+          },
+          "hidden": [
+            {
+              "set": "discount-tax",
+              "exit": 0,
+              "ms": 276,
+              "timedOut": false,
+              "tests": 14,
+              "pass": 14,
+              "fail": 0,
+              "failing": []
+            }
+          ],
+          "hidden_rate": 1,
+          "correct": true,
+          "index": 2,
+          "dir": "preexisting-failures/A/discount-tax-2",
+          "wall_ms": 81566,
+          "timed_out": false,
+          "state": null,
+          "place": null,
+          "log": {
+            "tool_calls": 15,
+            "edits": 5,
+            "test_runs": 6,
+            "verifies": 0,
+            "checks": 0,
+            "coordination": 0,
+            "baseline_by_hand": 0,
+            "permission_denials": 2,
+            "sessions": 1,
+            "turns": 16,
+            "cost_usd": 0.6565814000000001,
+            "session_id": "f5d4be6d-4786-4b58-970e-0b4f5919186b",
+            "ended": "success",
+            "final": "Invoices with a discount code now follow docs/billing.md. All six new tests pass. `npm test` still shows 3 failures, but they were already failing before I changed anything and none of them involve invoicing.\n\n**What was wrong:** `computeInvoice` took the discount off the subtotal once and never gave each line its share. So every line had discount 0, its taxable amount was its full price, and VAT was charged on the price before the discount. Separately, fixed vouchers weren't limited to the order value, which is why the gift-voucher invoice came out negative.\n\n**Changes:**\n- `src/invoice.ts`: works out the subtotal and discount total first, then splits the discount across the lines with the existing `allocate` function, which already implements the largest-remainder rule. Each line's `discount`, `taxable` (amount minus discount) and `tax` (half-up on the taxable amount) are now filled in. The tax total is still the sum of the line taxes.\n- `src/discount.ts`: `discountAmount` now caps a fixed code at the subtotal, so a voucher worth more than the order brings it to zero.\n- The public API is unchanged: same function names, signatures and result fields.\n\n**New tests** (`test/invoice.test.ts`, `test/discount.test.ts`):\n- **Ticket #418:** the DE order of EUR 100.00 with SPRING10 now gives discount 10.00, taxable 90.00, VAT 17.10, total 107.10.\n- **Worked examples from the doc:** the two-rate SPRING25 case (tax 1,050, total 8,550), the leftover-cent split (334 / 333 / 333), and a 5,000 voucher on a 3,000 order (discount 3,000, tax 0, total 0).\n- **Zero-amount line:** gets no share of the discount.\n\n**Test run:** 59 tests, 56 pass, 3 fail. The 3 failures are the same ones I saw before touching anything:\n- `csvField doubles embedded double quotes`\n- `isoWeek assigns days around New Year to the right ISO year`\n- `quarterlySummary groups by calendar quarter and currency`: `quarterlySummary` is still a stub that throws \"not implemented yet\"; your last commit says this test was"
+          },
+          "feedback": {
+            "rating": 5,
+            "answer": "**1. What helped and what was friction**\n\nHelped:\n- **`docs/billing.md` was a precise spec.** It gave the formula (`floor((taxable × rateBps + 5000) / 10000)`), the tie-break (\"equal remainders are served in invoice order, earliest first\") and worked examples with exact numbers. I turned those examples straight into assertions, so \"done\" was something I could check rather than guess at.\n- **`allocate` in `src/money.ts` already implemented the largest-remainder rule**, and the doc pointed to it (\"`allocate` in `src/money.ts` implements this rule\"). The fix was mostly wiring, not new arithmetic.\n- **`npm test` (`node --test`) was fast and had no dependencies.** It ran in about 0.4 s (`ℹ duration_ms 392.688709`), so a red/green loop cost nothing. `node --test test/invoice.test.ts test/discount.test.ts` let me run just the tests I cared about.\n- **The baseline run showed the existing failures before I touched anything:** `✖ csvField…`, `✖ isoWeek…`, `✖ quarterlySummary… Error: quarterlySummary is not implemented yet`. The last commit message (\"quarterly summary test ahead of #230\") explained one of them.\n\nFriction:\n- **My first attempt to append tests with a heredoc was blocked:** `Contains brace with quote character (expansion obfuscation)`. I had to re-read both files and use Edit instead, which cost a round trip.\n- **A chained command needed approval:** `This Bash command contains multiple operations. The following part requires approval: … npx --no-install tsc --noEmit -p .`. As a result I never ran a TypeScript type-check. My only evidence of type correctness is that Node's type stripping ran the code.\n- **The 3 old failures sit in every run with no marker saying they're expected.** I could only tell them apart from my own failures by comparing test names by hand against the baseline.\n\n**2. How well this environment would serve hard tasks**\n\n- **Already-failing suites:** reasonably, but only through manual discipline. Nothing records a baseline or marks known failures (no skip/todo, no CI status to compare against). In a larger suite, telling \"already broken\" from \"I broke it\" by eye would be error-prone.\n- **Flaky tests:** nothing helps. There's no retry or repeat runner, and no history of past runs.\n- **Unclear done criteria:** this repo is unusually good here because the spec doc is authoritative. Without it I'd have little to go on: there's no issue tracker access (the GitHub, Linear and similar integrations needed authentication), so I couldn't read ticket #418 or #230 myself.\n- **Other agents editing the same code:** the worktree isolates my files, but the stash is shared and nothing shows what other agents are changing or have locked. I'd find conflicts only at merge time.\n- **Type-checking:** with no type-check step I could run without approval, a whole class of errors goes unchecked.\n\n**3. Rating**\n\nRATING: 5/10\n\nIt was enough for this task because the spec and the fast tests did most of the work. The tooling around it didn't add much beyond that.\n\n**4. The one change that would raise my rating most**\n\nA recorded baseline of known test failures that the test run compares against. Each run would then report new failures and fixed tests separately from the 3 known ones, and include a type-check, so \"did I break anything?\" gets a direct answer instead of a hand comparison."
+          }
+        }
+      ],
+      "picks": {
+        "discount-tax": {
+          "index": 2,
+          "why": "no green attempt; fewest failing (3)"
+        }
+      },
+      "combined": null,
+      "runs": {}
+    },
+    "B": {
+      "arm": "B",
+      "complete": true,
+      "wall_ms": 114313,
+      "attempts": [
+        {
+          "task": "discount-tax",
+          "diff": {
+            "files": 4,
+            "added": 124,
+            "removed": 12,
+            "paths": [
+              "src/discount.ts",
+              "src/invoice.ts",
+              "test/discount.test.ts",
+              "test/invoice.test.ts"
+            ]
+          },
+          "gaming": [],
+          "gamed": false,
+          "npm_test": {
+            "exit": 1,
+            "ms": 1037,
+            "timedOut": false,
+            "tests": 58,
+            "pass": 55,
+            "fail": 3,
+            "failing": [
+              "csvField doubles embedded double quotes",
+              "isoWeek assigns days around New Year to the right ISO year",
+              "quarterlySummary groups by calendar quarter and currency"
+            ]
+          },
+          "hidden": [
+            {
+              "set": "discount-tax",
+              "exit": 0,
+              "ms": 320,
+              "timedOut": false,
+              "tests": 14,
+              "pass": 14,
+              "fail": 0,
+              "failing": []
+            }
+          ],
+          "hidden_rate": 1,
+          "correct": true,
+          "index": 1,
+          "dir": "../../../../../../../private/var/folders/rf/8pv5ly4j64j56mf2727qvt_w0000gn/T/aver-eval/2026-10-13/preexisting-failures/B/home/work/repo/JMY5DK-1",
+          "wall_ms": 112319,
+          "timed_out": false,
+          "state": "done",
+          "place": 1,
+          "log": {
+            "tool_calls": 14,
+            "edits": 6,
+            "test_runs": 2,
+            "verifies": 3,
+            "checks": 4,
+            "coordination": 0,
+            "baseline_by_hand": 0,
+            "permission_denials": 2,
+            "sessions": 1,
+            "turns": 15,
+            "cost_usd": 0.663065,
+            "session_id": "8e2bbae0-08f2-48e4-a60e-47d3e9874ced",
+            "ended": "success",
+            "final": "Ticket #418 is fixed: VAT is now charged on the discounted amount, as `docs/billing.md` requires. `aver verify` printed **DONE: PASS**. I used two of the ten verifies because the first one's output was cut off before the verdict line.\n\n**Cause:** the discount was taken off the subtotal, but every line still had `discount: 0` and was taxed on its full amount. Gift vouchers were also never capped.\n\n**Fix:**\n- **`src/invoice.ts`:** the discount total is now split across the lines in proportion to their amounts, using the existing `allocate` in `src/money.ts`. Leftover cents go to the largest remainder, earliest line first. Each line's `discount`, `taxable` (amount minus discount) and `tax` (on the taxable amount, rounded half up) are now filled in. So the per-line breakdown, `taxBreakdown` and the VAT return all reflect the discount.\n- **`src/discount.ts`:** `discountAmount` caps fixed codes at the subtotal, so a voucher worth more than the order brings it to zero instead of a negative total.\n\nThe public API is unchanged.\n\n**Tests:** I added cases tagged `[crit:discount-tax]` to `test/invoice.test.ts` and `test/discount.test.ts`. They fail on the original code and pass now. They cover:\n- the ticket's own example: EUR 100 with SPRING10 gives VAT 17.10 and total 107.10;\n- the mixed-rate, leftover-cent and voucher-larger-than-order examples from the docs;\n- a case with uneven remainders and a zero-amount line;\n- the cap in `discountAmount`.\n\nI didn't change any existing test.\n\nThree tests already failed before my change and still do, outside billing: `csvField` quoting, `isoWeek` around New Year and `quarterlySummary`. I left them alone; they may be worth their own ticket."
+          },
+          "feedback": {
+            "rating": 7,
+            "answer": "I'm answering from this session only; I won't modify any files or run any commands.\n\n**1. What helped and what was friction**\n\nHelped:\n- **The pre-existing failures were already sorted for me.** My first `aver check` said: \"3 fail on the original code too (a verify ignores them)\". `aver check --all` then named them (`csvField doubles embedded double quotes`, `isoWeek assigns days around New Year…`, `quarterlySummary groups by calendar quarter…`). Without that, I would have spent time checking whether my change broke CSV or date code it never touches.\n- **The \"not yet proven\" message told me exactly what to do.** Before I wrote tests it said: \"discount-tax NOT YET: no test tagged [crit:discount-tax] ran. Add one…\". After I added them, it listed every tagged test with \"(original: fails, yours: passes)\", which is the evidence I actually needed.\n- **`aver check` ends on its prediction.** The last line, \"Verify should PASS, unless the sandbox differs (above)\", was easy to act on. It also warned me about \"Node 25 here, Node 22 in the sandbox\", which is the sort of difference that would otherwise surprise me.\n- **It told me how my edits to existing test files would be judged.** \"You changed existing test files; a verify judges regressions with their original versions and uses yours only to prove criteria.\" So I knew adding cases to `test/invoice.test.ts` couldn't hide a regression.\n- **The criterion text was a usable spec.** It named largest-remainder allocation, per-line half-up tax and the fixed-discount cap, and that matched `docs/billing.md`.\n\nFriction:\n- **I wasted a verify.** I ran `aver verify 2>&1 | tail -15`. The verdict (\"DONE: PASS…\") is printed only at the top, so my tail showed the list of proving tests and timings but no verdict. I spent a second verify (2 of 10) just to read the result. `aver check` ends on its verdict line; `aver verify` doesn't.\n- **The brief says exit code 0 means done, but I didn't capture it.** When I tried, my command (`; echo exit=$?`) was blocked by my own shell's safety rules, not by Aver. That pushed me back to reading the text output.\n- Minor: on a passing run, the line \"Verify would stop at UNPROVEN…\" is replaced by \"Verify should PASS…\". That's fine, but a short summary at the top of `aver check`, matching what `aver verify` does, would make its output easier to skim.\n\n**2. Hard tasks: better or worse than a plain checkout?**\n\nBetter for flaky or already-failing suites, and that is its strongest point. The comparison against the original code, plus up to three reruns per test, answers \"is this failure mine?\" mechanically. On a plain checkout I would have to stash my change, rerun the suite and compare by hand, which is slow and easy to get wrong.\n\nBetter for unclear done criteria, but only as far as the criterion text is good. Here it was precise. If it were vague, the \"fails on the original, passes on mine\" test would still keep me honest, though I could still write a weak test that proves the wrong thing.\n\nFor other agents editing the same code, I can't say from this session; nothing like that happened. Recording my files rather than relying on git commits sounds like it would help, but I didn't test it.\n\nWhere it's worse: it adds rules I have to keep in mind (don't edit runner config, tag tests, a limited number of verifies). On a small task like this one, a plain checkout would have been nearly as fast.\n\n**3. Rating**\n\nThis task was easy enough that I didn't strictly need Aver. The pre-existing-failure triage and the check-before-verify preview were real time savers, and they would matter much more on a messier repository.\n\nRATING: 7/10\n\n**4. The one change that would raise it most**\n\nRepeat the verdict as the last line of `aver verify`'s output, the way `aver check` ends on \"Verify should PASS\". Something like \"DONE: PASS (exit 0)\". Agents routinely pipe output through `tail`, and here that cost me one of my ten verifies."
+          }
+        },
+        {
+          "task": "discount-tax",
+          "diff": {
+            "files": 3,
+            "added": 127,
+            "removed": 11,
+            "paths": [
+              "src/discount.ts",
+              "src/invoice.ts",
+              "test/invoice-discount.test.ts"
+            ]
+          },
+          "gaming": [],
+          "gamed": false,
+          "npm_test": {
+            "exit": 1,
+            "ms": 1156,
+            "timedOut": false,
+            "tests": 59,
+            "pass": 56,
+            "fail": 3,
+            "failing": [
+              "csvField doubles embedded double quotes",
+              "isoWeek assigns days around New Year to the right ISO year",
+              "quarterlySummary groups by calendar quarter and currency"
+            ]
+          },
+          "hidden": [
+            {
+              "set": "discount-tax",
+              "exit": 0,
+              "ms": 232,
+              "timedOut": false,
+              "tests": 14,
+              "pass": 14,
+              "fail": 0,
+              "failing": []
+            }
+          ],
+          "hidden_rate": 1,
+          "correct": true,
+          "index": 2,
+          "dir": "../../../../../../../private/var/folders/rf/8pv5ly4j64j56mf2727qvt_w0000gn/T/aver-eval/2026-10-13/preexisting-failures/B/home/work/repo/JMY5DK-2",
+          "wall_ms": 108477,
+          "timed_out": false,
+          "state": "done",
+          "place": 2,
+          "log": {
+            "tool_calls": 14,
+            "edits": 4,
+            "test_runs": 1,
+            "verifies": 3,
+            "checks": 1,
+            "coordination": 0,
+            "baseline_by_hand": 0,
+            "permission_denials": 2,
+            "sessions": 1,
+            "turns": 15,
+            "cost_usd": 0.6367262000000001,
+            "session_id": "c556d99a-9b54-4e5e-b0ac-8d0cfd77b41d",
+            "ended": "success",
+            "final": "I fixed ticket #418, and `aver verify` reports **DONE: PASS** (1 of 1 criteria proven, no new failures).\n\n**The cause:** `computeInvoice` took the discount off the subtotal once but never passed it down to the lines. Each line was still taxed on its full amount, its `discount` showed 0 and its `taxable` amount was the full price, so the printed invoice and the VAT return were both overstated.\n\n**What changed:**\n- **`src/invoice.ts`:** the discount total is now split across the lines in proportion to their amounts, using the existing `allocate` function (largest-remainder rule, ties go to the earliest line). Each line is taxed on its amount minus its share, rounded half up. The VAT total is the sum of the line taxes, as the docs require. The ticket example now gives VAT EUR 17.10 and a total of EUR 107.10.\n- **`src/discount.ts`:** a fixed discount is now capped at the subtotal. A gift voucher worth more than the order brings it to zero instead of making the total negative.\n\nThe public API hasn't changed. One behaviour change for direct callers: `discountAmount` now returns the capped amount for fixed codes.\n\n**Tests:** the new file `test/invoice-discount.test.ts` covers:\n- the ticket example\n- the worked examples in `docs/billing.md` (two VAT rates, the leftover cent, a voucher larger than the order)\n- a case where the leftover cent goes to the line with the largest remainder rather than the first line\n- half-up rounding of each line's tax\n- a line with an amount of 0 getting no share of the discount\n\nAll of these fail on the original code and pass now. Three existing tests (`csvField`, `isoWeek`, `quarterlySummary`) also fail on the original code; they are unrelated to this fix and I left them alone."
+          },
+          "feedback": {
+            "rating": 7,
+            "answer": "Answering from this session only. I haven't changed any files or run any commands.\n\n**1. What helped and what was friction**\n\nHelped:\n- **The brief.** It named the criterion and told me how to prove it (\"add a test whose name contains [crit:<id>] … must pass with your change and fail … on the original code\"). So I knew what \"done\" meant before I wrote any code.\n- **`aver check` said why each test counted.** It reported \"discount-tax WOULD PROVE: fails on the original ✓, passes with your change ✓\" and listed each test as \"(original: fails, yours: passes)\". That replaced a manual stash-and-rerun of the original code, which I would otherwise have done.\n- **Failures that predate me were sorted out for me.** My first `npm test` showed three failures (`csvField`, `isoWeek`, `quarterlySummary`). Aver labelled them \"3 fail on the original code too (a verify ignores them)\". Without that I would have spent time checking whether I broke them.\n- **The environment warning.** \"Node 25 here, Node 22 in the sandbox\" was useful. It didn't matter this time, but it's the kind of mismatch that otherwise causes surprises.\n- **`aver verify` was fast and clear.** It took 1.3 s, and its first line was a plain verdict: \"DONE: PASS … Next: nothing. You are done; stop here.\"\n\nFriction:\n- **I used two verifies where one was enough.** I piped the first run through `tail -15`, which cut off the verdict on line 1, so I ran it again to see it. That was my mistake, but a short summary line at the end of the report would make the result survive `tail`.\n- **Two commands were blocked by Claude Code's permission layer, not by Aver.** A `python3 -` heredoc and an `echo exit=$?` were both stopped. That's outside Aver's control.\n\n**2. Hard tasks compared with a plain checkout**\n\nAver would be better. Already-failing and flaky tests are where agents waste the most effort: either chasing failures that aren't theirs or hiding them. Aver compares my code with the original and reruns failures to spot flaky tests, so I get those answers without working them out myself. When the done criteria are unclear, the `[crit:id]` proof rule makes \"done\" checkable.\n\nFor other agents editing the same code, this session gave me no evidence either way. The rule that records any edit to a test as CHANGED for human review does protect against an agent quietly weakening tests to get a pass.\n\nOn an easy task like this one, Aver mostly saved me one comparison against the original code.\n\n**3. Rating**\n\nRATING: 7/10\n\n**4. One change that would raise it most**\n\nRepeat the verdict as the last line of `aver verify`, as `aver check` already does with \"Verify should PASS\". Then piping the output through `tail` can't hide the result, and no verify gets spent just to read it again."
+          }
+        }
+      ],
+      "picks": {
+        "discount-tax": {
+          "index": 1,
+          "why": "Aver's rank 1"
+        }
+      },
+      "combined": null,
+      "runs": {
+        "discount-tax": "JMY5DK"
+      }
+    }
+  },
+  "complete": true
+}

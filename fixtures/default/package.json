@@ -1,0 +1,11 @@
+{
+  "name": "default-check",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Aver test fixture: no aver.toml, a build its tests need, and a test that needs the network. Zero npm dependencies.",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "node build.js",
+    "test": "node --test"
+  }
+}

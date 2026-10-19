@@ -1,0 +1,9 @@
+{
+  "name": "limits",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Aver test fixture: limits. Zero npm dependencies.",
+  "scripts": {
+    "test": "node --test"
+  }
+}

@@ -1,0 +1,19 @@
+# Cloudflare Pages response headers.
+#
+# One Content-Security-Policy for every path, so the 404 page served at an
+# unknown path is covered too. Cloudflare joins a header set by two matching
+# rules with a comma, which browsers read as two policies that must both pass,
+# so a per-page override would be stricter rather than different. connect-src
+# allows https: because the receipt viewer fetches ?url= receipts; each page's
+# meta CSP narrows that further (the landing page and 404 set connect-src 'none').
+/*
+  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self'; connect-src 'self' https:; manifest-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  Permissions-Policy: accelerometer=(), camera=(), clipboard-read=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Cross-Origin-Opener-Policy: same-origin
+  X-Frame-Options: DENY
+
+/fonts/*
+  Cache-Control: public, max-age=604800

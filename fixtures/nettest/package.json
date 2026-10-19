@@ -1,0 +1,9 @@
+{
+  "name": "nettest",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Aver test fixture: nettest. Zero npm dependencies.",
+  "scripts": {
+    "test": "node --test"
+  }
+}

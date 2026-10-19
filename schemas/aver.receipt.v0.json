@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aver.build/schemas/receipt/v0",
+  "title": "Receipt",
+  "description": "The verifier's signed account of an attempt (ARCHITECTURE.md §1.9.3). checks is a set sorted by id; attempt_id and cause are nullable and always present; detail is omitted when there is no failure excerpt.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "task_id", "attempt_id", "agent_id", "base_snapshot", "head_snapshot", "environment_hash", "env_changed", "criteria", "checks", "unproven", "verdict", "reproduce", "verifier", "created_at", "signature"],
+  "properties": {
+    "schema": { "const": "aver.receipt/v0" },
+    "task_id": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/TaskId" },
+    "attempt_id": {
+      "anyOf": [{ "$ref": "https://aver.build/schemas/defs/v0#/$defs/AttemptId" }, { "type": "null" }]
+    },
+    "agent_id": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/AgentId" },
+    "base_snapshot": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/SnapshotId" },
+    "head_snapshot": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/SnapshotId" },
+    "environment_hash": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/EnvId" },
+    "env_changed": { "type": "boolean" },
+    "criteria": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/Criteria" },
+    "checks": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "base", "head", "cause", "proves", "source", "runs"],
+        "properties": {
+          "id": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/EntryId" },
+          "base": { "enum": ["pass", "fail", "flaky", "n/a"] },
+          "head": { "enum": ["pass", "fail", "flaky"] },
+          "cause": { "enum": ["NEW", "PREEXISTING", "FLAKY", "ENV", null] },
+          "proves": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/CriterionSet" },
+          "source": { "enum": ["env", "task"] },
+          "runs": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["base", "head"],
+            "properties": {
+              "base": { "type": "array", "items": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/RunId" } },
+              "head": { "type": "array", "items": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/RunId" } }
+            }
+          },
+          "detail": { "type": "string", "maxLength": 2048 }
+        }
+      }
+    },
+    "unproven": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/CriterionId" }
+    },
+    "verdict": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/Verdict" },
+    "reproduce": { "type": "string" },
+    "verifier": { "type": "string" },
+    "created_at": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/Timestamp" },
+    "signature": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/Signature" }
+  }
+}

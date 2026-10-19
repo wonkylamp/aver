@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aver.build/schemas/snapshot/v0",
+  "title": "Snapshot",
+  "description": "State, not history: a root tree and an environment (ARCHITECTURE.md §1.5).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "root", "env"],
+  "properties": {
+    "schema": { "const": "aver.snapshot/v0" },
+    "root": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/TreeId" },
+    "env": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/EnvId" }
+  }
+}

@@ -1,0 +1,78 @@
+# Aver's own verification environment (dogfooding; see docs/DOGFOODING.md).
+#
+# Two dependency layers, one per lockfile: the Node packages of site/ (the
+# environment's own lockfile), linked as node_modules beside its lockfile in
+# every Node check, and the Rust workspace's crates (Cargo.lock).
+#
+# Node 24, because site/ runs its TypeScript sources directly (type
+# stripping; package.json engines ">=24.2").
+#
+# A verify runs only the checks a change affects (docs/VERDICTS.md): a
+# check's covers patterns name every file its tests read, so a change to
+# docs/ runs nothing and one to site/ skips the Rust build.
+
+[env]
+image    = "node:24-bookworm-slim@sha256:d6aa754f16b3197301076f047b5def2f02ea1dbbc2ca920407d46d7ec7f87b20"
+lockfile = "site/package-lock.json"
+install  = ["npm", "ci", "--ignore-scripts", "--no-audit", "--no-fund"]
+
+[[deps]]
+lockfile = "Cargo.lock"
+
+# The Rust build output lives in the sandbox's memory: 3.5 GiB per sandbox
+# keeps a base and a head run inside an 8 GiB Docker VM.
+[limits]
+cpus = 4
+memory_mb = 3584
+pids = 1024
+timeout_s = 300
+
+# The workspace's tests, per test from cargo's own output, and its examples
+# built in test mode (so a change that breaks one fails here, and covering
+# them is true), without doc-tests (they cost memory). It covers the crates'
+# sources, tests and examples and what the tests and the binary read: the
+# fixtures, the schemas and the Claude Code plugin.
+# Tests that need Node or Docker are #[ignore]d (make test-native runs
+# them). In the sandbox (Linux), two build jobs, no debug info and GNU ld's
+# low-memory mode keep a build inside 3.5 GiB; `aver check` on a Mac runs
+# plain `cargo test`, which reuses the directory's warm target/.
+[[check]]
+id        = "rust"
+image     = "rust:1.99-bookworm@sha256:114c7a4425406451c2866b6aafe69fe29b1b298832db1277d411ac73c82d04d6"
+run       = ["sh", "-c", "if [ \"$(uname)\" = Linux ]; then export CARGO_BUILD_JOBS=2 CARGO_INCREMENTAL=0 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_DEV_STRIP=symbols RUSTFLAGS=-Clink-arg=-Wl,--no-keep-memory; fi; cargo test --workspace --lib --bins --tests --examples --no-fail-fast --locked >/aver/out/rust.txt 2>&1; s=$?; cat /aver/out/rust.txt; exit $s"]
+report    = { format = "libtest", path = "/aver/out/rust.txt" }
+timeout_s = 1800
+covers    = ["crates/*/src/**", "crates/*/tests/**", "crates/*/examples/**", "fixtures/**", "schemas/**", "integrations/claude-code/**"]
+
+# The site/ tests read the cross-language test vectors in schemas/.
+[[check]]
+id     = "site"
+cwd    = "site"
+run    = ["node", "--test", "--test-reporter=spec", "--test-reporter-destination=stdout", "--test-reporter=junit", "--test-reporter-destination=/aver/out/site.xml", "test/**/*.test.ts"]
+report = { format = "junit", path = "/aver/out/site.xml" }
+covers = ["site/**", "schemas/**"]
+
+# Type checks report one entry per type error (the tsc format), so an error
+# already on the base does not block a verify.
+[[check]]
+id     = "site-typecheck"
+cwd    = "site"
+run    = ["sh", "-c", "node_modules/.bin/tsc --noEmit --pretty false >/aver/out/site-tsc.txt 2>&1; s=$?; cat /aver/out/site-tsc.txt; exit $s"]
+report = { format = "tsc", path = "/aver/out/site-tsc.txt" }
+covers = ["site/**"]
+
+# The A/B harness and its scenarios, with scripted agents (make test-eval).
+# The full Node image, because the scenarios build Git repositories, and no
+# dependency layers, because the harness needs none.
+[[check]]
+id     = "bench"
+image  = "node:24-bookworm@sha256:3d27e5c11e5786e309ec3e03f93ae536eb36e6e5eb3714d5eb3300a36157add0"
+deps   = []
+run    = ["node", "--test", "--test-reporter=spec", "--test-reporter-destination=stdout", "--test-reporter=junit", "--test-reporter-destination=/aver/out/bench.xml", "bench/eval/test/*.test.ts"]
+report = { format = "junit", path = "/aver/out/bench.xml" }
+covers = ["bench/**"]
+
+# Workspace directories start with this checkout's Cargo build cache, so a
+# subagent's first cargo build reuses compiled dependencies.
+[workspace]
+warm = ["target"]

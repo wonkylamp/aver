@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aver.build/schemas/attempt/v0",
+  "title": "AttemptRecord",
+  "description": "An attempt frozen on submit (ARCHITECTURE.md §1.8).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "attempt", "task", "agent", "base", "head", "receipt", "outcome", "submitted_at"],
+  "properties": {
+    "schema": { "const": "aver.attempt/v0" },
+    "attempt": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/AttemptId" },
+    "task": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/TaskId" },
+    "agent": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/AgentId" },
+    "base": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/SnapshotId" },
+    "head": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/SnapshotId" },
+    "receipt": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/ReceiptId" },
+    "outcome": { "enum": ["accepted", "rejected"] },
+    "submitted_at": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/Timestamp" }
+  }
+}

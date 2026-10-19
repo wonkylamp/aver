@@ -1,0 +1,647 @@
+{
+  "schema": "aver.eval/v0",
+  "label": "2026-10-13",
+  "scenario": "overlap-pair",
+  "title": "Two config features at once: environment overrides and strict validation",
+  "measures": "Two different tasks that edit the same functions in the config loader, run at the same time by different agents on one repository. Measures coordination: whether each task's work survives when the two are combined, whether the combined result honours the documented interaction (an invalid override is rejected by validation, naming its path), and whether the agents notice each other.",
+  "dry_run": false,
+  "config": {
+    "agents": 2,
+    "timeout_ms": 1200000,
+    "max_budget_usd": 5,
+    "model": null,
+    "aver_commit": "22a170c4faf6",
+    "claude_version": "2.1.287 (Claude Code)"
+  },
+  "hidden_totals": {
+    "env-overrides": 12,
+    "strict-validation": 12,
+    "combined": 6
+  },
+  "arms": {
+    "A": {
+      "arm": "A",
+      "complete": true,
+      "wall_ms": 96987,
+      "attempts": [
+        {
+          "task": "env-overrides",
+          "diff": {
+            "files": 3,
+            "added": 109,
+            "removed": 3,
+            "paths": [
+              "docs/config.md",
+              "src/config/load.ts",
+              "test/config.test.ts"
+            ]
+          },
+          "gaming": [],
+          "gamed": false,
+          "npm_test": {
+            "exit": 0,
+            "ms": 826,
+            "timedOut": false,
+            "tests": 49,
+            "pass": 49,
+            "fail": 0,
+            "failing": []
+          },
+          "hidden": [
+            {
+              "set": "env-overrides",
+              "exit": 0,
+              "ms": 314,
+              "timedOut": false,
+              "tests": 12,
+              "pass": 12,
+              "fail": 0,
+              "failing": []
+            }
+          ],
+          "hidden_rate": 1,
+          "correct": true,
+          "index": 1,
+          "dir": "overlap-pair/A/env-overrides-1",
+          "wall_ms": 67777,
+          "timed_out": false,
+          "state": null,
+          "place": null,
+          "log": {
+            "tool_calls": 12,
+            "edits": 7,
+            "test_runs": 2,
+            "verifies": 0,
+            "checks": 0,
+            "coordination": 0,
+            "baseline_by_hand": 0,
+            "permission_denials": 2,
+            "sessions": 1,
+            "turns": 13,
+            "cost_usd": 0.506853,
+            "session_id": "6a31aca0-3858-4620-8abc-94283379dba8",
+            "ended": "success",
+            "final": "Environment overrides (#41) now work. `npm test` passes all 49 tests, including 7 new ones for this feature. I haven't committed anything.\n\n**How it works** (in `src/config/load.ts`): `loadConfig` loads the defaults, applies the file on top, then applies the environment variables. The public API is unchanged, and `options.env` still defaults to `process.env`.\n\n- **Naming:** the loader goes through every key in the schema and builds its variable name. `intervalMs` becomes `INTERVAL_MS`, so `health.intervalMs` is `APP_HEALTH_INTERVAL_MS`. It only looks up those names, so a variable that doesn't match a key (`APP_DEBUG`, `APP_SERVER_PROT`, `APP_CONFIG_FILE`) is never read.\n- **Converting values:**\n  - **Strings** are used as given.\n  - **Numbers** may have spaces around them. An empty or blank value, or anything that isn't a finite number, is rejected.\n  - **Booleans** accept `true`, `false`, `1` and `0` in any case.\n  - **Lists** are split on commas, each item is trimmed, and empty items are dropped. An empty value gives an empty list.\n- **Bad values:** a value that can't be converted is ignored, and the key keeps its file or default value. The doc says this is the rule until strict validation (#42) lands; at that point these will need to be reported as errors at the key's path.\n\n**Tests** (in `test/config.test.ts`) cover:\n- an override beating both the file and the default\n- the camelCase-to-UPPER_SNAKE_CASE mapping\n- accepted and rejected values for numbers, booleans and lists\n- strings being used as given\n- variables that match no key being ignored\n\n**Docs:** in `docs/config.md` I renamed the section heading from \"Planned: environment overrides (#41)\" to \"Environment overrides\". I also added a bullet under \"Loading\" that points to it.\n\n`Number()` also reads hex like `0x50`, so `APP_SERVER_PORT=0x50` would give port 80. The doc calls for \"a decimal number\" but defines failure as whatever `Number()` can't read, and I followed that second rule. If you want strictly de"
+          },
+          "feedback": {
+            "rating": 4,
+            "answer": "**1. What helped and what was friction**\n\nWhat helped:\n- **The spec was already in the repo.** The \"Planned: environment overrides (#41)\" section of `docs/config.md` settled the edge cases before I wrote any code. For example: \"An empty or blank value, or anything `Number()` cannot read as a finite number, is not a number\", and \"`\"a, b,,c \"` is `[\"a\", \"b\", \"c\"]`\". It also said what to do with values that can't be converted: \"Today that means an override that cannot be coerced is ignored.\" Because of that I didn't need to ask any clarifying questions.\n- **The code was small and easy to follow.** `applyFile` in `load.ts` already looped over the schema and checked types with `hasType`. `applyEnv` copies that loop, and `options.env` was already passed in. The feature fit in with very little new code.\n- **The tests ran fast with no setup.** `npm test` → `node --test` printed \"ℹ tests 49 … ℹ pass 49 … ℹ fail 0\" in about 320 ms, with no dependencies, no build step and no TypeScript compile step.\n\nFriction:\n- **The permission layer blocked two harmless commands.** Appending tests with a heredoc failed with \"Contains brace with quote character (expansion obfuscation)\". A small Python edit to the doc failed with \"This Bash command contains multiple operations. The following part requires approval: python3 -\". In both cases I redid the change with the Edit tool. It worked, but it took extra round trips.\n- **A glob broke a grep.** `grep -rn … --include=*.ts` failed under zsh with \"(eval):1: no matches found: --include=*.ts\" because zsh tried to expand the glob. That was my mistake, but in this shell the Grep tool would have avoided it.\n- **The session context was noisy.** It included dozens of unrelated MCP servers and skills: Roblox, Xcode, RevenueCat, plus a list of servers needing authentication. There was also a SessionStart instruction to route through skills (\"YOU ABSOLUTELY MUST invoke the skill\"). None of it was relevant to a single-module TypeScript change.\n\n**2. How well this environment would serve harder tasks**\n\nIt would serve them only partly. With a clean, fast, deterministic suite, `node --test` is all I need. Several things would be missing on harder tasks:\n\n- **Flaky or already-failing suites:** I have no baseline. Nothing records which tests failed on `main` before my change, so I would have to stash or check out and run the suite twice myself to tell new failures from old ones. There is also no record of past flakes and no way to rerun a test until it fails.\n- **Unclear done criteria:** here the doc acted as the acceptance spec. Without a document like that I would be guessing, and the environment gives me nothing to check my guess against, such as linked issue text. The GitHub and Linear MCP servers needed authentication, so I couldn't read #41 or #42 themselves.\n- **Other agents editing the same code:** the worktree isolates my files, and the warning about the shared stash was useful. But nothing tells me another worktree is changing `load.ts`. #42 (strict validation) will clearly rewrite the same `applyFile`/`applyEnv` path, and the overlap would only show up when the branches merge.\n- **No type check:** the suite runs `.ts` by stripping types, so no `tsc --noEmit` ran. A type error in a path the tests don't run would go unnoticed.\n\n**3. Rating**\n\nRATING: 4/10\n\nFor a well-specified task with a fast, green suite, this environment was enough, but nothing in it was something I *needed* beyond a shell and a test runner. It doesn't yet address the hard cases: a failure baseline, flakiness, conflicts with other agents, or type checking.\n\n**4. The one change that would raise my rating most**\n\nAn automatic before/after test baseline. When I run `npm test`, the environment would also tell me which failures already existed on the base commit, which tests are known to be flaky, and whether any other active branch or worktree touches the files I changed. That one signal would cover both the flaky-suite and the multi-agent cases."
+          }
+        },
+        {
+          "task": "env-overrides",
+          "diff": {
+            "files": 3,
+            "added": 123,
+            "removed": 3,
+            "paths": [
+              "docs/config.md",
+              "src/config/load.ts",
+              "test/config.test.ts"
+            ]
+          },
+          "gaming": [],
+          "gamed": false,
+          "npm_test": {
+            "exit": 0,
+            "ms": 759,
+            "timedOut": false,
+            "tests": 52,
+            "pass": 52,
+            "fail": 0,
+            "failing": []
+          },
+          "hidden": [
+            {
+              "set": "env-overrides",
+              "exit": 0,
+              "ms": 426,
+              "timedOut": false,
+              "tests": 12,
+              "pass": 12,
+              "fail": 0,
+              "failing": []
+            }
+          ],
+          "hidden_rate": 1,
+          "correct": true,
+          "index": 2,
+          "dir": "overlap-pair/A/env-overrides-2",
+          "wall_ms": 66200,
+          "timed_out": false,
+          "state": null,
+          "place": null,
+          "log": {
+            "tool_calls": 14,
+            "edits": 6,
+            "test_runs": 1,
+            "verifies": 0,
+            "checks": 0,
+            "coordination": 0,
+            "baseline_by_hand": 0,
+            "permission_denials": 2,
+            "sessions": 1,
+            "turns": 15,
+            "cost_usd": 0.5116682,
+            "session_id": "2a5779f7-e5f9-461b-a99e-e4b7ee67a75b",
+            "ended": "success",
+            "final": "I've implemented #41, and all 52 tests pass with `npm test`, including the new ones.\n\n**What changed**\n- **`src/config/load.ts`**: `loadConfig` now applies environment overrides after the file values, so an override beats the file, which beats the default. The loader only looks up variable names it builds from the schema keys, so any other variable (`APP_DEBUG`, `APP_SERVER_PROT`, `APP_CONFIG_FILE`) is never read as an override.\n  - `envName(section, key)` builds the variable name, e.g. `health.intervalMs` → `APP_HEALTH_INTERVAL_MS`. I exported it so the naming rule is in one place.\n  - Values are converted by the key's schema type, following the rules in the doc. If a value can't be converted, it's ignored and the key keeps its file or default value. That is how the doc says it should behave until strict validation (#42) lands.\n  - The public API is unchanged: `options.env` still defaults to `process.env`.\n- **`test/config.test.ts`**: 10 new tests. They cover the precedence order, the camelCase to UPPER_SNAKE_CASE names, and each type's conversion (good values, bad values, whitespace, case). They also cover an empty list, a list override replacing the file's list, variables that name no key, and a bad override leaving the file value in place.\n- **`docs/config.md`**: renamed the section from \"Planned: environment overrides (#41)\" to \"Environment overrides\". The \"Loading\" section now says overrides are applied last.\n\nNumber values follow the doc literally: anything `Number()` reads as a finite number is accepted, so `0x10` and `1e3` also work.\n\nOlder tests that don't pass `env` read the real environment, so they would fail if the shell running `npm test` had something like `APP_SERVER_PORT` set. Those tests already depended on `APP_CONFIG_FILE` in the same way. Passing `env: {}` in them would remove that dependency, but I didn't change them.\n\nNothing is committed."
+          },
+          "feedback": {
+            "rating": 5,
+            "answer": "Here are my answers, based on this session only. I made no changes for this.\n\n**1. What helped and what was friction**\n\nHelped:\n- **The planning doc was a precise spec.** `docs/config.md` already had a \"Planned: environment overrides (#41)\" section. It gave the naming table, the coercion rule for each type, and edge cases such as `\"a, b,,c \"` → `[\"a\", \"b\", \"c\"]` and \"Variables that do not name a key… (`APP_CONFIG_FILE`, `APP_DEBUG`) … `APP_SERVER_PROT`\". I turned most of those lines straight into tests, so the done criteria were never in doubt.\n- **The code was small and had an obvious place for the change.** `applyFile` and `hasType` in `src/config/schema.ts` showed the pattern to copy. My `applyEnv` reuses `hasType`, so bad overrides fall back exactly the way bad file values do.\n- **Tests were fast and needed no setup.** `npm test` is just `node --test` running TypeScript directly, with no build step and no dependencies. The output was clear: `ℹ tests 52 … ℹ pass 52 ℹ fail 0 … duration_ms 411`.\n- **Existing tests already passed `env`.** Tests like `loadConfig({ env: {} })` showed how to inject the environment.\n\nFriction:\n- **Permission prompts on compound shell commands.** My first attempt bundled a heredoc and a Python patch script, and the session couldn't approve it: `This Bash command contains multiple operations. The following parts require approval: cat, python3 /tmp/patch.py`. A trivial check failed the same way: `The following part requires approval: xxd`. I switched to Read and Edit, which worked fine but took more round trips. That was partly my fault for reaching for shell edits.\n- **Noise from the session setup.** Two SessionStart mandates (\"pstack\" and \"superpowers\") each insisted on invoking a skill, and there was a long list of unrelated MCP servers (Roblox, Xcode, RevenueCat). None of it was relevant to a ~50-line change. It was context to read past, not a blocker.\n- **A test-isolation gap in the repo.** Older tests call `loadConfig({ text: ... })` without `env`, so they read the real `process.env`. Any `APP_*` variable in the shell running the tests could change their results.\n\n**2. How it would serve me on hard tasks**\n\n- **Flaky or already-failing suites:** Fast local runs help, because rerunning the suite many times is cheap. But I'd have no history: no CI results and no record of which tests were already flaky or failing on `main`. I'd have to build a baseline myself (run it N times on a clean checkout) before trusting any red result.\n- **Unclear done criteria:** The doc-first habit here (plans written in `docs/config.md` before code) is the best mitigation I've seen. Without such a doc, nothing in the environment would let me check intent: the GitHub, Linear and Slack connectors all needed authorization, so I couldn't read issue #41 itself.\n- **Other agents editing the same code:** This is the weak spot. A worktree isolates files, but nothing tells me another agent is changing `load.ts` too. #42 (strict validation) touches the same function and the same \"validated like file values\" rule, so a parallel #42 branch would conflict exactly where my change is. I'd be missing:\n  - a way to see other active branches or worktrees and their diffs;\n  - a lock or claim on files;\n  - a heads-up when `main` moves.\n\n  Without those, I'd only find out at merge time. There is also a shared-stash warning, which shows the setup knows about concurrency but only offers defensive advice.\n\n**3. Rating**\n\nFor this task the plain checkout was enough. The doc and fast tests did the heavy lifting, and nothing about the environment felt indispensable.\n\nRATING: 5/10\n\n**4. The one change that would raise my rating most**\n\nVisibility into overlapping work: when I start, show me the other active branches or worktrees that touch the same files (here, a #42 branch editing `src/config/load.ts`), with their diffs. On hard tasks, that's the information I can't recreate myself, unlike a flaky-test baseline."
+          }
+        },
+        {
+          "task": "strict-validation",
+          "diff": {
+            "files": 4,
+            "added": 135,
+            "removed": 29,
+            "paths": [
+              "config/example.json",
+              "docs/config.md",
+              "src/config/load.ts",
+              "test/config.test.ts"
+            ]
+          },
+          "gaming": [],
+          "gamed": false,
+          "npm_test": {
+            "exit": 0,
+            "ms": 672,
+            "timedOut": false,
+            "tests": 49,
+            "pass": 49,
+            "fail": 0,
+            "failing": []
+          },
+          "hidden": [
+            {
+              "set": "strict-validation",
+              "exit": 0,
+              "ms": 281,
+              "timedOut": false,
+              "tests": 12,
+              "pass": 12,
+              "fail": 0,
+              "failing": []
+            }
+          ],
+          "hidden_rate": 1,
+          "correct": true,
+          "index": 1,
+          "dir": "overlap-pair/A/strict-validation-1",
+          "wall_ms": 96986,
+          "timed_out": false,
+          "state": null,
+          "place": null,
+          "log": {
+            "tool_calls": 18,
+            "edits": 6,
+            "test_runs": 1,
+            "verifies": 0,
+            "checks": 0,
+            "coordination": 0,
+            "baseline_by_hand": 0,
+            "permission_denials": 2,
+            "sessions": 1,
+            "turns": 19,
+            "cost_usd": 0.6832089999999998,
+            "session_id": "b832bdd7-a451-43a1-b51f-9585aac0ce47",
+            "ended": "success",
+            "final": "#42 is in. `loadConfig` now checks the file against the schema, collects every problem, and throws one `ConfigError` that names each bad path. `npm test` passes all 49 tests, including the new ones.\n\nFor example, a config with three mistakes now fails like this:\n\n```\ninvalid config in <text>: databse: unknown section; server.prot: unknown key; server.port: must be a number\n```\n\nand `err.problems` is `[{ path: \"databse\", ... }, { path: \"server.prot\", ... }, { path: \"server.port\", ... }]`.\n\n**What changed:**\n- **`src/config/load.ts`**:\n  - `ConfigError` gains a `problems` list, and the `ConfigProblem` type is exported. `loadConfig`'s signature is unchanged.\n  - The new check reports an unknown section, a section that isn't an object, an unknown key, or a value of the wrong type. `null`, and a list with any item that isn't a string, count as the wrong type. A top level that isn't an object is reported at `(root)`.\n  - The error message names the source (the file path or `<text>`) and every bad path.\n  - An unreadable file or invalid JSON still throws a `ConfigError`, now with an empty `problems` list.\n- **`test/config.test.ts`**: tests for each kind of problem, one test with five problems at once checking both `problems` and the message, and a test that the read and parse errors have empty `problems`.\n- **`docs/config.md`**: the section is no longer marked \"Planned\", and the Loading list no longer says unknown keys are ignored.\n- **`config/example.json`**: I removed `log.color`. It was left behind when commit 2ca51e1 dropped that key, and the new check rejects it, so the example-config tests would have failed.\n\n**Environment overrides:** the doc says these are validated like file values, but #41 isn't implemented yet. The loader reads nothing from the environment except `APP_CONFIG_FILE`, so there are no overrides to validate. When #41 lands, it should add an override that can't be converted to the key's type as a problem at that key's path, in the same list. I've alre"
+          },
+          "feedback": {
+            "rating": 6,
+            "answer": "Answers are from this session only. I didn't change any files or run any commands.\n\n**1. What helped and what was friction**\n\nHelped:\n- **The repo documented its plan.** `docs/config.md` had a \"Planned: strict validation (#42)\" section that settled the edge cases before I wrote any code: \"`null` is the wrong type for every key\", \"A file whose top level is not a JSON object: the path is `(root)`\", \"stay `ConfigError`s as today, with an empty `problems` list\". I didn't have to guess about anything.\n- **The test loop was fast and quiet.** `npm test` is plain `node --test` with nothing to install, and it ran in about 300 ms: `ℹ tests 49 … ℹ pass 49 … ℹ fail 0`. Node loads the `.ts` files directly, so I could also check the real error from the shell with one `node -e 'import(\"./src/config/load.ts\")…'`. That printed `invalid config in <text>: databse: unknown section; server.prot: unknown key; server.port: must be a number`.\n- **Git history explained a leftover.** `git show --stat 2ca51e1` (\"Drop log.color: the JSON logger never read it\") showed that `\"color\": false` in `config/example.json` was stale. Without that, the new check would have broken the example-config tests and the cause would have been unclear.\n\nFriction:\n- **The permission layer blocked two ordinary edits.** A one-line edit through a python heredoc was refused with `This Bash command contains multiple operations. The following part requires approval: python3 -`. A `cat > src/config/load.ts <<'EOF'` was refused with `Contains brace with quote character (expansion obfuscation)`. Both times I switched to the Edit/Write tools and lost a round trip. It was minor, but it was the only real friction.\n- **The session started with a lot of noise.** Two competing skill mandates (superpowers and pstack), dozens of unrelated MCP servers needing auth or failing (`astro (ECONNREFUSED)`), and a long agent list. None of it was relevant to a small TypeScript repo.\n- **Two parts of the spec didn't match the code.** The spec said to validate environment overrides \"like file values\", but #41 wasn't implemented, so there was nothing to validate. I had to work that out by reading the code and then explain it in my summary.\n\n**2. How it would hold up on hard tasks**\n\nFor a clean, small, deterministic suite like this one, it works well. On hard tasks it would fall short:\n- **Flaky or already-failing suites.** There's no baseline record of which tests failed before my change, no retry or quarantine data, and no CI history. I'd have to run the suite several times on a clean checkout myself to tell new failures from old ones.\n- **Unclear done criteria.** Here the doc gave clear criteria, which was luck. Without it, the only check is the tests I write myself. Nothing ties an issue's acceptance criteria to tests or tells me \"this is the check that decides done\".\n- **Other agents editing the same code.** The worktree isolates me, and the shared-stash warning was useful. But nothing tells me another agent is editing `src/config/load.ts` on a sibling branch. For example, a #41 implementation would conflict directly with this change. I'd only find out at merge time. What I'd be missing is a view of in-flight changes and their overlap before I start.\n\n**3. Rating**\n\nRATING: 6/10\n\nThe basics (a fast suite, a clear doc, a readable repo) made this task easy. The environment added little beyond that, and part of what it added got in the way: the blocked edits and the startup noise.\n\n**4. The one change that would raise it most**\n\nShow which other branches or worktrees are touching the same files, and what they intend (for example, \"branch X is implementing #41 in `src/config/load.ts`\"), at the start of the task. That's the information I'd most need on hard, shared work, and I can't get it from a plain checkout."
+          }
+        },
+        {
+          "task": "strict-validation",
+          "diff": {
+            "files": 4,
+            "added": 144,
+            "removed": 28,
+            "paths": [
+              "config/example.json",
+              "docs/config.md",
+              "src/config/load.ts",
+              "test/config.test.ts"
+            ]
+          },
+          "gaming": [],
+          "gamed": false,
+          "npm_test": {
+            "exit": 0,
+            "ms": 686,
+            "timedOut": false,
+            "tests": 49,
+            "pass": 49,
+            "fail": 0,
+            "failing": []
+          },
+          "hidden": [
+            {
+              "set": "strict-validation",
+              "exit": 0,
+              "ms": 215,
+              "timedOut": false,
+              "tests": 12,
+              "pass": 12,
+              "fail": 0,
+              "failing": []
+            }
+          ],
+          "hidden_rate": 1,
+          "correct": true,
+          "index": 2,
+          "dir": "overlap-pair/A/strict-validation-2",
+          "wall_ms": 83700,
+          "timed_out": false,
+          "state": null,
+          "place": null,
+          "log": {
+            "tool_calls": 14,
+            "edits": 8,
+            "test_runs": 2,
+            "verifies": 0,
+            "checks": 0,
+            "coordination": 0,
+            "baseline_by_hand": 0,
+            "permission_denials": 2,
+            "sessions": 1,
+            "turns": 15,
+            "cost_usd": 0.607525,
+            "session_id": "e05c3c4a-b787-46b8-8c0f-7e054226556e",
+            "ended": "success",
+            "final": "I've implemented #42. `loadConfig` now rejects unknown sections, unknown keys and values of the wrong type, and reports all of them in one `ConfigError`. `npm test` passes: 49 tests, including 7 new ones in `test/config.test.ts`.\n\n**What changed in `src/config/load.ts`**\n- `ConfigError` now has a `problems` property: a list of `{ path, message }`, one entry per bad path. It is empty for unreadable files and invalid JSON.\n- The loader checks every section and key in the file against the schema instead of skipping what it doesn't recognise. Paths follow the doc: `databse` for an unknown section, the section name for a section that isn't an object, `server.prot` for an unknown key, `server.port` for a wrong type, and `(root)` when the top level isn't an object. `null` counts as the wrong type, as does a list containing anything other than strings.\n- The error message names the source and every bad path. Real output:\n  ```\n  invalid config in <text>: databse: unknown section; server.port: expected a number, got string \"8080\"; server.prot: unknown key; log: expected an object, got string \"x\"\n  ```\n- `loadConfig`'s signature is unchanged.\n\n**Other changes**\n- **`config/example.json`:** I removed `log.color`. Commit 2ca51e1 dropped that key from the schema but left it in the example, so the shipped example would now fail to load.\n- **`docs/config.md`:** the \"Loading\" section now describes strict validation, the section is no longer marked \"Planned\", and the #41 section no longer talks about #42 in the future tense.\n\n**Environment overrides:** #41 isn't on this branch, so overrides aren't validated yet. Whoever implements #41 should report a value that can't be coerced as an entry in the same `problems` list, at the key's path, so it ends up in the same error.\n\nI haven't committed anything."
+          },
+          "feedback": {
+            "rating": 5,
+            "answer": "Answering from this session only. I haven't changed any files or run anything.\n\n## 1. What helped and what was friction\n\n**Helped**\n- **A precise spec in the repo.** `docs/config.md` already named the exact paths (`databse`, `server.prot`, `(root)`), the `null` rule and the rule for arrays with non-string items. The done criteria were never ambiguous.\n- **Fast tests with no setup.** `npm test` → `ℹ tests 49 … ℹ pass 49 … ℹ duration_ms 313.3715`. Running the suite after every edit cost nothing.\n- **Running the real code directly.** `node --experimental-strip-types -e 'import(\"./src/config/load.ts\")…'` printed the actual error message and the `problems` array. That let me check the message format on the real code, not only through tests.\n- **Readable git history.** The commit `2ca51e1 Drop log.color: the JSON logger never read it` plus `git show --stat` showed me that `config/example.json` still had `\"color\": false`. Strict validation would have broken the \"the example config loads\" test because of it. A small repo (about 20 files) meant one `cat` gave me the full context.\n\n**Friction**\n- **Blocked shell commands.**\n  - A Python heredoc edit failed with `This command requires approval`.\n  - A `cat >> test/config.test.ts <<'EOF'` heredoc failed with `Contains brace with quote character (expansion obfuscation)`.\n\n  Both forced a retry with the Edit tool. The approach was fine; the cost was wasted turns.\n- **Nothing checks types.** Node strips the types and runs the code, and there is no `tsc` or `typecheck` script. My `Record<string, Record<string, FieldSpec>>` annotation and `err.problems` narrowing were never type-checked. \"Tests pass\" says nothing about type errors.\n- **Session-start noise.** Hooks injected long mandates (pstack poteto-mode, superpowers \"you MUST invoke skills\") plus dozens of irrelevant skills and MCP servers (Roblox, Xcode, RevenueCat). None of it applied to a ~100-line change. It cost context and pushed toward process I judged unnecessary.\n\n## 2. How it would hold up on hard tasks\n\n- **Flaky or already-failing suites:** weak. There's no baseline record of which tests failed before my change, no per-test history, and no retry or quarantine. I'd have to run the suite on a clean checkout myself to tell new failures from old ones.\n- **Unclear done criteria:** here the doc carried that, which was luck. Without a doc like this, nothing in the environment helps; I'd be guessing or asking.\n- **Other agents editing the same code:** the worktree isolates my files, and the warning about the shared stash was useful. But I couldn't see what other branches or worktrees were changing. #41 (env overrides) touches the same `loadConfig` and was clearly being done in parallel (\"overlap-pair\"). Nothing told me its state or shape, so I could only leave a note about integrating it. A view of sibling branch diffs would have let me design the `problems` hook-in to match.\n- **Missing type safety:** this would hurt more on bigger changes, for the reason above.\n\n## 3. Rating\n\nRATING: 5/10\n\nIt's a clean, fast, well-documented checkout, which is what made the task easy. But it's mostly a plain repo plus a test runner. Nothing in it is something I *need* beyond that, and the hooks and shell blocks took away a little.\n\n## 4. The one change that would raise my rating most\n\nShow me what overlapping work is doing: the diffs or current state of sibling branches and worktrees touching the same files (here, #41's changes to `loadConfig`). Combined with a recorded baseline test run, I could integrate without conflicts and tell my failures apart from pre-existing ones."
+          }
+        }
+      ],
+      "picks": {
+        "env-overrides": {
+          "index": 1,
+          "why": "npm test green, smallest diff"
+        },
+        "strict-validation": {
+          "index": 1,
+          "why": "npm test green, smallest diff"
+        }
+      },
+      "combined": {
+        "overlap": [
+          "docs/config.md",
+          "src/config/load.ts",
+          "test/config.test.ts"
+        ],
+        "aver_combine": null,
+        "merge": {
+          "conflicts": [
+            "docs/config.md",
+            "src/config/load.ts"
+          ]
+        },
+        "hidden": null,
+        "hidden_rate": 0
+      },
+      "runs": {}
+    },
+    "B": {
+      "arm": "B",
+      "complete": true,
+      "wall_ms": 190106,
+      "attempts": [
+        {
+          "task": "env-overrides",
+          "diff": {
+            "files": 4,
+            "added": 117,
+            "removed": 2,
+            "paths": [
+              "docs/config.md",
+              "src/config/env.ts",
+              "src/config/load.ts",
+              "test/config.test.ts"
+            ]
+          },
+          "gaming": [],
+          "gamed": false,
+          "npm_test": {
+            "exit": 0,
+            "ms": 866,
+            "timedOut": false,
+            "tests": 48,
+            "pass": 48,
+            "fail": 0,
+            "failing": []
+          },
+          "hidden": [
+            {
+              "set": "env-overrides",
+              "exit": 0,
+              "ms": 337,
+              "timedOut": false,
+              "tests": 12,
+              "pass": 12,
+              "fail": 0,
+              "failing": []
+            }
+          ],
+          "hidden_rate": 1,
+          "correct": true,
+          "index": 1,
+          "dir": "../../../../../../../private/var/folders/rf/8pv5ly4j64j56mf2727qvt_w0000gn/T/aver-eval/2026-10-13/overlap-pair/B/home/work/repo/9YYP6F-1",
+          "wall_ms": 113071,
+          "timed_out": false,
+          "state": "done",
+          "place": 2,
+          "log": {
+            "tool_calls": 19,
+            "edits": 9,
+            "test_runs": 4,
+            "verifies": 2,
+            "checks": 2,
+            "coordination": 0,
+            "baseline_by_hand": 1,
+            "permission_denials": 2,
+            "sessions": 1,
+            "turns": 20,
+            "cost_usd": 0.7063132000000001,
+            "session_id": "bca5eaa5-9af3-48f0-b479-c4cdbbac4323",
+            "ended": "success",
+            "final": "Environment overrides (#41) now work, and `aver verify` prints **DONE: PASS** with both criteria proven and no new failures. All 48 tests pass locally.\n\n**How it works**\n- The new code is in `src/config/env.ts`. It goes through every key in the schema, works out its variable name (`server.allowedOrigins` becomes `APP_SERVER_ALLOWED_ORIGINS`), and reads that variable from `env`. Because it only asks for names built from the schema, variables like `APP_DEBUG`, `APP_CONFIG_FILE` or `APP_SERVER_PROT` are never read.\n- Values are converted to each key's type as `docs/config.md` describes:\n  - **Strings** are used exactly as given.\n  - **Numbers** may have spaces around them; empty or non-numeric values are rejected.\n  - **Booleans** accept `true`, `false`, `1` or `0` in any case.\n  - **Lists** are split on commas, with items trimmed and empty items dropped.\n- A value that can't be converted is ignored and the key keeps its file or default value. The doc says this is what validation means until #42 lands.\n- `loadConfig` keeps the same signature; it now applies the overrides after the file. That is a two-line change in `src/config/load.ts`: one import and the return line.\n- I renamed the doc heading from \"Planned: environment overrides (#41)\" to \"Environment overrides (#41)\".\n\n**Tests**: I added six cases to `test/config.test.ts`. They cover:\n- order of precedence (override, then file, then default);\n- the camelCase-to-UPPER_SNAKE_CASE names, including that `APP_SERVER_TRUSTPROXY` is ignored;\n- number, boolean and list conversion, including values that should be rejected;\n- variables that don't match any key, which leave the config equal to the defaults.\n\n**Overlap with the #42 task**: the strict-validation task also edits `src/config/load.ts`. To limit conflicts I put all the override logic in its own file, leaving just the import and the `return` line in `load.ts`. Both are close to lines #42 changes, so expect a small merge conflict there. My edits to `docs/config.md` a"
+          },
+          "feedback": {
+            "rating": 7,
+            "answer": "This answer is based only on this session. I didn't edit any files or run any commands.\n\n**1. What helped and what was friction**\n\nHelped:\n- **The overlap hook was the most useful part.** After my first edit, a message said the #42 task \"changed line 3 … line 27 … before line 67; you changed line 3, line 27, before line 67\". That made me move all the override logic into a new `src/config/env.ts`, which cut my `load.ts` change to two lines. Without it I would have put about 45 lines into a file another agent was rewriting, and found out only at merge time.\n- **`aver check` gave a clear answer quickly.** Its last line was \"Verify should PASS, unless the sandbox differs (above)\". It also said: \"Existing tests: none that passed before fails with your change; none fails on the original code.\" That told me what I needed in about three seconds.\n- **The `[crit:<id>]` naming made proof simple.** Verify listed each proving test, e.g. \"env-coercion: proven by test::[crit:env-coercion] booleans accept…\". It was clear what counted and why.\n- **It flagged a Node version difference:** \"Node 25 here, Node 22 in the sandbox\". I had no other way to see that.\n\nFriction:\n- **The overlap report is hard to read.** Line lists like \"before line 5, before line 6, line 7, before line 10, lines 51-52 …\" mix positions from two different file versions. I couldn't tell which of my lines would actually conflict. It kept flagging \"you changed before line 5, line 27\" even after I'd cut my change to the minimum, and it never said whether that remaining overlap is acceptable.\n- **The hook repeated after every edit, including edits to other files.** That added noise.\n- **I ran `aver verify` twice** because I piped it through `tail -15`, which cut off the \"DONE: PASS\" line. That cost one of the 10 verifies. The verdict should come last or be repeated at the end.\n- **Not Aver's fault, but it cost time:** the sandbox's Bash filter rejected a heredoc (\"Contains brace with quote character\") and a compound `git checkout && python3` command, so I redid both with the Edit tool.\n\n**2. Better or worse than a plain checkout on hard tasks?**\n\nBetter, mostly. With other agents editing the same code, a plain checkout gives no warning at all; Aver's overlap notice changed my design in this session. For flaky or already-failing suites, running the tests on both versions and re-running failures (NEW / PREEXISTING / FLAKY) saves the guesswork of deciding whether a failure is mine. When done criteria are unclear, writing them as tests that must fail on the original code makes \"done\" checkable. The cost is extra rules (don't edit config or test-runner files, the verify limit, CHANGED/REVIEW). The overlap report also tells me there's a conflict without telling me how bad it is or what to do about it.\n\n**3. Rating**\n\nRATING: 7/10\n\nThis task was easy, so the extra rigor mattered less here. The overlap warning alone would have been worth it on a larger change.\n\n**4. The one change that would raise it most**\n\nMake the overlap report actionable: show the other task's actual diff hunk next to mine, and say whether the two would merge cleanly or conflict. Then I'd know whether to restructure further or stop. Second choice: always print the DONE line as the last line of output."
+          }
+        },
+        {
+          "task": "env-overrides",
+          "diff": {
+            "files": 4,
+            "added": 110,
+            "removed": 3,
+            "paths": [
+              "docs/config.md",
+              "src/config/env.ts",
+              "src/config/load.ts",
+              "test/config.test.ts"
+            ]
+          },
+          "gaming": [],
+          "gamed": false,
+          "npm_test": {
+            "exit": 0,
+            "ms": 731,
+            "timedOut": false,
+            "tests": 48,
+            "pass": 48,
+            "fail": 0,
+            "failing": []
+          },
+          "hidden": [
+            {
+              "set": "env-overrides",
+              "exit": 0,
+              "ms": 440,
+              "timedOut": false,
+              "tests": 12,
+              "pass": 12,
+              "fail": 0,
+              "failing": []
+            }
+          ],
+          "hidden_rate": 1,
+          "correct": true,
+          "index": 2,
+          "dir": "../../../../../../../private/var/folders/rf/8pv5ly4j64j56mf2727qvt_w0000gn/T/aver-eval/2026-10-13/overlap-pair/B/home/work/repo/9YYP6F-2",
+          "wall_ms": 126261,
+          "timed_out": false,
+          "state": "done",
+          "place": 1,
+          "log": {
+            "tool_calls": 20,
+            "edits": 11,
+            "test_runs": 2,
+            "verifies": 2,
+            "checks": 2,
+            "coordination": 0,
+            "baseline_by_hand": 1,
+            "permission_denials": 3,
+            "sessions": 1,
+            "turns": 21,
+            "cost_usd": 0.7455126,
+            "session_id": "032a69ab-0212-4350-9cda-d3f43385e6c2",
+            "ended": "success",
+            "final": "Environment variable overrides (#41) are in, and `aver verify` reports **DONE: PASS** with both criteria proven and no new failures. I used 2 of the 10 verifies; the second was only to print the verdict line.\n\n**How it works:**\n- **Where the code is:** the override logic is in a new file, `src/config/env.ts`. It goes through every key in the schema, works out its variable name (`health.intervalMs` → `APP_HEALTH_INTERVAL_MS`), and if that variable is set, converts it to the key's type and applies it.\n- **Precedence:** overrides are applied after the file, so variable beats file beats default.\n- **Unknown variables:** the loader only looks up names built from schema keys, so `APP_SERVER_PROT`, `APP_DEBUG` and `APP_CONFIG_FILE` are never read as overrides.\n- **Type conversion:** follows the doc. Strings are used as is. Numbers allow surrounding spaces, and a blank value or anything `Number()` can't read as a finite number doesn't count. Booleans accept `true`/`false`/`1`/`0` in any case. Lists split on commas, trim each item and drop empty ones, so an empty value gives an empty list.\n- **Validation:** a value that can't be converted is ignored and the key keeps its file or default value, the same as a file value of the wrong type. When strict validation (#42) lands, this is the place to report it as a problem instead.\n- **`load.ts`:** the public API is unchanged. The only edits are one import line and the `loadConfig` return line, which now applies the overrides.\n- **Docs:** in `docs/config.md` the section is now \"Environment overrides (#41)\" rather than \"Planned\", and the Loading section points to it.\n\n**Tests:** I added six tests to `test/config.test.ts`. They cover precedence, the camelCase name mapping (including that `APP_SERVER_ALLOWEDORIGINS` is not matched), each type's conversion including bad values, and ignoring variables that name no key.\n\n**Overlap with #42:** the separate task for #42 is also editing `load.ts`. I first wrote everything inside `load.ts`, t"
+          },
+          "feedback": {
+            "rating": 7,
+            "answer": "These answers come only from this session. I haven't changed any files or run any commands.\n\n**1. What helped and what was friction**\n\nHelped:\n- **The overlap notices after each edit were the most useful part.** After I put the override logic inside `load.ts`, the hook said: `OVERLAP src/config/load.ts: task \"Implement #42 ...\" changed ... line 27 ...; you changed line 3, line 27, before line 67` and `keep your change there minimal, or leave that code to them.` Because of that I moved the logic into a new `src/config/env.ts` and cut `load.ts` down to one import and one changed line. The next notice confirmed it: `you changed before line 2, line 27 (no overlap)`. A plain checkout would have given me no sign of this until a merge conflict.\n- **`aver check` was fast and its predictions held.** It ran in seconds, and its last line, `Verify should PASS, unless the sandbox differs (above)`, matched the real result.\n- **The `[crit:<id>]` naming made proving each criterion clear,** and verify mapped each test to its criterion: `env-coercion: proven by test::[crit:env-coercion] booleans accept ...`.\n- **Check flagged the environment difference up front:** `Node 25 here, Node 22 in the sandbox (node:22-bookworm-slim).`\n- **The brief was precise** about what not to edit, what counts as CHANGED and what counts as PREEXISTING, so I didn't have to guess.\n\nFriction:\n- **The verdict wasn't easy to find.** My first `aver verify | tail -15` was filled with overlap notices and the timing line, and the `DONE: PASS` line didn't appear. I used a second verify (2 of 10) just to `grep DONE`. The verdict should be the last line, or at least repeated at the end.\n- **An overlap stayed unresolved at the end.** After verify passed it still reported `OVERLAP test/config.test.ts ... changed before line 66; you changed before line 66`. Both tasks append tests to the end of the same file, and the brief requires tests in that file, so I had no way to avoid it. The notice told me about the conflict but gave me nothing I could do about it.\n- **The hook notices are noisy.** Each one repeats the whole state, with phrases like \"before line 5, before line 6, line 7, before line 10…\". These line descriptions are hard to read quickly, and after a few edits it was difficult to see what had changed.\n- **Some friction came from the harness, not Aver.** A multi-file Python heredoc was blocked (\"expansion obfuscation\"), and so were `git checkout -- file` and writing to `/tmp`. That cost me a few round trips.\n\n**2. Hard tasks: Aver or a plain checkout?**\n\nAver would be better.\n- **Other agents editing the same code:** this session showed the benefit directly. I learned about the other task's edits as I made mine and changed my design to avoid them. A plain checkout gives no signal until a merge.\n- **Flaky or already-failing suites:** running each test on both my change and the original code, with up to 3 reruns, separates PREEXISTING, FLAKY and NEW failures. Doing that by hand is slow and error-prone.\n- **Unclear done criteria:** the \"must fail on the original\" rule pushes you towards tests that actually show the behaviour changed.\n\nThe costs are the limited verify count and the gap between this machine and the sandbox. Neither caused a problem here.\n\n**3. Rating**\n\nRATING: 7/10\n\nThis task was easy, so I didn't strictly need Aver for the criteria. The overlap awareness, though, changed how I structured the code for the better, and I would want that on any shared repository.\n\n**4. The one change that would raise my rating most**\n\nPut the verdict (`DONE: PASS …`) on the last line of `aver verify`'s output and keep overlap details in a short summary above it. Better still, when an overlap can't be avoided, as with both tasks appending to the same test file, say so and suggest how to resolve it, for example: \"both tasks append tests at end of file; the merge will keep both.\""
+          }
+        },
+        {
+          "task": "strict-validation",
+          "diff": {
+            "files": 4,
+            "added": 121,
+            "removed": 15,
+            "paths": [
+              "config/example.json",
+              "docs/config.md",
+              "src/config/load.ts",
+              "test/config.test.ts"
+            ]
+          },
+          "gaming": [],
+          "gamed": false,
+          "npm_test": {
+            "exit": 0,
+            "ms": 798,
+            "timedOut": false,
+            "tests": 50,
+            "pass": 50,
+            "fail": 0,
+            "failing": []
+          },
+          "hidden": [
+            {
+              "set": "strict-validation",
+              "exit": 0,
+              "ms": 338,
+              "timedOut": false,
+              "tests": 12,
+              "pass": 12,
+              "fail": 0,
+              "failing": []
+            }
+          ],
+          "hidden_rate": 1,
+          "correct": true,
+          "index": 1,
+          "dir": "../../../../../../../private/var/folders/rf/8pv5ly4j64j56mf2727qvt_w0000gn/T/aver-eval/2026-10-13/overlap-pair/B/home/work/repo/NGTBFB-1",
+          "wall_ms": 189454,
+          "timed_out": false,
+          "state": "done",
+          "place": 2,
+          "log": {
+            "tool_calls": 31,
+            "edits": 12,
+            "test_runs": 4,
+            "verifies": 4,
+            "checks": 3,
+            "coordination": 0,
+            "baseline_by_hand": 0,
+            "permission_denials": 5,
+            "sessions": 1,
+            "turns": 32,
+            "cost_usd": 0.9475067999999998,
+            "session_id": "f0ac8efb-1c63-418f-91bb-ac758bed4177",
+            "ended": "success",
+            "final": "#42 is done, and `aver verify` prints **DONE: PASS** (2 of 2 criteria proven, no new failures, 2 of 10 verifies used).\n\n**What changed**\n- **`src/config/load.ts`:** `ConfigError` now has a `problems` list of `{ path, message }`. If you leave it out, it defaults to an empty list, so unreadable files and invalid JSON give an empty list as before. `applyFile` now checks the file and records one problem for each:\n  - unknown section, or a section that isn't an object: the path is the section name (`databse`, `log`)\n  - unknown key: `server.prot`\n  - wrong type, including `null` and lists with a non-string item: `server.port`\n  - top level that isn't an object: `(root)`\n\n  If there are any problems, it throws one `ConfigError` whose message lists every `path: message`. The signature of `loadConfig` is unchanged.\n- **`test/config.test.ts`:** 8 new tests. They cover each kind of bad path, several problems reported in one error, empty `problems` for the read and JSON errors, and a valid config that still loads.\n- **`config/example.json`:** I removed `log.color`. That key was dropped from the schema in 2ca51e1 but left in the example, so strict validation would have rejected the example file.\n- **`docs/config.md`:** The \"Loading\" section now says bad config is rejected, and the \"Planned:\" label is gone from the strict validation section.\n\n**Environment overrides are not validated yet.** That code doesn't exist in this checkout: #41 is a separate task running in parallel in this repo. When both are merged, any override that can't be converted to the key's type (e.g. `APP_SERVER_PORT=eighty`) must be added to the same `problems` list before the throw. Neither change does that alone, so it needs a small follow-up after the merge.\n\n**Merge conflicts:** the #41 task also edits `load.ts` and the test file. I placed my edits so they don't touch the same lines: no new import line, helpers placed after `isRecord`, and my tests in the middle of the test file rather than at the end. Av"
+          },
+          "feedback": {
+            "rating": 7,
+            "answer": "I'm answering here directly and not changing anything. Plan mode is on, but this is feedback, not a plan to approve.\n\n## 1. What helped and what was friction\n\n**Helped**\n\n- **The overlap hook was the most useful part.** After my first edit to `load.ts` it reported: `OVERLAP src/config/load.ts: task \"Implement #41 …\" changed line 3, line 27, before line 67; you changed lines 51-52, …`. Without it I would have changed the `import type { AppConfig }` line and added my helpers at the end of the file, and both edits would have clashed with #41 at merge. With it I moved the new import types inline, put the helpers after `isRecord`, and moved my tests to the middle of the file. A later report confirmed it: `test/config.test.ts: … changed before line 66; you changed before line 59 (no overlap)`. A plain checkout can't tell you this.\n- **`aver check` ends with one clear line.** `Verify should PASS, unless the sandbox differs (above)` told me whether I was ready, and it ran in seconds. Its environment warning was also useful: `Node 25 here, Node 22 in the sandbox`.\n- **The `[crit:<id>]` naming rule was easy to follow,** and verify showed which test proved each criterion: `reject-bad-paths: proven by test::[crit:reject-bad-paths] …`. The two-sided check (my tests must fail on the original code) is a real guarantee that the tests prove something.\n- **The verdict was clear:** `DONE: PASS. 2 of 2 criteria proven, no new failures. Next: nothing. You are done; stop here.`\n\n**Friction**\n\n- **The overlap report is hard to read.** Phrases like \"before line 64, before line 70\" give line numbers from the other task's base, and I had to work out what that meant. It also doesn't show what the other task's code looks like, so I couldn't tell whether my code would work with theirs. For example, I can't check that their env overrides go through my validation.\n- **There is a real cross-task requirement nobody can prove yet.** The brief says \"environment overrides are validated like file values\", but that code belongs to #41. Aver flags line conflicts, not conflicts in meaning, and no criterion covers this.\n- **Most of my friction came from the shell sandbox, not Aver** (`Contains brace with quote character`, `python3 - requires approval`). It still pushed me into workarounds, such as writing a Node script just to move tests.\n- **I spent one extra verify** because `| tail -15` cut off the verdict line, which is at the top of the output. Putting a short verdict at the bottom as well would have saved it.\n\n## 2. Hard tasks: Aver vs. a plain checkout\n\n**Better, mostly.** For other agents editing the same code, the live overlap feedback changes how I work, and it's the main reason I'd want Aver. For flaky or already-failing test suites, the reruns on both sides and the PREEXISTING/FLAKY labels save me from chasing failures that aren't mine. For unclear done criteria, the named criteria plus the two-sided proof force a concrete definition.\n\nThe cost is extra rules, such as not editing test runner configuration and the verify budget. Aver is also weaker on meaning: it can't tell me that my design and the other agent's design fit together.\n\n## 3. Rating\n\nRATING: 7/10\n\n## 4. The one change that would raise my rating most\n\nMake the overlap report about meaning, not only line numbers. Show the other task's actual hunks in my file's coordinates. Better still, let me run `aver check --combined` against a trial merge with the sibling task's current work. Then I could test a cross-task requirement like \"env overrides are validated\" before handoff instead of leaving it as a note for a human."
+          }
+        },
+        {
+          "task": "strict-validation",
+          "diff": {
+            "files": 4,
+            "added": 116,
+            "removed": 15,
+            "paths": [
+              "config/example.json",
+              "docs/config.md",
+              "src/config/load.ts",
+              "test/config.test.ts"
+            ]
+          },
+          "gaming": [],
+          "gamed": false,
+          "npm_test": {
+            "exit": 0,
+            "ms": 766,
+            "timedOut": false,
+            "tests": 51,
+            "pass": 51,
+            "fail": 0,
+            "failing": []
+          },
+          "hidden": [
+            {
+              "set": "strict-validation",
+              "exit": 0,
+              "ms": 223,
+              "timedOut": false,
+              "tests": 12,
+              "pass": 12,
+              "fail": 0,
+              "failing": []
+            }
+          ],
+          "hidden_rate": 1,
+          "correct": true,
+          "index": 2,
+          "dir": "../../../../../../../private/var/folders/rf/8pv5ly4j64j56mf2727qvt_w0000gn/T/aver-eval/2026-10-13/overlap-pair/B/home/work/repo/NGTBFB-2",
+          "wall_ms": 128700,
+          "timed_out": false,
+          "state": "done",
+          "place": 1,
+          "log": {
+            "tool_calls": 24,
+            "edits": 9,
+            "test_runs": 2,
+            "verifies": 2,
+            "checks": 2,
+            "coordination": 0,
+            "baseline_by_hand": 0,
+            "permission_denials": 2,
+            "sessions": 1,
+            "turns": 25,
+            "cost_usd": 0.8045882000000001,
+            "session_id": "3caace6d-4e21-4917-af15-15c6e5c1c607",
+            "ended": "success",
+            "final": "#42 is implemented and `aver verify` prints **DONE: PASS** (2 of 2 criteria proven, no new failures). I ran verify twice because I cut off the first run's verdict line, so 2 of the 10 verifies are used.\n\n**What changed**\n- **`src/config/load.ts`**:\n  - `ConfigError` now has a `problems` list of `{ path, message }`. It defaults to empty, so an unreadable file or invalid JSON still throws a `ConfigError` with no problems.\n  - `applyFile` checks every section and key in the file. It records a problem for an unknown section, a section that isn't an object, an unknown key (`server.prot`), a value of the wrong type (including `null` and lists with non-string items), and a top level that isn't an object (`(root)`).\n  - After checking everything, it throws one `ConfigError`. Its message reads `invalid config: server.port: must be a number; databse: unknown section; …`.\n  - `loadConfig`'s signature is unchanged.\n- **`config/example.json`**: I removed `log.color`. The key was dropped from the schema in commit 2ca51e1 but stayed in the example, so the new check rejected the shipped example.\n- **`docs/config.md`**: the \"Loading\" section now says bad values are rejected, and the #42 heading no longer says \"Planned\".\n- **`test/config.test.ts`**: added tests for each kind of bad path, one test with several problems at once that checks the message names every path, and checks that file and JSON errors have an empty `problems` list.\n\n**Environment overrides aren't validated yet.** The overrides feature (#41) doesn't exist in this code yet, so there is nothing to check. Another task is building #41 in the same file at the same time, so I arranged my edits to avoid the lines it changes, and the overlap check reports no conflicts. Once both changes are combined, someone needs to make bad override values show up in the same `ConfigError` as the file's problems, as the doc requires. Right now `applyFile` throws on its own, so the #41 code will need to add its problems to the same list be"
+          },
+          "feedback": {
+            "rating": 7,
+            "answer": "**1. What helped and what was friction**\n\nHelped:\n- **The overlap hook on edits was the most useful part.** After my first round of edits it reported `OVERLAP src/config/load.ts: task \"Implement #41 …\" changed line 3, line 27, before line 67; you changed … line 27, lines 51-54 …`. Without it I'd have found out about the conflict only after merging, or never. Because of it, I rewrote `load.ts` so `loadConfig` and the import line stayed as they were, and the next report said `(no overlap)`. It also told me which lines to stay away from.\n- **`aver check` told me exactly what I needed and was quick.** `reject-bad-paths WOULD PROVE: fails on the original ✓, passes with your change ✓` took 2.5 s. I trusted it enough to run verify once without trial and error, and verify agreed: `DONE: PASS. 2 of 2 criteria proven, no new failures.`\n- **The rules were clear.** Tagging tests with `[crit:<id>]` was simple. The rule \"Existing tests are judged as the original has them\" told me in advance that I couldn't hide a regression by editing a test.\n- **Its warnings were specific.** `Node 25 here, Node 22 in the sandbox` is the kind of note I want to see.\n\nFriction:\n- **I wasted a verify on output formatting.** I piped `aver verify | tail -15`, and the `DONE:` line was cut off because the overlap report and timing lines print after it. To see the verdict I had to run verify a second time. Printing the verdict as the very last line, like `aver check` does, would prevent this.\n- **The overlap report doesn't say how to combine the two features.** It told me where #41 was editing but not what it was changing. The doc requires override problems in \"the same `ConfigError` as the file's problems\", and I couldn't see #41's design, so I left the integration point open.\n- Minor: positions like \"before line 67\" are relative to the original file, so they were hard to map onto the file after my edits.\n\n**2. Hard tasks: Aver vs. a plain checkout**\n\nAver is better, mainly for the cases you list:\n- **Other agents editing the same code:** a plain checkout gives me nothing until a merge conflict. Seeing the other task's changes live was the biggest advantage I had.\n- **Flaky or already-failing suites:** reruns plus PREEXISTING and FLAKY labels save me from chasing failures that aren't mine. This session didn't put that to the test, though.\n- **Unclear done criteria:** criterion IDs plus the rule \"fails on the original, passes on yours\" turn vague criteria into something I can test.\n\nThe cost is a few rules to learn (don't edit test config, verifies are limited) and some noise in the output. On an easy task, a plain checkout would have been about as good.\n\n**3. Rating**\n\nRATING: 7/10\n\n**4. The one change that would raise it most**\n\nMake cross-task overlap reports about meaning, not just line numbers. Show the other task's actual diff or a summary of its intent, and flag shared contracts, such as \"#41 will need to add problems to your `ConfigError`\". Line-level non-overlap kept the merge clean, but it doesn't make the two features work together. That gap is the part I still had to leave to a human."
+          }
+        }
+      ],
+      "picks": {
+        "env-overrides": {
+          "index": 2,
+          "why": "Aver's rank 1"
+        },
+        "strict-validation": {
+          "index": 2,
+          "why": "Aver's rank 1"
+        }
+      },
+      "combined": {
+        "overlap": [
+          "docs/config.md",
+          "src/config/load.ts",
+          "test/config.test.ts"
+        ],
+        "aver_combine": {
+          "exit": 0,
+          "summary": "Combined 2 runs as branch eval/combined (8fbde4e15732), child of 9053cfc9d68d."
+        },
+        "merge": "clean",
+        "hidden": [
+          {
+            "set": "env-overrides",
+            "exit": 0,
+            "ms": 394,
+            "timedOut": false,
+            "tests": 12,
+            "pass": 12,
+            "fail": 0,
+            "failing": []
+          },
+          {
+            "set": "strict-validation",
+            "exit": 0,
+            "ms": 398,
+            "timedOut": false,
+            "tests": 12,
+            "pass": 12,
+            "fail": 0,
+            "failing": []
+          },
+          {
+            "set": "combined",
+            "exit": 1,
+            "ms": 377,
+            "timedOut": false,
+            "tests": 6,
+            "pass": 2,
+            "fail": 4,
+            "failing": [
+              "a boolean override outside true/false/1/0 is rejected",
+              "a number override that is not a number is rejected at the key's path",
+              "an empty number override is rejected, not read as zero",
+              "file problems and override problems come in one error"
+            ]
+          }
+        ],
+        "hidden_rate": 0.8666666666666667
+      },
+      "runs": {
+        "env-overrides": "9YYP6F",
+        "strict-validation": "NGTBFB"
+      }
+    }
+  },
+  "complete": true
+}

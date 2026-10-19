@@ -1,0 +1,14 @@
+{
+  "name": "tally",
+  "version": "0.15.0",
+  "description": "Personal finance ledger: bank statement import, categories, budgets and reports",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "test": "node --test",
+    "fetch-rates": "node scripts/fetch-rates.ts"
+  }
+}

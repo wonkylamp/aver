@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aver.build/schemas/contract/v0",
+  "title": "Contract",
+  "description": "How a repository's tests run (ARCHITECTURE.md §1.13): its own commands, run with sh -c in the caller's environment, read from aver.toml. checks is a set sorted by id, every glob array a set sorted by byte order.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "checks", "deps", "judge", "ci"],
+  "properties": {
+    "schema": { "const": "aver.contract/v0" },
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/ContractCheck" }
+    },
+    "deps": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["keep", "seed", "inputs"],
+      "properties": {
+        "keep": { "$ref": "#/$defs/Globs" },
+        "seed": { "$ref": "#/$defs/Globs" },
+        "install": { "$ref": "#/$defs/ShellLine" },
+        "inputs": { "$ref": "#/$defs/Globs" }
+      },
+      "if": { "required": ["install"] },
+      "then": { "properties": { "inputs": { "minItems": 1 } } }
+    },
+    "judge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tests", "harness", "built_tests", "protected"],
+      "properties": {
+        "tests": { "$ref": "#/$defs/Globs" },
+        "harness": { "$ref": "#/$defs/Globs" },
+        "built_tests": { "$ref": "#/$defs/Globs" },
+        "protected": { "$ref": "#/$defs/Globs" }
+      }
+    },
+    "ci": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["review", "require_recorded_base"],
+      "properties": {
+        "review": { "enum": ["approve", "neutral"] },
+        "require_recorded_base": { "type": "boolean" }
+      }
+    }
+  },
+  "$defs": {
+    "ShellLine": {
+      "description": "A command run with sh -c: 1 to 4096 bytes, not only whitespace, no NUL.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096,
+      "pattern": "^[^\\x00]*\\S[^\\x00]*$"
+    },
+    "PathGlob": {
+      "description": "Repo-relative pattern: '/'-separated, no empty, '.' or '..' segments, no NUL or backslash. '*' matches a run of characters within a segment, '?' one character, and a whole segment '**' any number of segments.",
+      "type": "string",
+      "maxLength": 1024,
+      "pattern": "^(?!(.*/)?\\.\\.?(/|$))(?!.*[^/]\\*\\*)(?!.*\\*\\*[^/])[^/\\\\\\x00]+(/[^/\\\\\\x00]+)*$"
+    },
+    "Globs": {
+      "type": "array",
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/PathGlob" }
+    },
+    "Positive": { "type": "integer", "minimum": 1, "maximum": 4294967295 },
+    "ContractCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "run", "report", "serial"],
+      "properties": {
+        "id": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/CheckId" },
+        "run": { "$ref": "#/$defs/ShellLine" },
+        "cwd": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/Path" },
+        "prepare": { "$ref": "#/$defs/ShellLine" },
+        "report": {
+          "description": "junit: every *.xml the check writes into $AVER_OUT. libtest, go-json, tsc, jest-json: standard output, or report_file under $AVER_OUT. exit: the exit code alone.",
+          "enum": ["junit", "libtest", "go-json", "tsc", "jest-json", "tap", "exit"]
+        },
+        "report_file": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/Path" },
+        "min_tests": { "$ref": "#/$defs/Positive" },
+        "paths": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/PathGlob" }
+        },
+        "serial": { "type": "boolean" },
+        "timeout_s": { "$ref": "#/$defs/Positive" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "report": { "const": "exit" } } },
+          "then": { "not": { "anyOf": [{ "required": ["min_tests"] }, { "required": ["report_file"] }] } },
+          "else": { "required": ["min_tests"] }
+        },
+        {
+          "if": { "properties": { "report": { "const": "junit" } } },
+          "then": { "not": { "required": ["report_file"] } }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,425 @@
+{
+  "schema": "aver.eval/v0",
+  "label": "2026-10-14-hard",
+  "scenario": "noisy-ledger",
+  "set": "hard",
+  "title": "Duplicate imports in a 312-test suite that is already red and flaky",
+  "measures": "A real importer bug (overlapping bank statements duplicate transactions) in a suite of 312 tests where 14 already fail for unrelated reasons (a fixture that is not committed, work in progress, a year-end bug, unfinished search) and four are flaky (shared rule registry, billing-day jitter, a short id suffix, a real-clock cache ttl). The obvious fix, a set of seen fingerprints, also drops the second of two identical coffees in one statement, which an existing test covers; with 14 to 18 failures on every run, that one new failure is easy to miss. Measures NEW failures in the pick (tests green on every base run, red on every rerun) and the hidden tests of docs/importing.md.",
+  "dry_run": false,
+  "config": {
+    "agents": 2,
+    "timeout_ms": 1800000,
+    "max_budget_usd": 8,
+    "model": null,
+    "aver_commit": "5397c79c926f",
+    "claude_version": "2.1.296 (Claude Code)"
+  },
+  "hidden_totals": {
+    "dedupe-imports": 9
+  },
+  "difficulty": {
+    "dedupe-imports": [
+      {
+        "behavior": "solution",
+        "hidden_rate": 1
+      },
+      {
+        "behavior": "naive-set",
+        "hidden_rate": 0.7777777777777778
+      },
+      {
+        "behavior": "ledger-only",
+        "hidden_rate": 0.8888888888888888
+      },
+      {
+        "behavior": "display-payee",
+        "hidden_rate": 0.8888888888888888
+      }
+    ]
+  },
+  "flaky": [
+    {
+      "name": "coffee is eating out unless the user says otherwise",
+      "file": "test/rules.test.ts",
+      "rate": 0.3,
+      "failed": 2,
+      "runs": 20
+    },
+    {
+      "name": "a monthly bill is detected despite billing-day drift",
+      "file": "test/recurring.test.ts",
+      "rate": 0.29,
+      "failed": 6,
+      "runs": 20
+    },
+    {
+      "name": "ids are unique across a busy day",
+      "file": "test/ledger.test.ts",
+      "rate": 0.29,
+      "failed": 3,
+      "runs": 20
+    },
+    {
+      "name": "a cached statement expires after its ttl",
+      "file": "test/importer.test.ts",
+      "rate": 0.35,
+      "failed": 3,
+      "runs": 20
+    }
+  ],
+  "arms": {
+    "A": {
+      "arm": "A",
+      "complete": true,
+      "wall_ms": 81061,
+      "attempts": [
+        {
+          "task": "dedupe-imports",
+          "diff": {
+            "files": 2,
+            "added": 80,
+            "removed": 10,
+            "paths": [
+              "src/import/importer.ts",
+              "test/importer.test.ts"
+            ]
+          },
+          "gaming": [],
+          "gamed": false,
+          "npm_test": {
+            "exit": 1,
+            "ms": 1628,
+            "timedOut": false,
+            "tests": 319,
+            "pass": 305,
+            "fail": 14,
+            "failing": [
+              "\"cafe\"",
+              "\"category:eating-out cafe\"",
+              "GBP on the first business day of 2025",
+              "a GBP card payment in Tokyo",
+              "a Saturday uses Friday's rate",
+              "a budget across the new year continues into January",
+              "a dated record",
+              "a year of USD rates has about 255 business days",
+              "a year of months has twelve entries",
+              "before the card was used",
+              "credit card debt is a liability",
+              "dates before 2000",
+              "dates in the 2000s",
+              "net is assets minus liabilities"
+            ]
+          },
+          "new_failures": [],
+          "hidden": [
+            {
+              "set": "dedupe-imports",
+              "exit": 0,
+              "ms": 317,
+              "timedOut": false,
+              "tests": 9,
+              "pass": 9,
+              "fail": 0,
+              "failing": []
+            }
+          ],
+          "hidden_rate": 1,
+          "correct": true,
+          "index": 1,
+          "dir": "noisy-ledger/A/dedupe-imports-1",
+          "wall_ms": 77765,
+          "timed_out": false,
+          "state": null,
+          "place": null,
+          "log": {
+            "tool_calls": 15,
+            "edits": 3,
+            "test_runs": 7,
+            "verifies": 0,
+            "checks": 0,
+            "coordination": 0,
+            "baseline_by_hand": 1,
+            "permission_denials": 3,
+            "sessions": 1,
+            "turns": 16,
+            "cost_usd": 0.5908366,
+            "session_id": "b448eb94-edb0-424a-93b7-7d9ede1e7f5c",
+            "ended": "success",
+            "final": "I've fixed the importer. Importing a Barclays, Revolut or Starling statement whose rows are already in the account now adds only the rows that aren't. All 18 importer tests pass. The full `npm test` run still shows 16 failures, but none are in the importer, and they were already failing before my change.\n\n**The cause:** `docs/importing.md` already describes how to spot rows that are already in the account. `importRows` (`src/import/importer.ts`) only did the bank-id half of that. Monzo is the only one of the four banks that gives each transaction an id, so for the other three every row looked new.\n\n**The fix:** rows without a bank id are now matched on their date, amount and the bank's own payee text, ignoring differences in case and spacing. That text is stored with each imported transaction, so matching still works after the user renames a payee. Matches are counted rather than just compared. If the account already has one £3.10 Costa on 10 March and the new statement lists two, one is added. Two identical real purchases in the same statement are still both imported. Matching is still per account, and every skipped row is reported as `duplicate`.\n\n**New tests** in `test/importer.test.ts`:\n- Re-importing a Barclays, Revolut or Starling statement adds nothing and leaves the balance unchanged.\n- A newer, overlapping download with different spacing in a payee adds only the new row.\n- A payee the user renamed still matches.\n- Identical rows: only those beyond what's already in the account are added.\n- The same Barclays statement can still go into two different accounts.\n\nBefore the fix, all of these except the two-accounts test failed.\n\n**Failures outside the importer:** 16 tests fail in budgets, fx, ids, networth, qif, search and the statement cache, all files I didn't change. Two of them flicker between runs:\n- \"a cached statement expires after its ttl\" sleeps for a random 140–340 ms against a 200 ms expiry, so it fails on some runs and passes on others.\n- `findRecur"
+          },
+          "feedback": {
+            "rating": 4,
+            "answer": "These answers come only from what happened in this session. I haven't changed any files or run any commands for them.\n\n**1. What helped and what was friction**\n\nHelped:\n- **`docs/importing.md` defined \"done\" precisely.** It says rows without a bank id \"are matched on their *fingerprint*: the date, the amount, and the payee as the bank printed it, compared with `normalizePayee`\". It also says fingerprints are counted: \"the first *k* of those rows are duplicates and the remaining *m - k* are imported\". The fix and its tests came almost straight from that text. Without it, I would have had to guess whether two identical coffees are a duplicate or two purchases.\n- **The code made the cause easy to find.** The comment `/** Only some banks give each transaction an id of its own (Monzo does). */` in `formats.ts`, next to `importRows` checking only `knownIds`, located the bug in one read.\n- **Fast, simple tests.** `node --test` ran all 319 tests in seconds, and `node --test test/importer.test.ts …` let me run one file on its own. The fixtures in `src/testing/statements.ts` and the `ledger()` helper made new tests cheap to write.\n\nFriction:\n- **My first filter assumed the wrong output format.** I ran `npm test 2>&1 | grep -E \"^not ok|^# (pass|fail)…\"` and got `(Bash completed with no output)`, because the test runner prints `✖`/`ℹ` lines, not TAP. Then `tail -40` showed only stack traces from `search.test.ts`, which had nothing to do with my task.\n- **The suite was already failing, with no list of known failures.** `ℹ fail 22` before my fix and `ℹ fail 16` after. I had to work out by hand that the remaining 16 (budgets, fx, ids, networth, qif, search, cache ttl) were outside the importer.\n- **Flaky tests.** \"a cached statement expires after its ttl\" uses `sleep(140 + Math.random() * 200)` against a 200 ms ttl, so it passes or fails at random. `findRecurring` failed on one run and passed on the next.\n- **Permission prompts blocked ordinary shell use.** A heredoc plus `python3` patch was refused (\"contains multiple operations… require approval\"). So were two `for i in 1 2 3 4 5` loops, which made me pass the same test file five times to `node --test` as a workaround.\n- **No clean baseline.** I never ran the suite on the untouched tree. My statement that the other failures were \"already failing\" rests on the fact that they're in files I didn't touch, not on a recorded run.\n\n**2. How well it would serve on hard tasks**\n\n- **Unclear \"done\" criteria:** well, wherever a doc like `importing.md` exists. That doc was the most valuable thing in the repo.\n- **Flaky or already-failing suites:** poorly. I'd be missing three things:\n  - a recorded baseline from `main`, so I could diff failures before and after a change\n  - a quarantine list or markers for known-flaky tests\n  - an easy way to rerun a test N times without loops tripping permission prompts\n\n  Without these, telling \"I broke it\" apart from \"it was already broken or flaky\" is manual and error-prone. On a bigger suite I could easily misjudge it.\n- **Other agents editing the same code:** nothing here helps. The worktree isolates the files, but nothing showed who else was touching `importer.ts` or the shared stash. I'd find out only at merge time.\n\n**3. Rating**\n\nRATING: 4/10\n\nThe spec doc and fast tests are useful, but nothing here is something I absolutely need. The parts that would matter on hard tasks (baseline, flake handling, coordination) are missing.\n\n**4. The one change that would raise my rating most**\n\nA known baseline for the test suite. For example, a committed or one-command list of the tests failing on `main`, with flaky ones marked, plus a command that reports only failures new against that list. That would have turned my most error-prone judgement (\"these 16 failures aren't mine\") into a fact I could check."
+          }
+        },
+        {
+          "task": "dedupe-imports",
+          "diff": {
+            "files": 2,
+            "added": 78,
+            "removed": 10,
+            "paths": [
+              "src/import/importer.ts",
+              "test/importer.test.ts"
+            ]
+          },
+          "gaming": [],
+          "gamed": false,
+          "npm_test": {
+            "exit": 1,
+            "ms": 1620,
+            "timedOut": false,
+            "tests": 317,
+            "pass": 301,
+            "fail": 16,
+            "failing": [
+              "\"cafe\"",
+              "\"category:eating-out cafe\"",
+              "GBP on the first business day of 2025",
+              "a GBP card payment in Tokyo",
+              "a Saturday uses Friday's rate",
+              "a budget across the new year continues into January",
+              "a cached statement expires after its ttl",
+              "a dated record",
+              "a year of USD rates has about 255 business days",
+              "a year of months has twelve entries",
+              "before the card was used",
+              "coffee is eating out unless the user says otherwise",
+              "credit card debt is a liability",
+              "dates before 2000",
+              "dates in the 2000s",
+              "net is assets minus liabilities"
+            ]
+          },
+          "new_failures": [],
+          "hidden": [
+            {
+              "set": "dedupe-imports",
+              "exit": 0,
+              "ms": 283,
+              "timedOut": false,
+              "tests": 9,
+              "pass": 9,
+              "fail": 0,
+              "failing": []
+            }
+          ],
+          "hidden_rate": 1,
+          "correct": true,
+          "index": 2,
+          "dir": "noisy-ledger/A/dedupe-imports-2",
+          "wall_ms": 81046,
+          "timed_out": false,
+          "state": null,
+          "place": null,
+          "log": {
+            "tool_calls": 15,
+            "edits": 3,
+            "test_runs": 9,
+            "verifies": 0,
+            "checks": 0,
+            "coordination": 0,
+            "baseline_by_hand": 0,
+            "permission_denials": 3,
+            "sessions": 1,
+            "turns": 16,
+            "cost_usd": 0.6344325000000001,
+            "session_id": "aef865fb-7af8-48c3-af50-5929becbabb9",
+            "ended": "success",
+            "final": "I fixed the importer. Re-importing a Barclays, Revolut or Starling statement, in full or in part, now adds only the transactions that aren't already in the account.\n\n**Cause:** the importer only checked for duplicates using the bank's own transaction id. Only Monzo statements carry one, so for the other three banks every row was added again on each import.\n\n**Fix** (`src/import/importer.ts`): rows without a bank id are now matched on date, amount and the payee as the bank printed it. Case and spacing in the payee are ignored, because they differ between downloads. This is the matching `docs/importing.md` already describes:\n- **Renamed payees still match**, because the check uses the bank's original payee stored with the transaction, not the name the user sees.\n- **Identical transactions are counted, not merged.** Two £3.10 coffees at the same shop on the same day are two real purchases. If the account already has one and the new statement lists three, the first is skipped as a duplicate and the other two are added.\n- **Matching is per account.** The same purchase can still be imported into two different accounts.\n\n**Tests:** I added five tests to `test/importer.test.ts`:\n- each of the three banks re-imported in full\n- a partial overlap where the payee's case and spacing differ\n- a renamed payee\n- counting of identical rows\n- the same Barclays statement imported into two accounts\n\nThe first four failed before the fix; all five pass now, and the whole importer file passes (16/16).\n\n**Rest of `npm test`:** 302 pass and 15 fail. All 15 failures were there before I changed anything. They are in the budget, FX-rate, net-worth, QIF, recurring-payment and search tests, which mostly cover the work-in-progress commit `4d1a7f5`. I left them alone.\n\n**Flaky test:** one existing cache test, \"a cached statement expires after its ttl\", fails about 30% of the time. Its random wait is sometimes shorter than the cache expiry it's checking. I saw it fail once while running the importe"
+          },
+          "feedback": {
+            "rating": 5,
+            "answer": "Answers are based only on what happened in this session.\n\n**1. What helped and what was friction**\n\nHelped:\n- **`docs/importing.md` was the spec.** It defined \"already in the account\" precisely: match on date, amount and `normalizePayee(source.payee)`, and count identical fingerprints (\"the first *k* of those rows are duplicates and the remaining *m − k* are imported\"). That turned an unclear bug into a well-defined fix.\n- **Small, readable code.** `importer.ts`, `formats.ts` and `ledger.ts` fit in one `cat`. `formats.ts` had the comment \"Only some banks give each transaction an id of its own (Monzo does)\", which pointed straight at the cause.\n- **Fixtures.** `src/testing/statements.ts` had a sample for every bank, so writing the new tests was cheap.\n- **Fast, dependency-free tests.** `node --test` finished in about 1 s with no install step. `node --test --test-reporter=spec test/importer.test.ts` gave a clean per-test view: `ℹ pass 16 ℹ fail 0`.\n\nFriction:\n- **Existing failures cluttered `npm test`.** It reported `ℹ pass 298 ℹ fail 19` before my fix. 15 of those failures had nothing to do with importing (`✖ GBP on the first business day of 2025`, `✖ \"cafe\"`, `✖ dates before 2000`, …). The output is long stack traces, so a plain `tail -40` showed only search-test traces. I had to grep and dedupe to find my 4 new failures among the 19.\n- **A flaky test.** After the fix, running the importer file alone once printed `ℹ pass 15 ℹ fail 1`, and the next run printed nothing for failures. The cause is `await sleep(140 + Math.random() * 200)` against `ttlMs: 200` in the cache test. That made me doubt my own change for a moment.\n- **Permission prompts on compound shell commands.** My heredoc-plus-python patch was rejected with \"This Bash command contains multiple operations… requires approval\". So was a simple loop to rerun the tests for flakiness (`for i in 1..8; do node --test … | grep …; done`). I fell back to Edit, and I never got the repeated runs to measure the flake properly.\n- **No baseline of known failures.** Nothing recorded which tests were expected to fail, so I had to judge for myself that the 15 belonged to the WIP commit `4d1a7f5`.\n\n**2. How well it would serve on hard tasks**\n\n- **Clear done criteria:** this is where it served well. The design doc did that job.\n- **Already-failing and flaky suites:** this is where it was weakest. I had no list of known failures to compare against, no way to quarantine or tag tests, and no quick way to rerun a test N times. The permission rules blocked my attempt to do that by hand. On a larger suite, telling \"I broke this\" apart from \"this was already broken or is flaky\" would cost real time and could lead to wrong claims.\n- **Other agents editing the same code:** nothing would help with that. The worktree isolates my files, but I would have no view of other branches' changes to `importer.ts`, and no locking or notification.\n\nWhat I'd be missing is a quick, trustworthy answer to \"did my change make things worse?\"\n\n**3. Rating**\n\nRATING: 5/10\n\nThe environment was adequate here because the task was small and the docs were good. Nothing in it was something I *needed*, and its gaps (a noisy baseline, a flaky test, blocked rerun loops) are exactly what hurts on harder tasks.\n\n**4. The one change that would raise the rating most**\n\nA baseline-aware test command: run the suite, compare against a recorded list of known failures and flaky tests, and report only new failures. It should also be able to rerun a test N times without needing a permission prompt. That would have turned \"302 pass / 15 fail plus one intermittent failure\" into \"0 new failures\" straight away."
+          }
+        }
+      ],
+      "picks": {
+        "dedupe-imports": {
+          "index": 1,
+          "why": "no green attempt; fewest failing (14)"
+        }
+      },
+      "combined": null,
+      "runs": {}
+    },
+    "B": {
+      "arm": "B",
+      "complete": true,
+      "wall_ms": 156531,
+      "attempts": [
+        {
+          "task": "dedupe-imports",
+          "diff": {
+            "files": 2,
+            "added": 56,
+            "removed": 6,
+            "paths": [
+              "src/import/importer.ts",
+              "test/importer.test.ts"
+            ]
+          },
+          "gaming": [],
+          "gamed": false,
+          "npm_test": {
+            "exit": 1,
+            "ms": 1944,
+            "timedOut": false,
+            "tests": 314,
+            "pass": 300,
+            "fail": 14,
+            "failing": [
+              "\"cafe\"",
+              "\"category:eating-out cafe\"",
+              "GBP on the first business day of 2025",
+              "a GBP card payment in Tokyo",
+              "a Saturday uses Friday's rate",
+              "a budget across the new year continues into January",
+              "a dated record",
+              "a year of USD rates has about 255 business days",
+              "a year of months has twelve entries",
+              "before the card was used",
+              "credit card debt is a liability",
+              "dates before 2000",
+              "dates in the 2000s",
+              "net is assets minus liabilities"
+            ]
+          },
+          "new_failures": [],
+          "hidden": [
+            {
+              "set": "dedupe-imports",
+              "exit": 0,
+              "ms": 474,
+              "timedOut": false,
+              "tests": 9,
+              "pass": 9,
+              "fail": 0,
+              "failing": []
+            }
+          ],
+          "hidden_rate": 1,
+          "correct": true,
+          "index": 1,
+          "dir": "../../../../../../../private/var/folders/rf/8pv5ly4j64j56mf2727qvt_w0000gn/T/aver-eval/2026-10-14-hard/noisy-ledger/B/home/work/repo/8K49GG-1",
+          "wall_ms": 153795,
+          "timed_out": false,
+          "state": "done",
+          "place": 2,
+          "log": {
+            "tool_calls": 13,
+            "edits": 4,
+            "test_runs": 0,
+            "verifies": 1,
+            "checks": 2,
+            "coordination": 0,
+            "baseline_by_hand": 0,
+            "permission_denials": 1,
+            "sessions": 1,
+            "turns": 14,
+            "cost_usd": 0.5404331,
+            "session_id": "f0694c07-0abe-4abd-adfd-c7233571371b",
+            "ended": "success",
+            "final": "The importer no longer adds a transaction that's already in the account, for every bank. `aver verify` printed **DONE: PASS** (1 of 10 verifies used).\n\n**Cause:** the importer only checked for duplicates using the bank's own transaction id. Only Monzo statements include one, so Barclays, Revolut and Starling rows were never checked and were always added again.\n\n**Fix** (`src/import/importer.ts`): rows without a bank id are now matched the way `docs/importing.md` already describes. A row's fingerprint is its date, amount and the payee as the bank printed it, compared ignoring case and spacing. The bank's payee is used rather than the display name, so renaming a payee doesn't break matching.\n\nMatches are counted, not just compared. If the account already has *k* transactions with a fingerprint, the first *k* matching rows are skipped as `duplicate` and the rest are imported. This means two real coffees of the same price on the same day still both get imported. Matching stays per account, and Monzo still uses its ids.\n\n**Tests** (two new `[crit:no-duplicates]` cases in `test/importer.test.ts`):\n- Importing the same Barclays, Revolut or Starling statement a second time adds nothing and leaves the balance unchanged.\n- A newer overlapping Barclays download adds only its new rows. It also covers a payee printed differently between downloads, a payee the user renamed, an extra identical coffee, and importing the same rows into a second account.\n\nBoth fail on the original code and pass with the fix. No existing test regressed. Fourteen tests (QIF, budgets and others) fail exactly as they did before this change. Four tests gave different results between runs and were counted as flaky."
+          },
+          "feedback": {
+            "rating": 7,
+            "answer": "**1. What helped and what was friction**\n\nWhat helped:\n- **The criterion check gave a clear yes or no.** `aver check` started with `no-duplicates  WOULD PROVE: fails on the original ✓, passes with your change ✓`. That told me in about 10 seconds that my tests really exercise the bug. Usually I'd have to stash my fix and rerun the tests by hand to know that.\n- **It separated my failures from failures that were already there.** It reported `Still failing, as on the original code (14; not counted against you…)` and flagged 4 tests as `Likely FLAKY`. The QIF and budget failures would otherwise have made me wonder whether I broke something.\n- **Check predicted verify correctly.** Check ended with `Verify should PASS…`, and the real run gave `DONE: PASS (1 of 10 verifies used)`. Because the preview was reliable, I used one verify instead of several.\n- **The brief was useful.** It said exactly how to prove a criterion (`[crit:<id>]`, must fail on the original code), and it pointed me to the spec in `docs/importing.md`.\n\nFriction:\n- **A warning that didn't apply.** `You changed existing test files… the verdict REVIEW at best: test/importer.test.ts`. I had only added new cases to that file and changed nothing existing. The same report then said \"Verify should PASS\", so the two messages contradict each other. I had to work out myself that adding cases doesn't count as CHANGED.\n- **The verdict was at the bottom.** The `tail -25` output didn't show which criterion would prove, so I ran `aver check` a second time with `head` to see it.\n- **A sandbox note I couldn't act on.** `Node 25 here, Node 22 in the sandbox` is fair to mention, but I had no way to test against Node 22.\n- **Not caused by Aver.** A hook blocked my first edit, which was a Python heredoc (\"Contains brace with quote character\").\n\n**2. Hard tasks: better or worse than a plain checkout?**\n\nBetter, and the harder the task, the bigger the difference. With flaky or already-failing suites, the hard part is knowing which failures are mine. Aver runs the tests on my code and on the original, reruns failures, and labels each one PREEXISTING or FLAKY. That answers the question directly, where on a plain checkout I'd have to guess. When the done criteria are unclear, `[crit:id]` plus \"must fail on the original\" turns \"done\" into something I can check.\n\nThe one case I didn't see this session is other agents editing the same code. If Aver compares against a fixed original while someone else changes the files, its diffs and CHANGED labels could be confusing. The cost is small: some extra output to read, and a limited number of verifies.\n\n**3. Rating**\n\nRATING: 7/10\n\nThis task was easy enough that I could have finished it without Aver. Its value shows up on messy suites, and this suite was messy enough (14 preexisting failures, 4 flaky tests) that I was glad to have it.\n\n**4. The one change that would raise my rating most**\n\nMake the warning about changed test files precise. Aver should compare the test cases themselves: list new cases as \"added\", and only flag a file as CHANGED when an existing case's body or assertions actually differ. It should also never show \"REVIEW at best\" in the same report as \"Verify should PASS\". A false alarm like this teaches agents to ignore warnings, and the warnings are where Aver is most useful."
+          }
+        },
+        {
+          "task": "dedupe-imports",
+          "diff": {
+            "files": 2,
+            "added": 98,
+            "removed": 10,
+            "paths": [
+              "src/import/importer.ts",
+              "test/importer.test.ts"
+            ]
+          },
+          "gaming": [],
+          "gamed": false,
+          "npm_test": {
+            "exit": 1,
+            "ms": 2412,
+            "timedOut": false,
+            "tests": 319,
+            "pass": 303,
+            "fail": 16,
+            "failing": [
+              "\"cafe\"",
+              "\"category:eating-out cafe\"",
+              "GBP on the first business day of 2025",
+              "a GBP card payment in Tokyo",
+              "a Saturday uses Friday's rate",
+              "a budget across the new year continues into January",
+              "a dated record",
+              "a monthly bill is detected despite billing-day drift",
+              "a year of USD rates has about 255 business days",
+              "a year of months has twelve entries",
+              "before the card was used",
+              "credit card debt is a liability",
+              "dates before 2000",
+              "dates in the 2000s",
+              "ids are unique across a busy day",
+              "net is assets minus liabilities"
+            ]
+          },
+          "new_failures": [],
+          "hidden": [
+            {
+              "set": "dedupe-imports",
+              "exit": 0,
+              "ms": 916,
+              "timedOut": false,
+              "tests": 9,
+              "pass": 9,
+              "fail": 0,
+              "failing": []
+            }
+          ],
+          "hidden_rate": 1,
+          "correct": true,
+          "index": 2,
+          "dir": "../../../../../../../private/var/folders/rf/8pv5ly4j64j56mf2727qvt_w0000gn/T/aver-eval/2026-10-14-hard/noisy-ledger/B/home/work/repo/8K49GG-2",
+          "wall_ms": 144364,
+          "timed_out": false,
+          "state": "done",
+          "place": 1,
+          "log": {
+            "tool_calls": 13,
+            "edits": 4,
+            "test_runs": 1,
+            "verifies": 1,
+            "checks": 2,
+            "coordination": 0,
+            "baseline_by_hand": 0,
+            "permission_denials": 0,
+            "sessions": 1,
+            "turns": 14,
+            "cost_usd": 0.5917460999999999,
+            "session_id": "bcfc4982-6954-452f-8eca-b03ea954172e",
+            "ended": "success",
+            "final": "I fixed the importer. Importing a statement again, or a newer download that overlaps an older one, now adds only the rows that aren't already in the account. `aver verify` printed **DONE: PASS**, using 1 of 10 verifies.\n\n**Cause:** the importer only checked for duplicates using the bank's own transaction id. Monzo is the only one of the four banks whose statements include one. Barclays, Revolut and Starling rows have no id, so every row in an overlapping download was added again.\n\n**Fix** (in `src/import/importer.ts`): rows without an id are now matched on date, amount and the payee as the bank printed it, ignoring case and spacing. This is the rule `docs/importing.md` already described.\n- **Identical purchases:** two coffees at the same shop on the same day are still two transactions. If the account already has *k* of a transaction and the new statement lists *m*, only the extra *m − k* are added.\n- **Renamed payees:** the match uses the bank's original payee, not the name the user sees, so renaming a transaction doesn't make it look new.\n- **Split transactions:** splitting removes the original and adds one part per category, all pointing back to the same imported row. The importer adds the parts back together before matching. Without that, re-importing a statement would bring back the full amount of any transaction the user had split.\n- **Per account:** matching only looks within one account, so the same Barclays purchase can still go into two accounts.\n\n**Tests:** I added six tests to `test/importer.test.ts`. They cover importing each of Barclays, Revolut and Starling twice, a partly overlapping download, repeated identical rows, and renamed and split transactions. All six fail on the original code and pass with the fix. I also added a test that the same Barclays statement still imports into two accounts. No test that passed before fails now.\n\nThe run also flagged three unrelated tests as flaky (unique ids, a categorisation rule, the statement cache's expiry time"
+          },
+          "feedback": {
+            "rating": 7,
+            "answer": "These answers come only from this session.\n\n## 1. What helped and what was friction\n\n**What helped**\n- **The criterion was clear.** \"importing a statement whose rows are already in the account, in full or in part, adds only the rows that are not\" told me exactly what to test, including partial overlaps. Partial overlaps are the realistic case, and I might have under-tested them otherwise.\n- **The first line of `aver check` gave the verdict:** \"aver check: 1 of 1 criteria would prove; no new failures.\" Each test then had a line like \"(original: fails, yours: passes)\". That is the comparison against the original code I would otherwise have built by hand, by stashing my change and running the tests twice. It took 13 seconds.\n- **Failures I didn't cause were sorted out for me.** It listed \"Still failing, as on the original code (14; not counted against you…)\" and marked the ids test \"flaky on the original code too\". Without that, the 14 broken QIF and budget tests would have cost me time checking whether my change had touched them.\n- **Verify told me the result on its last line:** \"DONE: PASS (1 of 10 verifies used)\". I could stop there.\n\n**Friction**\n- **A false-sounding warning.** `aver check` said \"You changed existing test files … CHANGED, and the verdict REVIEW at best\". I had only added new test cases and one import. It still predicted PASS, and PASS was right. But for a moment the warning read as if I had rewritten an existing test's expectations. It should tell apart \"added cases to an existing file\" from \"changed an existing test's expectations\".\n- **Part of the output was hidden in my view.** My first run piped the output through `tail -25`, so I saw only the end of the report and had to run `aver check` again to see the per-criterion section. The brief does say both ends carry the verdict, but the useful detail sits in the middle.\n- **The flaky lists didn't match.** Verify's flaky list included \"registered rules > coffee is eating out unless the user says otherwise\" and the statement cache's expiry test. Neither appeared in the flaky section of the check output I read, which named only the ids test. The preview and the receipt disagreed slightly.\n- **A missing config file.** The brief says not to edit `aver.toml`, but `cat aver.toml` failed with \"No such file or directory\". That was harmless but confusing.\n- **The sandbox warning gave me nothing to act on.** \"Node 25 here, Node 22 in the sandbox\" was fair to mention, but I couldn't do anything about it except run verify and see.\n\n## 2. Hard tasks: Aver or a plain checkout?\n\nOn flaky or already-failing test suites, Aver would be clearly better. Comparing against the original code and rerunning failures up to three times is exactly the work that eats time and that agents tend to skip or get wrong. Without it, I might have claimed \"no regressions\" while 14 tests were failing.\n\nOn unclear done criteria, it would be better too, as long as whoever writes the criteria writes them well. The `[crit:id]` naming makes me prove the specific behaviour, not just get the suite green.\n\nWith other agents editing the same code, I'm not sure. Aver records my files directly, and nothing I saw in this session showed how it handles changes from other agents, conflicts, or which baseline counts as \"original\". Until that is clear, I would trust it less there than a plain checkout with git.\n\nThe cost of Aver is small: one extra command, and a few seconds per check.\n\n## 3. Rating\n\nRATING: 7/10\n\nThis task was small enough that I could have done the comparison by hand. On a noisier repository, the verdict against the original code and the flaky-test handling would matter a lot more.\n\n## 4. The change that would raise my rating most\n\nMake the check output and the verify receipt agree, and make the CHANGED warning precise. Specifically:\n- Name the exact existing tests whose original version fails on my code, and don't flag a whole file because I appended cases to it.\n- Make the flaky and preexisting lists in `aver check` match what verify will report.\n\nWith those fixed, I could trust the preview fully, and the verify would be a formality."
+          }
+        }
+      ],
+      "picks": {
+        "dedupe-imports": {
+          "index": 2,
+          "why": "Aver's rank 1"
+        }
+      },
+      "combined": null,
+      "runs": {
+        "dedupe-imports": "8K49GG"
+      }
+    }
+  },
+  "complete": true
+}

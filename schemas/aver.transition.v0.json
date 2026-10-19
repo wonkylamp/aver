@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aver.build/schemas/transition/v0",
+  "title": "Transition",
+  "description": "How a snapshot came to exist, signed by the server key (ARCHITECTURE.md §1.6). from is ordered.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "from", "to", "via", "agent", "message", "at", "signature"],
+  "properties": {
+    "schema": { "const": "aver.transition/v0" },
+    "from": {
+      "type": "array",
+      "items": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/SnapshotId" }
+    },
+    "to": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/SnapshotId" },
+    "via": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "repo", "commit"],
+          "properties": {
+            "kind": { "const": "git-import" },
+            "repo": { "type": "string" },
+            "commit": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/GitSha" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "workspace"],
+          "properties": {
+            "kind": { "const": "workspace" },
+            "workspace": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/WorkspaceId" },
+            "attempt": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/AttemptId" }
+          }
+        }
+      ]
+    },
+    "agent": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/AgentId" },
+    "message": { "type": "string" },
+    "at": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/Timestamp" },
+    "signature": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/Signature" }
+  }
+}

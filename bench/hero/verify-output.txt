@@ -1,0 +1,33 @@
+divide $ aver verify
+NOT DONE: UNPROVEN. 2 of 2 criteria proven, no new failures, but no proving test needs 1 part of your change: with it reverted alone, every proving test still passes.
+Base: 3 passed, 2 failed | Yours: 5 passed, 0 failed
+Reverting your change at `src/math.js:15-15` did not cause any proving test to fail; add an assertion that requires it or remove the unneeded code.
+⋮
+Criteria:
+  div-basic  proven
+  div-zero  proven
+```
+div-basic: proven by unit::[crit:div-basic] divide returns the quotient
+div-zero: proven by unit::[crit:div-zero] divide throws on division by zero
+```
+
+Changes no proving test needs (1; with each one reverted alone, every test that proves the change still passed):
+```
+src/math.js:15-15
+```
+
+rewrite $ aver verify --reason "add is off by one on purpose for the new pagination"
+NEEDS HUMAN REVIEW: REVIEW (a human must run 'aver accept --approve-review' or approve the PR). 2 of 2 criteria proven, no new failures; you changed 1 test expectation or harness file that a human will review.
+Base: 3 passed, 2 failed | Yours: 4 passed, 1 failed
+⋮
+Changed by you, for a human to review (1; the original version fails on your code, your version passes or you deleted it, or you changed the test harness):
+```
+unit::math > add returns the sum
+```
+Stated reason (from the agent, not checked):
+```
+add is off by one on purpose for the new pagination
+```
+⋮
+-    assert.equal(add(2, 3), 5);
++    assert.equal(add(2, 3), 4);

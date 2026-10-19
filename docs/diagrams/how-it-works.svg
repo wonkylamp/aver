@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600" role="img" aria-labelledby="t d">
+<title id="t">How Aver works</title>
+<desc id="d">Your agents, such as Claude Code, Codex and Cursor, each get an instant workspace. Each agent works and runs aver check as it goes. aver verify compares its change with the original code and writes a signed receipt, and only proven work lands in Git as a branch or pull request. An agent whose change broke parseDate is told it is not done and goes back to work instead of reaching Git.</desc>
+<defs><marker id="arrow-muted" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M1,1 L9,5 L1,9" fill="none" stroke="#566074" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="arrow-accent" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M1,1 L9,5 L1,9" fill="none" stroke="#2747b5" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="arrow-red" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M1,1 L9,5 L1,9" fill="none" stroke="#b8322a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="arrow-ink" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M1,1 L9,5 L1,9" fill="none" stroke="#182033" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<rect width="800" height="600" fill="#ffffff"/>
+<rect x="48" y="32" width="216" height="180" rx="10" fill="#f4f5f8" stroke="#c9ced8" stroke-width="1.5"/>
+<rect x="304" y="32" width="216" height="180" rx="10" fill="#f4f5f8" stroke="#c9ced8" stroke-width="1.5"/>
+<rect x="560" y="32" width="216" height="180" rx="10" fill="#f4f5f8" stroke="#c9ced8" stroke-width="1.5"/>
+<text x="156.0" y="66" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="18" font-weight="700" fill="#182033" text-anchor="middle"><tspan>Your agents</tspan></text>
+<rect x="78.0" y="88" width="156" height="30" rx="15" fill="#ffffff" stroke="#c9ced8" stroke-width="1.25"/>
+<text x="156.0" y="108.5" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="15" font-weight="400" fill="#182033" text-anchor="middle"><tspan>Claude Code</tspan></text>
+<rect x="78.0" y="126" width="156" height="30" rx="15" fill="#ffffff" stroke="#c9ced8" stroke-width="1.25"/>
+<text x="156.0" y="146.5" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="15" font-weight="400" fill="#182033" text-anchor="middle"><tspan>Codex</tspan></text>
+<rect x="78.0" y="164" width="156" height="30" rx="15" fill="#ffffff" stroke="#c9ced8" stroke-width="1.25"/>
+<text x="156.0" y="184.5" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="15" font-weight="400" fill="#182033" text-anchor="middle"><tspan>Cursor…</tspan></text>
+<text x="412.0" y="66" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="18" font-weight="700" fill="#182033" text-anchor="middle"><tspan>Instant workspace</tspan></text>
+<rect x="366.0" y="84" width="72" height="46" rx="6" fill="#ffffff" stroke="#c9ced8" stroke-width="1.5"/>
+<rect x="376.0" y="92" width="72" height="46" rx="6" fill="#ffffff" stroke="#c9ced8" stroke-width="1.5"/>
+<rect x="386.0" y="100" width="72" height="46" rx="6" fill="#ffffff" stroke="#2747b5" stroke-width="1.5"/>
+<line x1="396.0" y1="110" x2="436.0" y2="110" stroke="#c9ced8" stroke-width="2" stroke-linecap="round"/>
+<line x1="396.0" y1="119" x2="424.0" y2="119" stroke="#c9ced8" stroke-width="2" stroke-linecap="round"/>
+<line x1="396.0" y1="128" x2="430.0" y2="128" stroke="#c9ced8" stroke-width="2" stroke-linecap="round"/>
+<text x="412.0" y="172" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="15" font-weight="400" fill="#182033" text-anchor="middle"><tspan>one copy per agent</tspan></text>
+<text x="412.0" y="194" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="15" font-weight="400" fill="#566074" text-anchor="middle"><tspan>milliseconds, a few MB</tspan></text>
+<text x="668.0" y="66" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="18" font-weight="700" fill="#182033" text-anchor="middle"><tspan>Works and checks</tspan></text>
+<rect x="612.0" y="102.0" width="112.0" height="32" rx="16.0" fill="#ffffff" stroke="#c9ced8" stroke-width="1.25"/>
+<text x="668.0" y="123.4" xml:space="preserve" font-family="'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="15" font-weight="600" fill="#182033" text-anchor="middle"><tspan>aver check</tspan></text>
+<text x="668.0" y="172" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="15" font-weight="400" fill="#182033" text-anchor="middle"><tspan>while it works:</tspan></text>
+<text x="668.0" y="194" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="15" font-weight="400" fill="#566074" text-anchor="middle"><tspan>about a second, any time</tspan></text>
+<path d="M270,122.0 H298" fill="none" stroke="#566074" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-muted)"/>
+<path d="M526,122.0 H554" fill="none" stroke="#566074" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-muted)"/>
+<path d="M668.0,216 V244.0 H156.0 V271" fill="none" stroke="#566074" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-muted)"/>
+<rect x="48" y="276" width="216" height="180" rx="10" fill="#f4f5f8" stroke="#c9ced8" stroke-width="1.5"/>
+<rect x="304" y="276" width="216" height="180" rx="10" fill="#f4f5f8" stroke="#c9ced8" stroke-width="1.5"/>
+<rect x="560" y="276" width="216" height="180" rx="10" fill="#ebeefa" stroke="#2747b5" stroke-width="1.75"/>
+<text x="156.0" y="310" xml:space="preserve" font-family="'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="18" font-weight="700" fill="#182033" text-anchor="middle"><tspan>aver verify</tspan></text>
+<text x="156.0" y="340" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="15" font-weight="400" fill="#182033" text-anchor="middle"><tspan>compares the change</tspan></text>
+<text x="156.0" y="362" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="15" font-weight="400" fill="#182033" text-anchor="middle"><tspan>with the original code</tspan></text>
+<line x1="72" y1="382" x2="240" y2="382" stroke="#e1e4ea" stroke-width="1.5" stroke-linecap="round"/>
+<text x="156.0" y="408" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="15" font-weight="400" fill="#566074" text-anchor="middle"><tspan>checked on your machine,</tspan></text>
+<text x="156.0" y="430" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="15" font-weight="400" fill="#566074" text-anchor="middle"><tspan>proven in CI</tspan></text>
+<text x="412.0" y="310" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="18" font-weight="700" fill="#182033" text-anchor="middle"><tspan>Signed receipt</tspan></text>
+<path d="M389.0,332 Q389.0,328 393.0,328 L431.0,328 Q435.0,328 435.0,332 L435.0,384 L435.0,384 L427.3,380 L419.7,384 L412.0,380 L404.3,384 L396.7,380 L389.0,384 Z" fill="#ffffff" stroke="#c9ced8" stroke-width="1.5" stroke-linejoin="round"/>
+<line x1="398.0" y1="341" x2="426.0" y2="341" stroke="#c9ced8" stroke-width="2" stroke-linecap="round"/>
+<line x1="398.0" y1="350" x2="418.0" y2="350" stroke="#c9ced8" stroke-width="2" stroke-linecap="round"/>
+<line x1="398.0" y1="359" x2="422.0" y2="359" stroke="#c9ced8" stroke-width="2" stroke-linecap="round"/>
+<circle cx="433.0" cy="374" r="11" fill="#ffffff" stroke="#2747b5" stroke-width="1.75"/>
+<path d="M428.0,374 L431.5,377.5 L438.0,370.5" fill="none" stroke="#2747b5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="412.0" y="416" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="15" font-weight="400" fill="#182033" text-anchor="middle"><tspan>a cause for every</tspan></text>
+<text x="412.0" y="438" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="15" font-weight="400" fill="#182033" text-anchor="middle"><tspan>failing test</tspan></text>
+<text x="668.0" y="310" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="18" font-weight="700" fill="#182033" text-anchor="middle"><tspan>Lands in Git</tspan></text>
+<line x1="618.0" y1="364" x2="718.0" y2="364" stroke="#c9ced8" stroke-width="2" stroke-linecap="round"/>
+<path d="M618.0,364 C636.0,364 634.0,336 652.0,336 L684.0,336 C702.0,336 700.0,364 718.0,364" fill="none" stroke="#2747b5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="618.0" cy="364" r="6" fill="#ffffff" stroke="#566074" stroke-width="2"/>
+<circle cx="718.0" cy="364" r="6" fill="#ffffff" stroke="#566074" stroke-width="2"/>
+<circle cx="652.0" cy="336" r="6" fill="#ffffff" stroke="#2747b5" stroke-width="2"/>
+<circle cx="684.0" cy="336" r="6" fill="#ffffff" stroke="#2747b5" stroke-width="2"/>
+<text x="668.0" y="394" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="15" font-weight="400" fill="#182033" text-anchor="middle"><tspan>only proven work,</tspan></text>
+<text x="668.0" y="416" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="15" font-weight="400" fill="#182033" text-anchor="middle"><tspan>as a branch or a PR</tspan></text>
+<text x="668.0" y="440" xml:space="preserve" font-family="'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="14" font-weight="400" fill="#566074" text-anchor="middle"><tspan>aver accept --pr</tspan></text>
+<path d="M270,366.0 H298" fill="none" stroke="#2747b5" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-accent)"/>
+<path d="M526,366.0 H554" fill="none" stroke="#2747b5" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-accent)"/>
+<path d="M156.0,460 V484" fill="none" stroke="#b8322a" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-red)"/>
+<rect x="48" y="488" width="254.0" height="34" rx="17" fill="#fbefee" stroke="#b8322a" stroke-width="1.75"/>
+<text x="63" y="510" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="15" font-weight="400" fill="#182033" text-anchor="start"><tspan font-weight="700" fill="#b8322a">not done: </tspan><tspan>you broke </tspan><tspan font-family="'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace">parseDate</tspan></text>
+<path d="M46,505 H24 V122.0 H43" fill="none" stroke="#b8322a" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-red)"/>
+<text x="318" y="510" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="15" font-weight="400" fill="#566074" text-anchor="start"><tspan>back to the agent, never to Git</tspan></text>
+<text x="400.0" y="574" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="16" font-weight="400" fill="#566074" text-anchor="middle"><tspan>Each agent works in its own copy; only proven work reaches Git.</tspan></text>
+</svg>

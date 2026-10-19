@@ -1,0 +1,58 @@
+rev 4
+{
+  "SessionStart": [
+    {
+      "hooks": [
+        {
+          "command": "command -v aver >/dev/null 2>&1 && aver hook session-start || true",
+          "timeout": 30,
+          "type": "command"
+        }
+      ]
+    }
+  ],
+  "Stop": [
+    {
+      "hooks": [
+        {
+          "command": "command -v aver >/dev/null 2>&1 && aver hook stop || true",
+          "timeout": 1800,
+          "type": "command"
+        }
+      ]
+    }
+  ],
+  "SubagentStop": [
+    {
+      "hooks": [
+        {
+          "command": "command -v aver >/dev/null 2>&1 && aver hook stop || true",
+          "timeout": 120,
+          "type": "command"
+        }
+      ]
+    }
+  ],
+  "WorktreeCreate": [
+    {
+      "hooks": [
+        {
+          "command": "if command -v aver >/dev/null 2>&1; then aver hook worktree-create; else n=$(sed -n 's/.*\"name\":\"\\([^\"]*\\)\".*/\\1/p' | tr -cd 'A-Za-z0-9._-'); d=\"$(git rev-parse --show-toplevel)/.claude/worktrees/$n\"; git worktree add -q -b \"worktree-$n\" \"$d\" HEAD >&2 && printf '%s\\n' \"$d\"; fi",
+          "timeout": 600,
+          "type": "command"
+        }
+      ]
+    }
+  ],
+  "WorktreeRemove": [
+    {
+      "hooks": [
+        {
+          "command": "if command -v aver >/dev/null 2>&1; then aver hook worktree-remove; else p=$(sed -n 's/.*\"worktree_path\":\"\\([^\"]*\\)\".*/\\1/p'); git worktree remove \"$p\" >&2; fi",
+          "timeout": 120,
+          "type": "command"
+        }
+      ]
+    }
+  ]
+}

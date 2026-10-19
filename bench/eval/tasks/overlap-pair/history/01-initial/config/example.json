@@ -1,0 +1,24 @@
+{
+  "server": {
+    "host": "127.0.0.1",
+    "port": 8443,
+    "trustProxy": true,
+    "allowedOrigins": ["https://status.example.org"]
+  },
+  "log": {
+    "level": "info",
+    "json": true,
+    "color": false
+  },
+  "health": {
+    "intervalMs": 30000,
+    "checks": ["store", "queue", "upstream"]
+  },
+  "metrics": {
+    "enabled": true,
+    "prefix": "beacon_"
+  },
+  "features": {
+    "enabled": ["new-dashboard"]
+  }
+}

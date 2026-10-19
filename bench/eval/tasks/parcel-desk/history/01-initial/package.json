@@ -1,0 +1,13 @@
+{
+  "name": "dispatch",
+  "version": "2.3.0",
+  "description": "Parcel desk: quotes, labels, tracking and the daily carrier manifest",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}

@@ -1,0 +1,72 @@
+=== .claude/settings.json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "command": "command -v aver >/dev/null 2>&1 && aver hook session-start --rev 4 || true",
+            "timeout": 30,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "command": "command -v aver >/dev/null 2>&1 && aver hook stop --rev 4 || true",
+            "timeout": 1800,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "command": "command -v aver >/dev/null 2>&1 && aver hook stop --rev 4 || true",
+            "timeout": 120,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "WorktreeCreate": [
+      {
+        "hooks": [
+          {
+            "command": "if command -v aver >/dev/null 2>&1; then aver hook worktree-create --rev 4; else n=$(sed -n 's/.*\"name\":\"\\([^\"]*\\)\".*/\\1/p' | tr -cd 'A-Za-z0-9._-'); d=\"$(git rev-parse --show-toplevel)/.claude/worktrees/$n\"; git worktree add -q -b \"worktree-$n\" \"$d\" HEAD >&2 && printf '%s\\n' \"$d\"; fi",
+            "timeout": 600,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "WorktreeRemove": [
+      {
+        "hooks": [
+          {
+            "command": "if command -v aver >/dev/null 2>&1; then aver hook worktree-remove --rev 4; else p=$(sed -n 's/.*\"worktree_path\":\"\\([^\"]*\\)\".*/\\1/p'); git worktree remove \"$p\" >&2; fi",
+            "timeout": 120,
+            "type": "command"
+          }
+        ]
+      }
+    ]
+  }
+}
+=== .claude/skills/aver/SKILL.md
+{{PLUGIN skills/aver/SKILL.md}}
+=== .claude/commands/aver.md
+{{PLUGIN commands/aver.md}}
+=== .claude/commands/aver-check.md
+{{PLUGIN commands/aver-check.md}}
+=== .claude/commands/aver-verify.md
+{{PLUGIN commands/aver-verify.md}}
+=== .claude/commands/aver-status.md
+{{PLUGIN commands/aver-status.md}}
+=== .claude/commands/aver-run.md
+{{PLUGIN commands/aver-run.md}}

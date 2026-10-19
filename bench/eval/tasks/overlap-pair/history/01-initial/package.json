@@ -1,0 +1,13 @@
+{
+  "name": "beacon-service",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Status, health and metrics gateway for the beacon fleet",
+  "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}

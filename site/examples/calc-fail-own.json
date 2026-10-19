@@ -1,0 +1,143 @@
+{
+  "receipt_id": "rcpt_qc7nstxxceb4ixqglzpsun7dcfpj4hn53xzu3isoxm763wej2q4q",
+  "receipt": {
+    "agent_id": "agent_webpttl6qk37mzbmca2fvjhfsp7r5igkzhn2cny72k45yoi2w2da",
+    "attempt_id": null,
+    "base_snapshot": "snap_g2dpduhxe7mdi6uiyqhq5326eie4r2fd2eaqrskhd2yrxtrxy7iq",
+    "checks": [
+      {
+        "base": "fail",
+        "cause": null,
+        "head": "pass",
+        "id": "unit::[crit:div-basic] divide returns the quotient",
+        "proves": [
+          "div-basic"
+        ],
+        "runs": {
+          "base": [
+            "run_tfukgnptwkmxgzxw4hqvzuf5num7tjvoyat7mp2bgqfbbh56as3q",
+            "run_lnxhhcwueraokq7ogzzdspp2ie7bc7k3odhdvfvgsjkm3cfqkkqa",
+            "run_ozzqxat2p6cxfi5fwbqiqaegfhptjttbd4e4gl5m6jf6msx7s7fa"
+          ],
+          "head": [
+            "run_rsxkaiyo7zisep72rvqbqzikwkllox4vspn6eshvijvwvjpy2a5q",
+            "run_xzfaaquuguwhx4dcsxdj6wh6oodg5sggmgqds4nwkclnujtvgyqq",
+            "run_zhdvij2ct4637yj5o5k6367esuq66biahwjwirc4ra7zynpsupra"
+          ]
+        },
+        "source": "env"
+      },
+      {
+        "base": "fail",
+        "cause": "PREEXISTING",
+        "detail": "[Error [ERR_TEST_FAILURE]: Missing expected exception.] {\n  code: 'ERR_TEST_FAILURE',\n  failureType: 'testCodeFailure',\n  cause: AssertionError [ERR_ASSERTION]: Missing expected exception.\n      at TestContext.<anonymous> (/work/test/divide.test.js:11:10)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1047:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:744:18)\n      at Test.postRun (node:internal/test_runner/test:1173:19)\n      at Test.run (node:internal/test_runner/test:1101:12)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: undefined,\n    expected: /division by zero/,\n    operator: 'throws',\n    diff: 'simple'\n  }\n}",
+        "head": "fail",
+        "id": "unit::[crit:div-zero] divide throws on division by zero",
+        "proves": [
+          "div-zero"
+        ],
+        "runs": {
+          "base": [
+            "run_tfukgnptwkmxgzxw4hqvzuf5num7tjvoyat7mp2bgqfbbh56as3q",
+            "run_lnxhhcwueraokq7ogzzdspp2ie7bc7k3odhdvfvgsjkm3cfqkkqa",
+            "run_ozzqxat2p6cxfi5fwbqiqaegfhptjttbd4e4gl5m6jf6msx7s7fa"
+          ],
+          "head": [
+            "run_rsxkaiyo7zisep72rvqbqzikwkllox4vspn6eshvijvwvjpy2a5q",
+            "run_xzfaaquuguwhx4dcsxdj6wh6oodg5sggmgqds4nwkclnujtvgyqq",
+            "run_zhdvij2ct4637yj5o5k6367esuq66biahwjwirc4ra7zynpsupra"
+          ]
+        },
+        "source": "env"
+      },
+      {
+        "base": "pass",
+        "cause": "NEW",
+        "detail": "Expected values to be strictly equal:-1 !== 5\nError [ERR_TEST_FAILURE]: Expected values to be strictly equal:\n\n-1 !== 5\n\n    at new Promise (<anonymous>)\n    at Array.map (<anonymous>) {\n  code: 'ERR_TEST_FAILURE',\n  failureType: 'testCodeFailure',\n  cause: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  \n  -1 !== 5\n  \n      at TestContext.<anonymous> (/work/test/math.test.js:7:12)\n      at Test.runInAsyncScope (node:async_hooks:214:14)\n      at Test.run (node:internal/test_runner/test:1047:25)\n      at Test.start (node:internal/test_runner/test:944:17)\n      at node:internal/test_runner/test:1440:71\n      at node:internal/per_context/primordials:466:82\n      at new Promise (<anonymous>)\n      at new SafePromise (node:internal/per_context/primordials:435:3)\n      at node:internal/per_context/primordials:466:9\n      at Array.map (<anonymous>) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: -1,\n    expected: 5,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n}",
+        "head": "fail",
+        "id": "unit::math > add returns the sum",
+        "proves": [],
+        "runs": {
+          "base": [
+            "run_tfukgnptwkmxgzxw4hqvzuf5num7tjvoyat7mp2bgqfbbh56as3q",
+            "run_lnxhhcwueraokq7ogzzdspp2ie7bc7k3odhdvfvgsjkm3cfqkkqa",
+            "run_ozzqxat2p6cxfi5fwbqiqaegfhptjttbd4e4gl5m6jf6msx7s7fa"
+          ],
+          "head": [
+            "run_rsxkaiyo7zisep72rvqbqzikwkllox4vspn6eshvijvwvjpy2a5q",
+            "run_xzfaaquuguwhx4dcsxdj6wh6oodg5sggmgqds4nwkclnujtvgyqq",
+            "run_zhdvij2ct4637yj5o5k6367esuq66biahwjwirc4ra7zynpsupra"
+          ]
+        },
+        "source": "env"
+      },
+      {
+        "base": "pass",
+        "cause": null,
+        "head": "pass",
+        "id": "unit::math > mul returns the product",
+        "proves": [],
+        "runs": {
+          "base": [
+            "run_tfukgnptwkmxgzxw4hqvzuf5num7tjvoyat7mp2bgqfbbh56as3q",
+            "run_lnxhhcwueraokq7ogzzdspp2ie7bc7k3odhdvfvgsjkm3cfqkkqa",
+            "run_ozzqxat2p6cxfi5fwbqiqaegfhptjttbd4e4gl5m6jf6msx7s7fa"
+          ],
+          "head": [
+            "run_rsxkaiyo7zisep72rvqbqzikwkllox4vspn6eshvijvwvjpy2a5q",
+            "run_xzfaaquuguwhx4dcsxdj6wh6oodg5sggmgqds4nwkclnujtvgyqq",
+            "run_zhdvij2ct4637yj5o5k6367esuq66biahwjwirc4ra7zynpsupra"
+          ]
+        },
+        "source": "env"
+      },
+      {
+        "base": "pass",
+        "cause": null,
+        "head": "pass",
+        "id": "unit::math > sub returns the difference",
+        "proves": [],
+        "runs": {
+          "base": [
+            "run_tfukgnptwkmxgzxw4hqvzuf5num7tjvoyat7mp2bgqfbbh56as3q",
+            "run_lnxhhcwueraokq7ogzzdspp2ie7bc7k3odhdvfvgsjkm3cfqkkqa",
+            "run_ozzqxat2p6cxfi5fwbqiqaegfhptjttbd4e4gl5m6jf6msx7s7fa"
+          ],
+          "head": [
+            "run_rsxkaiyo7zisep72rvqbqzikwkllox4vspn6eshvijvwvjpy2a5q",
+            "run_xzfaaquuguwhx4dcsxdj6wh6oodg5sggmgqds4nwkclnujtvgyqq",
+            "run_zhdvij2ct4637yj5o5k6367esuq66biahwjwirc4ra7zynpsupra"
+          ]
+        },
+        "source": "env"
+      }
+    ],
+    "created_at": "2026-10-12T22:13:52.129Z",
+    "criteria": [
+      {
+        "id": "div-basic",
+        "text": "divide returns the quotient"
+      },
+      {
+        "id": "div-zero",
+        "text": "divide throws on division by zero"
+      }
+    ],
+    "env_changed": false,
+    "environment_hash": "env_3bkngiirrj4mim666je6fxxsi2ibdnkve5b7xs3zrmiwpjo33wrq",
+    "head_snapshot": "snap_kljvtflx23g42lidzm6okfqhdth7y54pmcau6hsi253ser7vd6ta",
+    "reproduce": "aver verify --task task_a36jbpfexod7g5aknnfujtwbsb3sde2ctj37kimfhmzd2ahldc5q --head snap_kljvtflx23g42lidzm6okfqhdth7y54pmcau6hsi253ser7vd6ta --base snap_g2dpduhxe7mdi6uiyqhq5326eie4r2fd2eaqrskhd2yrxtrxy7iq --fresh",
+    "schema": "aver.receipt/v0",
+    "signature": {
+      "alg": "ed25519",
+      "key": "agent_soidwjwp5q7mf3hpjk5icjhujb75cyjasi4ihq2ry6b7lg2yzrrq",
+      "sig": "SR7FufVfnV1Z2jeAdzg1UHBu-9QCR8JF_LDXSBJJnxmY6DrxkhXicIfMi18EDd34tarNOg1-3pBBmaFAklSGDQ"
+    },
+    "task_id": "task_a36jbpfexod7g5aknnfujtwbsb3sde2ctj37kimfhmzd2ahldc5q",
+    "unproven": [
+      "div-zero"
+    ],
+    "verdict": "FAIL_OWN",
+    "verifier": "aver-verify/0.1.0"
+  }
+}

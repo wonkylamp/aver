@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aver.build/schemas/ledger/v0",
+  "title": "LedgerEntry",
+  "description": "Append-only, hash-chained per scope, signed by the server key (ARCHITECTURE.md §1.10). prev is nullable and always present; attempts is omitted when empty.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "scope", "prev", "kind", "summary", "rationale", "lessons", "agent", "at", "signature"],
+  "properties": {
+    "schema": { "const": "aver.ledger/v0" },
+    "scope": { "type": "string" },
+    "prev": {
+      "anyOf": [{ "$ref": "https://aver.build/schemas/defs/v0#/$defs/LedgerId" }, { "type": "null" }]
+    },
+    "kind": { "enum": ["import", "attempt", "accept", "reject", "escalate", "note"] },
+    "task": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/TaskId" },
+    "attempts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["attempt", "receipt", "verdict"],
+        "properties": {
+          "attempt": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/AttemptId" },
+          "receipt": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/ReceiptId" },
+          "verdict": { "type": "string" }
+        }
+      }
+    },
+    "winner": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/AttemptId" },
+    "base": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/SnapshotId" },
+    "head": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/SnapshotId" },
+    "summary": { "type": "string" },
+    "rationale": { "type": "string" },
+    "lessons": { "type": "array", "items": { "type": "string" } },
+    "agent": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/AgentId" },
+    "at": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/Timestamp" },
+    "signature": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/Signature" }
+  }
+}

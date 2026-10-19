@@ -1,0 +1,16 @@
+{
+  "name": "@acme/textkit",
+  "version": "4.3.0",
+  "description": "Shared string, number, date and collection helpers for Acme services",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}

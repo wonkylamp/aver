@@ -1,0 +1,13 @@
+{
+  "name": "tabs",
+  "version": "0.9.0",
+  "description": "Shared expenses for groups: who paid, who owes, and how to settle up",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}

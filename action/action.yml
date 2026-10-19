@@ -1,0 +1,254 @@
+name: Aver verify
+description: Verify a pull request or push with Aver and attach a signed receipt that attributes every failure to a cause.
+author: wonkylamp
+
+branding:
+  icon: check-circle
+  color: gray-dark
+
+inputs:
+  fail-on:
+    description: "When the step fails: unexplained (FAIL_OWN, and BLOCKED_NOT_OWN unless the base's own failures explain it; REVIEW and UNPROVEN exit 3, see review), fail-own (only FAIL_OWN), not-pass (any verdict but PASS, REVIEW included), or never. On merge_group events the action uses regressions instead: only FAIL_OWN and an unexplained BLOCKED_NOT_OWN fail, and the pull request's criteria are not read."
+    required: false
+    default: unexplained
+  mode:
+    description: "verify (the default) runs aver ci on the pull request or push; approve runs aver ci approve on a pull_request_review event, runs no check, and when a person other than the author approved the pull request's current head commit posts the Aver check run as success on it (the job needs permissions: checks: write and pull-requests: read)."
+    required: false
+    default: verify
+  review:
+    description: "What aver ci's exit 3 (REVIEW or UNPROVEN under fail-on unexplained: nothing broke, nothing proved the change safe) does: fail (the default) fails the job, titled 'Aver: needs maintainer review'; neutral keeps the job green and posts a neutral check run of that title; approve keeps the job green and posts a check run named Aver on the head commit for every verdict (success, failure, or action_required for exit 3), which branch protection requires and a mode: approve job clears. neutral and approve need permissions: checks: write."
+    required: false
+    default: fail
+  check:
+    description: "Run only this [[check]] of the base's aver.toml (aver ci --check), as one job of a matrix. The receipt covers that check alone, the artifact is named aver-receipt-<check>, and with review: approve the check run is named 'Aver (<check>)'. Empty runs every check."
+    required: false
+    default: ""
+  comment:
+    description: Create or update one pull request comment with the receipt summary.
+    required: false
+    default: "true"
+  viewer-url:
+    description: URL of an Aver receipt viewer to link from the summary.
+    required: false
+    default: ""
+  aver-version:
+    description: Release tag of aver to install. Empty means the action's own ref. Without a matching release, the action builds aver from source.
+    required: false
+    default: ""
+  working-directory:
+    description: Path of the Git repository to verify.
+    required: false
+    default: .
+  github-token:
+    description: Token for the pull request comment. It is never passed to aver or the checks.
+    required: false
+    default: ${{ github.token }}
+  base:
+    description: Base commit. Required for events other than pull_request, merge_group and push.
+    required: false
+    default: ""
+  head:
+    description: Head commit. Required for events other than pull_request, merge_group and push.
+    required: false
+    default: ""
+
+outputs:
+  verdict:
+    description: PASS, FAIL_OWN, BLOCKED_NOT_OWN, UNPROVEN or REVIEW. Empty when aver errored or the run was skipped.
+    value: ${{ steps.run.outputs.verdict }}
+  receipt-id:
+    description: The receipt id (rcpt_...). Empty when aver errored or the run was skipped.
+    value: ${{ steps.run.outputs.receipt-id }}
+  exit-code:
+    description: "The aver ci exit code: 0 acceptable, 1 the verdict tripped fail-on, 2 error, 3 needs maintainer review (0 with review: neutral or approve). Empty when skipped and in mode: approve."
+    value: ${{ steps.run.outputs.exit-code }}
+  approved:
+    description: "mode: approve only: true when an approval bound to the pull request's current head commit, else false."
+    value: ${{ steps.approve.outputs.approved }}
+
+runs:
+  using: composite
+  steps:
+    - name: Check the inputs
+      shell: bash
+      env:
+        MODE: ${{ inputs.mode }}
+        REVIEW: ${{ inputs.review }}
+      run: |
+        case "$MODE" in verify | approve) ;; *) echo "::error title=aver::mode must be verify or approve, not '$MODE'"; exit 2 ;; esac
+        case "$REVIEW" in fail | neutral | approve) ;; *) echo "::error title=aver::review must be fail, neutral or approve, not '$REVIEW'"; exit 2 ;; esac
+
+    - name: Resolve base and head
+      id: revs
+      shell: bash
+      env:
+        INPUT_BASE: ${{ inputs.base }}
+        INPUT_HEAD: ${{ inputs.head }}
+        WORKING_DIRECTORY: ${{ inputs.working-directory }}
+      run: bash "$GITHUB_ACTION_PATH/resolve-revs.sh"
+
+    - name: Install aver
+      id: install
+      if: steps.revs.outputs.skip != 'true'
+      shell: bash
+      env:
+        AVER_VERSION: ${{ inputs.aver-version }}
+        ACTION_REPOSITORY: ${{ github.action_repository }}
+        ACTION_REF: ${{ github.action_ref }}
+      run: bash "$GITHUB_ACTION_PATH/install-aver.sh"
+
+    # Restore and save are separate steps because actions/cache saves in a
+    # post step that runs only when the job succeeds, and a FAIL_OWN verdict
+    # fails the job.
+    - name: Restore the cargo cache
+      id: cargo-cache
+      if: steps.revs.outputs.skip != 'true' && steps.install.outputs.need-build == 'true'
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          ${{ steps.install.outputs.source-dir }}/target
+        key: aver-build-${{ runner.os }}-${{ runner.arch }}-${{ steps.install.outputs.cargo-lock-hash }}-${{ steps.install.outputs.ref }}
+        restore-keys: |
+          aver-build-${{ runner.os }}-${{ runner.arch }}-${{ steps.install.outputs.cargo-lock-hash }}-
+
+    - name: Build aver from source
+      if: steps.revs.outputs.skip != 'true' && steps.install.outputs.need-build == 'true'
+      shell: bash
+      env:
+        SOURCE_DIR: ${{ steps.install.outputs.source-dir }}
+      run: |
+        rustup toolchain install stable --profile minimal --no-self-update
+        cargo +stable build --release --locked -p aver --manifest-path "$SOURCE_DIR/Cargo.toml"
+        echo "$SOURCE_DIR/target/release" >>"$GITHUB_PATH"
+
+    - name: Save the cargo cache
+      if: steps.revs.outputs.skip != 'true' && steps.install.outputs.need-build == 'true' && steps.cargo-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          ${{ steps.install.outputs.source-dir }}/target
+        key: aver-build-${{ runner.os }}-${{ runner.arch }}-${{ steps.install.outputs.cargo-lock-hash }}-${{ steps.install.outputs.ref }}
+
+    - name: Create the run user
+      id: runuser
+      if: steps.revs.outputs.skip != 'true' && inputs.mode != 'approve'
+      shell: bash
+      run: bash "$GITHUB_ACTION_PATH/run-user.sh"
+
+    # Base records (5B.3): a push to the default branch or a merge queue run
+    # records the head's runs under the `head` key; a pull request restores
+    # its base's record under the `base` key, and aver ci uses it only on an
+    # exact hit. README.md, "Base records", has the trust model.
+    - name: Compute the base record keys
+      id: keys
+      if: steps.revs.outputs.skip != 'true'
+      shell: bash
+      env:
+        WORKING_DIRECTORY: ${{ inputs.working-directory }}
+        BASE_REV: ${{ steps.revs.outputs.base }}
+        HEAD_REV: ${{ steps.revs.outputs.head }}
+      run: bash "$GITHUB_ACTION_PATH/record-keys.sh"
+
+    - name: Restore the base record
+      id: base-record
+      if: steps.revs.outputs.skip != 'true' && github.event_name == 'pull_request' && steps.keys.outputs.base != ''
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/aver-base-record
+        key: ${{ steps.keys.outputs.base }}
+
+    - name: Run aver ci
+      id: run
+      if: steps.revs.outputs.skip != 'true' && inputs.mode != 'approve'
+      shell: bash
+      env:
+        WORKING_DIRECTORY: ${{ inputs.working-directory }}
+        BASE_REV: ${{ steps.revs.outputs.base }}
+        HEAD_REV: ${{ steps.revs.outputs.head }}
+        OUT_DIR: ${{ runner.temp }}/aver-out
+        CI_HOME: ${{ runner.temp }}/aver-home
+        FAIL_ON: ${{ inputs.fail-on }}
+        REVIEW: ${{ inputs.review }}
+        RUN_AS: ${{ steps.runuser.outputs.user }}
+        VIEWER_URL: ${{ inputs.viewer-url }}
+        CHECK: ${{ inputs.check }}
+        BASE_RECORD: ${{ steps.base-record.outputs.cache-hit == 'true' && format('{0}/aver-base-record', runner.temp) || '' }}
+        RECORD: ${{ steps.keys.outputs.head != '' && (github.event_name == 'merge_group' || (github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch))) && format('{0}/aver-record', runner.temp) || '' }}
+      run: bash "$GITHUB_ACTION_PATH/run.sh"
+
+    # aver ci puts the checkout back itself; this catches a run the job's
+    # cancellation or timeout killed before it could.
+    - name: Restore the checkout
+      if: always() && steps.revs.outputs.skip != 'true'
+      shell: bash
+      env:
+        WORKING_DIRECTORY: ${{ inputs.working-directory }}
+        RUN_AS: ${{ steps.runuser.outputs.user }}
+      run: bash "$GITHUB_ACTION_PATH/restore.sh"
+
+    # Its own step, not actions/cache's post step, so a failing verdict
+    # still saves the record.
+    - name: Save the record
+      if: always() && steps.run.outputs.recorded == 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/aver-record
+        key: ${{ steps.keys.outputs.head }}
+
+    - name: Bind a review's approval to the head commit
+      id: approve
+      if: steps.revs.outputs.skip != 'true' && inputs.mode == 'approve'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        WORKING_DIRECTORY: ${{ inputs.working-directory }}
+        OUT_DIR: ${{ runner.temp }}/aver-out
+      run: bash "$GITHUB_ACTION_PATH/approve.sh"
+
+    - name: Comment on the pull request
+      if: steps.revs.outputs.skip != 'true' && inputs.mode != 'approve' && inputs.comment == 'true' && github.event.pull_request
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        OUT_DIR: ${{ runner.temp }}/aver-out
+      run: bash "$GITHUB_ACTION_PATH/comment.sh"
+
+    - name: Post the neutral review check run
+      if: steps.run.outputs.needs-review == 'true' && inputs.review == 'neutral'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        HEAD_SHA: ${{ steps.revs.outputs.head }}
+        VERDICT: ${{ steps.run.outputs.verdict }}
+      run: bash "$GITHUB_ACTION_PATH/review-neutral.sh"
+
+    - name: Post the Aver check run
+      if: (inputs.review == 'approve' && steps.run.outputs.conclusion != '') || steps.approve.outputs.approved == 'true'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        HEAD_SHA: ${{ steps.approve.outputs.head || steps.revs.outputs.head }}
+        CONCLUSION: ${{ steps.approve.outputs.approved == 'true' && 'success' || steps.run.outputs.conclusion }}
+        VERDICT: ${{ steps.run.outputs.verdict }}
+        APPROVED: ${{ steps.approve.outputs.approved }}
+        REVIEWER: ${{ steps.approve.outputs.reviewer }}
+        CHECK: ${{ inputs.check }}
+      run: bash "$GITHUB_ACTION_PATH/check-run.sh"
+
+    - name: Upload the receipt
+      if: always() && steps.revs.outputs.skip != 'true'
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: ${{ inputs.mode == 'approve' && 'aver-approval' || (inputs.check != '' && format('aver-receipt-{0}', inputs.check) || 'aver-receipt') }}
+        path: ${{ runner.temp }}/aver-out
+        if-no-files-found: ignore
+
+    - name: Exit with the aver ci code
+      shell: bash
+      env:
+        AVER_EXIT: ${{ steps.run.outputs.exit-code || '0' }}
+      run: exit "$AVER_EXIT"

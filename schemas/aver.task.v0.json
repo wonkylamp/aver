@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aver.build/schemas/task/v0",
+  "title": "Task",
+  "description": "A unit of work signed by its author (ARCHITECTURE.md §1.7). criteria is ordered; checks and proves are sets sorted by id. checks is omitted when empty.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "title", "intent", "base", "criteria", "author", "created_at", "signature"],
+  "properties": {
+    "schema": { "const": "aver.task/v0" },
+    "title": { "type": "string", "maxLength": 200 },
+    "intent": { "type": "string", "maxLength": 16384 },
+    "base": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/SnapshotId" },
+    "target": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/RefName" },
+    "criteria": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/Criteria" },
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "argv", "proves"],
+        "properties": {
+          "id": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/CheckId" },
+          "argv": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/Argv" },
+          "cwd": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/Path" },
+          "timeout_ms": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/U32" },
+          "report": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/Report" },
+          "proves": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/CriterionSet" }
+        }
+      }
+    },
+    "author": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/AgentId" },
+    "created_at": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/Timestamp" },
+    "signature": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/Signature" }
+  }
+}

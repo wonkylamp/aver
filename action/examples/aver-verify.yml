@@ -1,0 +1,44 @@
+# Verifies every pull request and every push to main with Aver.
+#
+# This copy uses the action from the checked-out repository (./action), so in
+# the Aver repository it exercises the action as the pull request changed
+# it. In any other repository, replace `uses: ./action` with
+# `uses: wonkylamp/aver/action@<full commit SHA> # vX.Y.Z`.
+name: Aver verify
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aver-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      # The pull request's head, not GitHub's test merge commit, so aver ci
+      # runs the checks in this checkout with what the job installed. The
+      # default persist-credentials lets the action fetch the base and head
+      # commits that a shallow checkout lacks, in private repositories too.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: ./action
+        id: aver
+        with:
+          fail-on: unexplained
+      - name: Show the verdict
+        if: always()
+        env:
+          VERDICT: ${{ steps.aver.outputs.verdict }}
+          RECEIPT: ${{ steps.aver.outputs.receipt-id }}
+        run: echo "verdict=${VERDICT:-none} receipt=${RECEIPT:-none}"

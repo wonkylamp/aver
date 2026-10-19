@@ -1,0 +1,208 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aver.build/schemas/receipt/v3",
+  "title": "Receipt",
+  "description": "The verifier's signed account of an attempt (ARCHITECTURE.md §1.9.3), as verification writes it since round 14. v3 is v2 plus provenance (where and how the runs executed: natively on the verifier's machine, natively in CI, or in the Docker sandbox; a native receipt names its host profile and its executor is native-v0. and the profile's first 16 hex digits) and levels (how each check that ran was read: native parser, JUnit, or exit code). As in v2, it takes criteria or none, adds the transplant proof rule (transplant, head_tests, runs.transplant and runs.head_tests, only on entries that prove a criterion, all together), the executor, the config source, the test_changes report and, in receipts aver ci writes, the ci object. checks is a set sorted by id; attempt_id and cause are nullable and always present; detail, transplant, head_tests, their runs, ci and ci.subject are omitted when absent. Every list in test_changes is a set sorted by code point of at most 20 items.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "task_id", "attempt_id", "agent_id", "base_snapshot", "head_snapshot", "environment_hash", "env_changed", "criteria", "checks", "unproven", "verdict", "reproduce", "verifier", "created_at", "executor", "config", "test_changes", "provenance", "levels", "signature"],
+  "properties": {
+    "schema": { "const": "aver.receipt/v3" },
+    "task_id": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/TaskId" },
+    "attempt_id": {
+      "anyOf": [{ "$ref": "https://aver.build/schemas/defs/v0#/$defs/AttemptId" }, { "type": "null" }]
+    },
+    "agent_id": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/AgentId" },
+    "base_snapshot": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/SnapshotId" },
+    "head_snapshot": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/SnapshotId" },
+    "environment_hash": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/EnvId" },
+    "env_changed": { "type": "boolean" },
+    "criteria": {
+      "description": "Ordered; ids unique; empty for a regression-only task.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "text"],
+        "properties": {
+          "id": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/CriterionId" },
+          "text": { "type": "string" }
+        }
+      }
+    },
+    "checks": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "base", "head", "cause", "proves", "source", "runs"],
+        "properties": {
+          "id": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/EntryId" },
+          "base": { "enum": ["pass", "fail", "flaky", "n/a"] },
+          "head": { "enum": ["pass", "fail", "flaky"] },
+          "cause": { "enum": ["NEW", "PREEXISTING", "FLAKY", "ENV", "CHANGED", null] },
+          "proves": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/CriterionSet" },
+          "source": { "enum": ["env", "task"] },
+          "runs": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["base", "head"],
+            "properties": {
+              "base": { "type": "array", "items": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/RunId" } },
+              "head": { "type": "array", "items": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/RunId" } },
+              "transplant": { "type": "array", "minItems": 1, "items": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/RunId" } },
+              "head_tests": { "type": "array", "minItems": 1, "items": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/RunId" } }
+            }
+          },
+          "detail": { "type": "string", "maxLength": 2048 },
+          "transplant": { "$ref": "#/$defs/ProofResult" },
+          "head_tests": { "$ref": "#/$defs/ProofResult" }
+        },
+        "if": { "required": ["transplant"] },
+        "then": {
+          "required": ["head_tests"],
+          "properties": {
+            "proves": { "minItems": 1 },
+            "runs": { "required": ["transplant", "head_tests"] }
+          }
+        },
+        "else": {
+          "not": { "required": ["head_tests"] },
+          "properties": {
+            "runs": {
+              "allOf": [{ "not": { "required": ["transplant"] } }, { "not": { "required": ["head_tests"] } }]
+            }
+          }
+        }
+      }
+    },
+    "unproven": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/CriterionId" }
+    },
+    "verdict": { "enum": ["PASS", "FAIL_OWN", "BLOCKED_NOT_OWN", "UNPROVEN", "REVIEW"] },
+    "reproduce": { "type": "string" },
+    "verifier": { "type": "string" },
+    "created_at": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/Timestamp" },
+    "executor": {
+      "description": "The executor profile every run used, e.g. docker-runsc-v0 (gVisor) or docker-runc-v0 (plain Docker).",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._-]{1,64}$"
+    },
+    "config": {
+      "description": "Where the configuration every check ran under came from: the base's aver.toml, or the default environment (one npm test check) because the base has none.",
+      "enum": ["aver.toml", "default"]
+    },
+    "test_changes": {
+      "description": "What the head did to the tests and the harness. Paths and test ids are repository content.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["files_added", "files_modified", "files_deleted", "tests_removed", "tests_skipped", "harness_changed"],
+      "properties": {
+        "files_added": { "$ref": "#/$defs/ListedPaths" },
+        "files_modified": { "$ref": "#/$defs/ListedPaths" },
+        "files_deleted": { "$ref": "#/$defs/ListedPaths" },
+        "tests_removed": { "$ref": "#/$defs/ListedTests" },
+        "tests_skipped": { "$ref": "#/$defs/ListedTests" },
+        "harness_changed": { "$ref": "#/$defs/ListedEntries" }
+      }
+    },
+    "uncovered": {
+      "description": "Source files the head changed that no check could exercise, present only when there are some (not empty). A receipt with any is neither PASS nor REVIEW.",
+      "$ref": "#/$defs/ListedPaths"
+    },
+    "skipped": {
+      "description": "Checks that ran on neither side, present only when there are some (not empty): a set sorted by check id. A check is skipped as not_affected when nothing the head changed is a file it covers, a lockfile it installs from, or harness on the way to its directory (ARCHITECTURE.md §1.9.3). A skipped check has no entry.",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["check", "reason"],
+        "properties": {
+          "check": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/CheckId" },
+          "reason": { "enum": ["not_affected"] }
+        }
+      }
+    },
+    "ci": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["base_commit", "head_commit", "config_path", "criteria_text"],
+      "properties": {
+        "base_commit": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/GitSha" },
+        "head_commit": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/GitSha" },
+        "config_path": {
+          "anyOf": [{ "$ref": "https://aver.build/schemas/defs/v0#/$defs/Path" }, { "type": "null" }]
+        },
+        "criteria_text": { "type": ["string", "null"] },
+        "subject": {
+          "description": "1-256 bytes of UTF-8 without control characters (maxLength counts code points; the byte bound is checked by parsers).",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+        },
+        "requested_base": {
+          "description": "The commit --base resolved to, present exactly when it is not an ancestor of head_commit, so that base_commit is their merge base. Never equal to base_commit.",
+          "$ref": "https://aver.build/schemas/defs/v0#/$defs/GitSha"
+        }
+      }
+    },
+    "provenance": {
+      "description": "Where the runs executed. local: natively on the verifier's machine, as its user (the receipt trusts the agent and the host); ci: natively on a throwaway CI runner; sandbox: in the hardened Docker sandbox. host_profile is present exactly for local and ci. network says whether check runs could reach the network (best effort natively); uid whether they ran as a user other than the verifier's.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "network", "uid"],
+      "properties": {
+        "mode": { "enum": ["local", "ci", "sandbox"] },
+        "host_profile": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "network": { "enum": ["off", "on"] },
+        "uid": { "enum": ["separate", "same"] }
+      },
+      "if": { "properties": { "mode": { "const": "sandbox" } } },
+      "then": { "not": { "required": ["host_profile"] } },
+      "else": { "required": ["host_profile"] }
+    },
+    "levels": {
+      "description": "How each check that ran was read, keyed by check id: every check of the verification that is not in skipped. native: a parser Aver has for the runner; junit: JUnit XML; exit: the exit code alone.",
+      "type": "object",
+      "propertyNames": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/CheckId" },
+      "additionalProperties": { "enum": ["native", "junit", "exit"] }
+    },
+    "signature": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/Signature" }
+  },
+  "$defs": {
+    "ProofResult": { "enum": ["pass", "fail", "absent", "infra"] },
+    "ListedPaths": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["items", "omitted"],
+      "properties": {
+        "items": { "type": "array", "uniqueItems": true, "maxItems": 20, "items": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/Path" } },
+        "omitted": { "type": "integer", "minimum": 0, "maximum": 4294967295 }
+      }
+    },
+    "ListedTests": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["items", "omitted"],
+      "properties": {
+        "items": { "type": "array", "uniqueItems": true, "maxItems": 20, "items": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/TestCheckId" } },
+        "omitted": { "type": "integer", "minimum": 0, "maximum": 4294967295 }
+      }
+    },
+    "ListedEntries": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["items", "omitted"],
+      "properties": {
+        "items": { "type": "array", "uniqueItems": true, "maxItems": 20, "items": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/EntryId" } },
+        "omitted": { "type": "integer", "minimum": 0, "maximum": 4294967295 }
+      }
+    }
+  }
+}

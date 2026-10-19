@@ -1,0 +1,82 @@
+# Aver verifies every pull request against its base and posts a check run
+# named Aver. Written by `aver init --ci`; docs/CI.md explains it.
+#
+# verify, on a pull request: runs the checks on the base and the head and
+# posts Aver as success, failure, or action_required when a maintainer has
+# to look (REVIEW or UNPROVEN). On a push to main it records its runs,
+# so pull requests based on that commit do not run the base again. In a
+# merge queue it fails only on a regression.
+# approve, on a review: when a person other than the author approved the
+# pull request's head commit, posts Aver as success on it.
+#
+# In this repository the action is the released one at its pinned commit,
+# never ./action from the pull request, so a change cannot vouch for itself.
+# Aver is not a required check here; ci-ok is (docs/RELEASING.md).
+name: Aver
+
+on:
+  pull_request:
+  pull_request_review:
+    types: [submitted, dismissed]
+  push:
+    branches: [main]
+  merge_group:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aver-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  verify:
+    if: github.event_name != 'pull_request_review'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+    steps:
+      # The pull request's head, not GitHub's merge commit, so the checks
+      # run in this checkout with the dependencies installed below. The
+      # full history means no fetch, so no token stays in .git/config.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      # site/ needs Node 24 (its engines field); aver init --ci wrote lts/*.
+      - name: Install Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - name: Install the Node dependencies in site
+        working-directory: site
+        run: npm ci
+      - name: Install Rust
+        run: |
+          rustup toolchain install stable --profile minimal --no-self-update
+          rustup default stable
+      - name: Fetch the Rust dependencies
+        run: cargo fetch --locked
+      - uses: wonkylamp/aver/action@65bb7f027f56f2454778a3db9e11e704b654f0a5 # v0.4.1
+        with:
+          review: approve
+
+  approve:
+    if: github.event_name == 'pull_request_review'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: wonkylamp/aver/action@65bb7f027f56f2454778a3db9e11e704b654f0a5 # v0.4.1
+        with:
+          mode: approve

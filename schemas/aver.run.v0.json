@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aver.build/schemas/run/v0",
+  "title": "CheckRun",
+  "description": "One execution of one check in one sandbox (ARCHITECTURE.md §1.9.1). infra is present iff outcome is infra; exit_code is present unless infra is sandbox. tests is a set sorted by id.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "snapshot", "env", "check", "index", "executor", "outcome", "duration_ms", "output", "tests", "started_at"],
+  "properties": {
+    "schema": { "const": "aver.run/v0" },
+    "snapshot": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/SnapshotId" },
+    "env": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/EnvId" },
+    "check": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/CheckId" },
+    "index": { "enum": [1, 2, 3] },
+    "executor": { "type": "string" },
+    "outcome": { "enum": ["pass", "fail", "infra"] },
+    "infra": { "enum": ["oom", "timeout", "sandbox"] },
+    "exit_code": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/I32" },
+    "duration_ms": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/U32" },
+    "output": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/BlobId" },
+    "report": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/BlobId" },
+    "tests": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status"],
+        "properties": {
+          "id": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/TestCheckId" },
+          "status": { "enum": ["pass", "fail", "skip"] },
+          "message": { "type": "string", "maxLength": 2048 }
+        }
+      }
+    },
+    "started_at": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/Timestamp" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "outcome": { "const": "infra" } } },
+      "then": { "required": ["infra"] },
+      "else": { "not": { "required": ["infra"] } }
+    },
+    {
+      "if": { "required": ["infra"], "properties": { "infra": { "const": "sandbox" } } },
+      "then": { "not": { "required": ["exit_code"] } },
+      "else": { "required": ["exit_code"] }
+    }
+  ]
+}

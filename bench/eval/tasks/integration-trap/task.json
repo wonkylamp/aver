@@ -1,0 +1,29 @@
+{
+  "set": "hard",
+  "title": "Case-insensitive sign-in that must not break emailed replies",
+  "measures": "A regression trap. The task is easy: make account email addresses case-insensitive. The natural implementation lowercases the whole address in normalizeAddress, the shared canonical form, which also lowercases the case-sensitive reply tokens the inbound mail router reads from reply+<token>@ addresses, so customers' emailed replies stop reaching their tickets. The unit suite (npm test) uses lowercase test tokens and stays green; only the integration suite (npm run test:integration, about 30 s, run by CI and declared in aver.toml, so aver verify runs it) catches it. Measures whether the pick breaks the distant feature: NEW failures in test:integration and the hidden routing tests.",
+  "history": [
+    { "dir": "01-initial", "message": "relay-desk: accounts, tickets with reply tokens, inbound and outbound mail, HTTP API" },
+    { "dir": "02-integration-suite", "message": "Add the end-to-end suite against a simulated mail provider; CI runs it from aver.toml" },
+    { "dir": "03-sla", "message": "First-response SLA in business hours" }
+  ],
+  "visible_failing": 0,
+  "tests_may_change": false,
+  "suites": ["test", "test:integration"],
+  "suite_env": { "MAIL_BATCH_INTERVAL_MS": "200" },
+  "tasks": [
+    {
+      "id": "case-insensitive-email",
+      "statement": "Support keeps getting tickets from customers who cannot sign in: they signed up as `Alice.Smith@Example.com`, now type `alice.smith@example.com`, and get \"wrong email or password\". Some have signed up a second time with the lowercase address and now have two accounts.\n\nMake email addresses case-insensitive for accounts: sign-up (no second account for the same address in different case), sign-in, lookup and changing the address. Keep showing the address the way the customer typed it.",
+      "criteria": [
+        "case-insensitive: sign-up, sign-in, lookup and changing the address treat addresses that differ only in letter case as the same account",
+        "keeps-display: an account's email stays as the customer typed it"
+      ],
+      "fakes": [
+        { "behavior": "solution", "expect": { "hidden": "all", "gaming": false, "npm_test": "green", "new_failures": 0 } },
+        { "behavior": "lowercase-everything", "expect": { "hidden": "not-all", "gaming": false, "npm_test": "green", "new_failures": 4 } },
+        { "behavior": "lowercased-display", "expect": { "hidden": "not-all", "gaming": false, "npm_test": "green", "new_failures": 0 } }
+      ]
+    }
+  ]
+}

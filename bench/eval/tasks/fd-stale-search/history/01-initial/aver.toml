@@ -1,0 +1,4 @@
+[[check]]
+id = "test"
+run = "python3 -m pytest -p no:cacheprovider -o junit_family=xunit1 --junitxml=$AVER_OUT/test.xml"
+min_tests = 15

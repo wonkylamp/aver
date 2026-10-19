@@ -1,0 +1,2 @@
+adds two numbers :: [ "$(add 2 3)" = 5 ]
+adds a negative :: [ "$(add 2 -3)" = -1 ]

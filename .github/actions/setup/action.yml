@@ -1,0 +1,60 @@
+name: Set up Rust and Node
+description: Installs stable Rust with rustfmt and clippy, Node 24, and restores the cargo cache.
+
+inputs:
+  free-disk:
+    description: >-
+      'wait' deletes unused SDKs and waits for the space before the setup
+      ends; 'background' starts the deletion and returns at once, for jobs
+      that build a few binaries and do not need the space up front.
+    default: wait
+  cache-key:
+    description: >-
+      A cache shared by every job that passes the same key (rust-cache's
+      shared-key); empty keys the cache by job. Only jobs that build the same
+      dependencies with the same features should share one.
+    default: ""
+  save-cache:
+    description: >-
+      'false' only restores the cache. Saving also needs a push to main, so
+      pull requests restore main's cache and never write one.
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    # The hosted image ships SDKs this repository never uses; dropping them
+    # frees about 20 GB for cargo's target directory. Deleting them takes
+    # about two minutes, so it runs in the background behind the rest of the
+    # setup.
+    - name: Free disk space
+      if: runner.os == 'Linux'
+      shell: bash
+      run: ${{ github.action_path }}/free-disk.sh start
+
+    - name: Install Rust
+      shell: bash
+      run: |
+        rustup toolchain install stable --profile minimal -c rustfmt,clippy --no-self-update
+        rustup default stable
+        rustc --version
+
+    - name: Install Node
+      uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version: 24
+
+    # Caches the dependencies' build output, keyed by rustc's version, every
+    # Cargo.toml and Cargo.lock, and the CARGO_* and RUST* environment (so the
+    # workflow's CARGO_PROFILE_*_DEBUG and CARGO_INCREMENTAL settings are part
+    # of the key). The workspace's own crates are rebuilt every run.
+    - name: Restore the cargo cache
+      uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      with:
+        shared-key: ${{ inputs.cache-key }}
+        save-if: ${{ inputs.save-cache == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+
+    - name: Wait for the disk space
+      if: runner.os == 'Linux' && inputs.free-disk == 'wait'
+      shell: bash
+      run: ${{ github.action_path }}/free-disk.sh wait

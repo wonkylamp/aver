@@ -1,0 +1,13 @@
+{
+  "name": "pulse-feed",
+  "version": "1.0.0",
+  "description": "Activity feed service: who did what, newest first.",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}

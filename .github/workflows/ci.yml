@@ -1,0 +1,206 @@
+name: CI
+
+# Every pull request, every push to main and every merge-queue group, plus
+# a manual run on any ref: running it on a release tag gives that commit the
+# ci-ok check run release.yml requires (docs/RELEASING.md).
+on:
+  pull_request:
+  push:
+    branches: [main]
+  merge_group:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A newer push to a pull request supersedes the run in progress. Runs on
+# main finish: each commit there keeps its ci-ok result, which a release of
+# that commit needs.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  CARGO_TERM_COLOR: always
+  # Dozens of test binaries with full debug info overflow the runner's disk
+  # while linking (ld dies with a bus error); line tables keep backtraces.
+  CARGO_PROFILE_DEV_DEBUG: line-tables-only
+  CARGO_PROFILE_TEST_DEBUG: line-tables-only
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  # Whether anything but documentation changed. Top-level Markdown, docs/ and
+  # site/ feed no Rust test (Rust reads only the Claude Code
+  # plugin's Markdown, under integrations/), so a change to them alone runs
+  # just the docs job; site.yml builds and tests site/ on its own. Without a
+  # verdict (a manual run, a failed comparison) everything runs.
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      code: ${{ steps.filter.outputs.code != 'false' }}
+    steps:
+      # Full history, so a push is compared with the commit before it without
+      # a fetch (the checkout keeps no credentials).
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: filter
+        if: github.event_name == 'pull_request' || github.event_name == 'push'
+        continue-on-error: true
+        with:
+          predicate-quantifier: every
+          filters: |
+            code:
+              - '**'
+              - '!*.md'
+              - '!docs/**'
+              - '!site/**'
+              - '!LICENSE'
+
+  # Runs on every change: the site's tests check the commands README.md and
+  # docs/ show, and site/install.sh is the installer packaging/test exercises.
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - run: make site-deps test-install
+      - name: Site tests and typecheck
+        working-directory: site
+        run: |
+          npm test
+          npm run --silent typecheck
+
+  lint:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+        with:
+          free-disk: background
+      - run: make lint
+
+  # make test without the eval harness's self-tests, which run in the eval
+  # job (-o marks test-eval as already made).
+  test:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - run: make -o test-eval test
+
+  # The eval harness with scripted agents and a stub aver: Node and Git only.
+  eval:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - run: make test-eval
+
+  # make test-native in parallel shards (scripts/test-native-shard.sh lists
+  # what each runs). Every shard builds the same dependencies, so they share
+  # one cache, and only `rest`, which builds every test target, saves it.
+  test-native:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [workspace, rest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+        with:
+          free-disk: ${{ matrix.shard == 'rest' && 'wait' || 'background' }}
+          cache-key: aver-tests
+          save-cache: ${{ matrix.shard == 'rest' }}
+      - run: scripts/test-native-shard.sh ${{ matrix.shard }}
+
+
+
+  # The one check to require in branch protection: it passes when every job
+  # passed or was skipped as docs-only, and fails otherwise. Skipped jobs
+  # report no status of their own (a skipped matrix job not even under its
+  # shard names), so requiring them directly would leave docs-only changes
+  # waiting forever.
+  ci-ok:
+    if: always()
+    needs: [changes, docs, lint, test, eval, test-native]
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "job results: $RESULTS"
+          for r in $RESULTS; do
+            case "$r" in
+              success | skipped) ;;
+              *) echo "::error::a CI job ended with '$r'"; exit 1 ;;
+            esac
+          done
+
+  # Merging a version bump releases it (docs/RELEASING.md). release-plz
+  # tags v<version> when the tag does not exist yet, so a merge that does
+  # not change the version does nothing. A tag made with GITHUB_TOKEN starts
+  # no workflow, but a workflow_dispatch does, so this job dispatches
+  # release.yml on the new tag.
+  tag:
+    needs: ci-ok
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    concurrency:
+      group: release-tag
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Refuse a version lower than a released one
+        run: packaging/release/version-check.sh
+      - uses: release-plz/action@b8d6b54b02889ff2ae2bb82e8b57c3a8fc1683a5 # v0.5.139
+        id: release-plz
+        with:
+          command: release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - name: Start the release
+        if: steps.release-plz.outputs.releases_created == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASES: ${{ steps.release-plz.outputs.releases }}
+        run: |
+          tag=$(jq -r '.[] | select(.package_name == "aver") | .tag' <<<"$RELEASES")
+          [ -n "$tag" ] || { echo "::error::release-plz released no aver: $RELEASES"; exit 1; }
+          gh workflow run release.yml --ref "$tag"
+          echo "::notice title=Release started::$tag"

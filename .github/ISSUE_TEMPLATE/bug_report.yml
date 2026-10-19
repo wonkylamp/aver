@@ -1,0 +1,59 @@
+name: Bug report
+description: Something in Aver does not work as documented.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Report security problems privately, as SECURITY.md describes, not here.
+        Remove secrets and private paths from anything you paste.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you ran, what you expected, and what you got instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How to reproduce
+      description: The smallest command sequence or repository that shows the problem.
+      placeholder: |
+        1. aver workspace new .
+        2. aver verify
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Aver version
+      description: The output of `aver --version`, or the commit if you built from source.
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS
+      description: For example macOS 15.5 on arm64, or Ubuntu 24.04 on x86_64.
+    validations:
+      required: true
+  - type: textarea
+    id: doctor
+    attributes:
+      label: aver doctor
+      description: The output of `aver doctor` in the repository, which names the toolchains the checks run with.
+      render: text
+  - type: textarea
+    id: receipt
+    attributes:
+      label: Receipt or diagnostics
+      description: If the problem is a verdict, attach `receipt.json` and `diagnostics.json` from `aver ci`'s `aver-out/`, or paste the `aver verify` report.
+      render: text
+  - type: textarea
+    id: logs
+    attributes:
+      label: Other output
+      description: Error messages or daemon logs.
+      render: text

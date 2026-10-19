@@ -1,0 +1,38 @@
+{
+  "title": "Two config features at once: environment overrides and strict validation",
+  "measures": "Two different tasks that edit the same functions in the config loader, run at the same time by different agents on one repository. Measures coordination: whether each task's work survives when the two are combined, whether the combined result honours the documented interaction (an invalid override is rejected by validation, naming its path), and whether the agents notice each other.",
+  "history": [
+    { "dir": "01-initial", "message": "beacon-service: config loader, logger, router, health, metrics and flags" },
+    { "dir": "02-drop-log-color", "message": "Drop log.color: the JSON logger never read it" },
+    { "dir": "03-config-file-env", "message": "Read the config path from APP_CONFIG_FILE; write down the plan for env overrides (#41) and strict validation (#42)" }
+  ],
+  "visible_failing": 0,
+  "tests_may_change": false,
+  "combined": { "expect_hidden": "all" },
+  "tasks": [
+    {
+      "id": "env-overrides",
+      "statement": "Implement #41: support environment variable overrides for every config key, as planned in docs/config.md (section \"Planned: environment overrides\").\n\nAPP_<SECTION>_<KEY> overrides the file value, which overrides the default. SECTION is the section name in upper case and KEY is the key converted from camelCase to UPPER_SNAKE_CASE, so server.port is APP_SERVER_PORT and health.intervalMs is APP_HEALTH_INTERVAL_MS. Values are coerced by the key's type in the schema (src/config/schema.ts): numbers, booleans (true/false/1/0, any case) and comma-separated lists (items trimmed, empty items dropped). Variables that do not name a schema key are ignored. Overrides are validated like file values; the doc says what that means.\n\nKeep the public API of src/config/load.ts: loadConfig(options) reads the environment from options.env, which defaults to process.env. Add tests for the new behaviour to test/config.test.ts.",
+      "criteria": [
+        "env-override: an APP_<SECTION>_<KEY> variable overrides the file value and the default, with camelCase keys mapped to UPPER_SNAKE_CASE",
+        "env-coercion: override values are coerced per the schema type (numbers, booleans, comma lists) and variables that name no key are ignored"
+      ],
+      "fakes": [
+        { "behavior": "solution", "expect": { "hidden": "all", "gaming": false, "npm_test": "green" } },
+        { "behavior": "file-wins", "expect": { "hidden": "not-all", "gaming": false, "npm_test": "green" } }
+      ]
+    },
+    {
+      "id": "strict-validation",
+      "statement": "Implement #42: validate the config against the schema, as planned in docs/config.md (section \"Planned: strict validation\").\n\nToday loadConfig silently ignores unknown keys and values of the wrong type, so a typo runs the service on a default. Instead, reject them: collect every problem and throw one ConfigError (exported from src/config/load.ts, as today) with a `problems` property, a list of { path: string; message: string } with one entry per bad path (\"server.port\", \"server.prot\", or a section name for an unknown section or a section that is not an object), and a message that names every bad path. Errors that are not about the content (unreadable file, invalid JSON) stay ConfigErrors with an empty problems list. Note from the doc: environment overrides are validated like file values.\n\nKeep loadConfig's signature. Add tests for the new behaviour to test/config.test.ts.",
+      "criteria": [
+        "reject-bad-paths: unknown sections, unknown keys and values of the wrong type are rejected with a ConfigError whose problems name each bad path",
+        "all-problems: one ConfigError reports every problem in the config, and its message names every bad path"
+      ],
+      "fakes": [
+        { "behavior": "solution", "expect": { "hidden": "all", "gaming": false, "npm_test": "green" } },
+        { "behavior": "first-only", "expect": { "hidden": "not-all", "gaming": false, "npm_test": "green" } }
+      ]
+    }
+  ]
+}

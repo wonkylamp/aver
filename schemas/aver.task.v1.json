@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aver.build/schemas/task/v1",
+  "title": "Task",
+  "description": "A unit of work signed by its author (ARCHITECTURE.md §1.7). v1 is v0 plus protected_paths, a non-empty set of path patterns the head may not add, change or delete; a task without protected paths is written as v0. criteria is ordered; checks, proves and protected_paths are sets sorted by byte order. checks is omitted when empty.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "title", "intent", "base", "criteria", "protected_paths", "author", "created_at", "signature"],
+  "properties": {
+    "schema": { "const": "aver.task/v1" },
+    "title": { "type": "string", "maxLength": 200 },
+    "intent": { "type": "string", "maxLength": 16384 },
+    "base": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/SnapshotId" },
+    "target": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/RefName" },
+    "criteria": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/Criteria" },
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "argv", "proves"],
+        "properties": {
+          "id": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/CheckId" },
+          "argv": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/Argv" },
+          "cwd": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/Path" },
+          "timeout_ms": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/U32" },
+          "report": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/Report" },
+          "proves": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/CriterionSet" }
+        }
+      }
+    },
+    "protected_paths": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/PathGlob" }
+    },
+    "author": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/AgentId" },
+    "created_at": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/Timestamp" },
+    "signature": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/Signature" }
+  },
+  "$defs": {
+    "PathGlob": {
+      "description": "Repo-relative pattern: '/'-separated, no empty, '.' or '..' segments, no NUL or backslash. '*' matches a run of characters within a segment, '?' one character, and a whole segment '**' any number of segments. A pattern also covers every path under a directory it matches.",
+      "type": "string",
+      "maxLength": 1024,
+      "pattern": "^(?!(.*/)?\\.\\.?(/|$))(?!.*[^/]\\*\\*)(?!.*\\*\\*[^/])[^/\\\\\\x00]+(/[^/\\\\\\x00]+)*$"
+    }
+  }
+}

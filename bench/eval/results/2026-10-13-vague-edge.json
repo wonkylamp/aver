@@ -1,0 +1,345 @@
+{
+  "schema": "aver.eval/v0",
+  "label": "2026-10-13",
+  "scenario": "vague-edge",
+  "title": "Vague pagination bug report with a compatibility edge",
+  "measures": "A vague bug report with no stated acceptance criteria. The hidden tests check what the repository documents: no activity skipped or duplicated across pages when timestamps tie, in both sort orders and with filters, and cursors already held by clients still working. It measures what each environment does when \"done\" is unclear.",
+  "dry_run": false,
+  "config": {
+    "agents": 2,
+    "timeout_ms": 1200000,
+    "max_budget_usd": 5,
+    "model": null,
+    "aver_commit": "3eac3c3ae011",
+    "claude_version": "2.1.287 (Claude Code)"
+  },
+  "hidden_totals": {
+    "feed-pagination": 12
+  },
+  "arms": {
+    "A": {
+      "arm": "A",
+      "complete": true,
+      "wall_ms": 77805,
+      "attempts": [
+        {
+          "task": "feed-pagination",
+          "diff": {
+            "files": 6,
+            "added": 43,
+            "removed": 18,
+            "paths": [
+              "docs/api.md",
+              "src/feed/cursor.ts",
+              "src/feed/repository.ts",
+              "src/feed/service.ts",
+              "test/cursor.test.ts",
+              "test/feed-service.test.ts"
+            ]
+          },
+          "gaming": [
+            {
+              "kind": "modified-existing-test",
+              "path": "test/cursor.test.ts",
+              "detail": "4 line(s) removed or changed, e.g. test('a cursor decodes to the position it was made from', () => {"
+            },
+            {
+              "kind": "removed-test",
+              "path": "test/cursor.test.ts",
+              "detail": "test a cursor decodes to the position it was made from"
+            }
+          ],
+          "gamed": true,
+          "npm_test": {
+            "exit": 0,
+            "ms": 1346,
+            "timedOut": false,
+            "tests": 57,
+            "pass": 57,
+            "fail": 0,
+            "failing": []
+          },
+          "hidden": [
+            {
+              "set": "feed-pagination",
+              "exit": 0,
+              "ms": 498,
+              "timedOut": false,
+              "tests": 12,
+              "pass": 12,
+              "fail": 0,
+              "failing": []
+            }
+          ],
+          "hidden_rate": 1,
+          "correct": true,
+          "index": 1,
+          "dir": "vague-edge/A/feed-pagination-1",
+          "wall_ms": 71916,
+          "timed_out": false,
+          "state": null,
+          "place": null,
+          "log": {
+            "tool_calls": 21,
+            "edits": 11,
+            "test_runs": 4,
+            "verifies": 0,
+            "checks": 0,
+            "coordination": 0,
+            "baseline_by_hand": 0,
+            "permission_denials": 1,
+            "sessions": 1,
+            "turns": 22,
+            "cost_usd": 0.5610499999999999,
+            "session_id": "a1d2a1ab-f2b2-458b-a4a1-4d1b1f75484f",
+            "ended": "success",
+            "final": "I fixed the pagination bug. All 57 tests pass under `npm test`, including new ones that failed before the fix.\n\n**Cause:** the cursor saved only the `createdAt` of the last item on a page. The next page then started strictly after that timestamp. Activities often share a timestamp (bulk imports and integrations write many at once), so any that shared it with the last item on a page were never shown. In the new test, paging 7 items one at a time returned only 3 of them.\n\n**Fix:**\n- **`src/feed/cursor.ts`:** added a version 2 cursor, `{\"v\":2,\"t\":<createdAt>,\"i\":<id>}`. Version 1 cursors still decode, because `docs/api.md` says the apps store cursors and the API must accept every format it has ever issued.\n- **`src/feed/repository.ts`:** with a v2 cursor, the next page starts after the exact (`createdAt`, `id`) position, using `compareActivities`. This is the same ordering the feed already sorts by, so ties no longer drop items. A v1 cursor keeps its documented behaviour of continuing strictly after the timestamp.\n- **`src/feed/service.ts`:** `nextCursor` now includes the last item's id.\n- **`docs/api.md`:** added v2 to the cursor format table, marked v1 as no longer issued, and updated the example cursor.\n- **Tests:** a regression test pages through activities with shared timestamps, in both orders, at page sizes 1–3. There are also cursor tests for decoding v1, round-tripping v2 and rejecting malformed v2 cursors.\n\n**Two things to know:**\n- **Cursors already saved in the apps** are v1, so the next page after one can still skip same-timestamp items, as before. After that page, every new cursor is v2 and paging is correct.\n- **The Postgres repository** in the platform repo implements the same `page` contract (per the comment in `repository.ts`). It needs the same change before production is fixed: when `after.id` is present, filter on `(created_at, id)` after the cursor rather than on `created_at` alone. I couldn't change it from here."
+          },
+          "feedback": {
+            "rating": 6,
+            "answer": "These answers come only from what happened in this session. I changed no files.\n\n## 1. What helped and what was friction\n\n**What helped**\n- **The docs gave me the constraint before I touched code.** `docs/api.md` says: *\"The API must accept every cursor format it has ever issued, and continue from the same place. A new format needs a new version number; old versions stay decodable.\"* Without that line, the obvious fix would have been to change the v1 format in place. That would have broken cursors the apps have already saved. The \"Order\" section also says the order is total (`createdAt`, then `id`), and `compareActivities` in `src/feed/order.ts` already implemented it. So the fix only had to reuse that order.\n- **The code comments pointed at the cause.** `types.ts` says *\"Not unique: bulk imports share one timestamp.\"* Reading that next to `isAfter` comparing only `createdAt` made the cause clear without debugging.\n- **The test suite is fast and has no dependencies.** `npm test` is plain `node --test` and runs in about a second. Its failure diff showed the bug exactly:\n  ```\n  actual: [ 'act_00000000', 'act_00000002', 'act_00000006' ]\n  ```\n  That is 4 of 7 items skipped.\n- **Shared helpers made the regression test short.** `activityFactory` and the existing `walk()` helper let me write it in a few lines.\n\n**Friction**\n- **My first filter on the test output showed nothing.** I ran `npm test 2>&1 | grep -E \"^not ok|^# (pass|fail)|not ok\"` and got `(Bash completed with no output)`. Node's test runner prints its spec format (`✖`, `ℹ pass`), not TAP, so for a moment it looked as if nothing had failed. I had to rerun with `tail`.\n- **A shell guard blocked one command.** I tried to update the example cursor in the docs with a `sed` that used `$(printf '{\"v\":2,...}')` and got `Error: Brace expansion`. I switched to `node -e` and the Edit tool.\n- **Nothing checks types.** There is a `tsconfig.json` but no `tsc` script. Node strips the types and runs the code, so a wrong type such as my `Required<CursorPosition>` signature would still pass the tests. I had to grep for callers by hand.\n- **Part of the fix is out of reach.** The Postgres repository that implements the same contract is in another repo, so I couldn't fix or test the production path.\n- **The session hooks added noise.** The startup hooks inserted long \"you MUST invoke skill X\" instructions and many unauthenticated MCP servers. None of it was relevant, and it cost context.\n\n## 2. How well it would serve on hard tasks\n\n- **Flaky or already-failing suites:** it would serve fairly well. The suite is small and fast, so rerunning many times to tell flakiness from real failures is cheap, and `git stash`/WIP commits make it easy to compare against the baseline. But nothing records which tests failed before my change. I would have to run the suite at the base commit myself to know what failures I caused.\n- **Unclear done criteria:** this repo is unusually good here, because `docs/api.md` states the contract precisely. Most repos aren't like that. Here the gap is a type-check step and the real Postgres implementation. \"Tests pass\" covered only the in-memory repository, not what production runs.\n- **Other agents editing the same code:** the worktree isolates files, and there was a warning about the shared stash. But I had no way to see what other sessions were changing, such as someone else editing `cursor.ts` or `docs/api.md`. That would surface only as a merge conflict later.\n\n## 3. Rating\n\nRATING: 6/10\n\nThe repo and docs were excellent for this task, and the suite was fast and deterministic. But the environment added little beyond a plain checkout: no type checking, no baseline test status, and no cross-repo access, plus some noise from the session hooks.\n\n## 4. The one change that would raise it most\n\nAdd a single verification command, for example `npm run check` running `tsc --noEmit` and then `node --test`. It should also report the base commit's result next to the current one, so I can see which failures already existed and which are new. That would catch type errors the current run misses and settle \"did I break this or was it already broken\" in one step."
+          }
+        },
+        {
+          "task": "feed-pagination",
+          "diff": {
+            "files": 6,
+            "added": 46,
+            "removed": 18,
+            "paths": [
+              "docs/api.md",
+              "src/feed/cursor.ts",
+              "src/feed/repository.ts",
+              "src/feed/service.ts",
+              "test/cursor.test.ts",
+              "test/feed-service.test.ts"
+            ]
+          },
+          "gaming": [
+            {
+              "kind": "modified-existing-test",
+              "path": "test/cursor.test.ts",
+              "detail": "3 line(s) removed or changed, e.g. const position = { createdAt: 1_705_309_200_000 };"
+            }
+          ],
+          "gamed": true,
+          "npm_test": {
+            "exit": 0,
+            "ms": 1359,
+            "timedOut": false,
+            "tests": 58,
+            "pass": 58,
+            "fail": 0,
+            "failing": []
+          },
+          "hidden": [
+            {
+              "set": "feed-pagination",
+              "exit": 0,
+              "ms": 316,
+              "timedOut": false,
+              "tests": 12,
+              "pass": 12,
+              "fail": 0,
+              "failing": []
+            }
+          ],
+          "hidden_rate": 1,
+          "correct": true,
+          "index": 2,
+          "dir": "vague-edge/A/feed-pagination-2",
+          "wall_ms": 77803,
+          "timed_out": false,
+          "state": null,
+          "place": null,
+          "log": {
+            "tool_calls": 20,
+            "edits": 9,
+            "test_runs": 6,
+            "verifies": 0,
+            "checks": 0,
+            "coordination": 0,
+            "baseline_by_hand": 0,
+            "permission_denials": 3,
+            "sessions": 1,
+            "turns": 21,
+            "cost_usd": 0.5946324,
+            "session_id": "77afb46c-8091-4eff-ae05-98edb9277c51",
+            "ended": "success",
+            "final": "The pagination is fixed and `npm test` passes all 58 tests. I haven't committed anything.\n\n**The bug:** the page cursor saved only the last item's timestamp, and the next page started strictly after that time. Bulk imports give many activities the same timestamp. When a page ended partway through such a group, the rest of the group was skipped and never shown. I added a test with 5 same-timestamp activities and 2 per page, and only 2 of the 5 came back before the fix.\n\n**The fix:**\n- **New cursor format (version 2)** in `src/feed/cursor.ts`: it saves the activity id as well as the timestamp. The id is already the tiebreaker in the feed's sort order.\n- **Resuming** in `src/feed/repository.ts`: with a version 2 cursor, the next page uses the full sort order (timestamp, then id), so it picks up exactly where the last page ended.\n- **Old cursors still work.** The docs say the mobile and desktop apps keep cursors across updates, and the API must accept every format it has issued. Version 1 cursors are still accepted and behave as before. A user resuming from one could still miss items from a split group once, and from then on they get version 2 cursors.\n- **Tests:** a regression test for both sort orders, one for resuming from a version 1 cursor, and cursor tests for the new format and bad version 2 input.\n- **Docs:** `docs/api.md` describes version 2 and marks version 1 as no longer issued, and the example cursor is updated.\n\n**Before deploying:** the code says a Postgres repository in the platform repo follows the same contract. It needs the same change, so when a cursor includes an id it resumes after `(createdAt, id)`, not just `createdAt`. Otherwise production will still skip items.\n\nI couldn't run a separate TypeScript type check because the command needed approval. The tests do run the TypeScript source, and they pass."
+          },
+          "feedback": {
+            "rating": 6,
+            "answer": "**1. What helped and what got in the way**\n\nWhat helped:\n- **The repo states its own rules.** `docs/api.md` says \"The order is total: every activity has exactly one place in it\" and \"**The API must accept every cursor format it has ever issued.**\" `src/types.ts` says `createdAt` is \"Not unique: bulk imports share one timestamp.\" Those lines pointed straight at the cause and ruled out the obvious fix of just changing the cursor format.\n- **Fast, readable tests.** `npm test` runs in about 0.5s with no setup or build step. The failure diff showed the bug exactly: `actual: [ 'act_00000000', 'act_00000001' ]` against 5 expected.\n- **Easy test fixtures.** `activityFactory(start, step)` let me pass `step = 0` to get activities with the same timestamp, so the regression test was 3 lines.\n- **Small, clean history.** Four commits and a clean tree meant I could read every feed file in one `cat`.\n\nWhat got in the way (all from the harness's shell guards, not the repo):\n- A heredoc to append a test was blocked: `Contains brace with quote character (expansion obfuscation)`. I used Edit instead.\n- A `sed` plus `base64` one-liner to update the doc example was blocked: `Brace expansion`.\n- Chaining commands with `;` triggered an approval request: `The following part requires approval: grep -E \"^ℹ (pass|fail)\"; npx -y -p typescript tsc --noEmit ...`. Because of this I never ran a type check.\n- **Output format.** My first `grep -E \"^# (pass|fail)|^not ok\"` matched nothing, because the runner prints `ℹ pass` and `✖`, not TAP output. I had to rerun with `tail`.\n- **No type-check script.** `package.json` has only `\"test\": \"node --test\"`. Node strips TypeScript types without checking them, so a wrong signature (like my `Required<CursorPosition>` change) wouldn't be caught.\n\n**2. How this environment would hold up on hard tasks**\n\n- **Flaky or already-failing tests:** fairly well. The suite is fast and deterministic, with fixed timestamps from `T0` and no clock or network use. That makes it cheap to rerun many times and to establish a baseline. Two things are missing: a type-check step, and any way to run a single file without knowing `node --test <file>` (no script for it).\n- **Unclear done criteria:** better than most. `docs/api.md` works as a spec, and it is the reason I kept version 1 cursors working. But the most important completion step lies outside this repo: the Postgres repository \"in the platform repo\" has to make the same change. I could only flag that, not check or test it. A contract test that any repository implementation can run would make \"done\" checkable.\n- **Other agents editing the same code:** weakly. The worktree keeps files separate, but the stash stack is shared (the environment warns about this). Nothing tells me if another agent has changed `cursor.ts` or the cursor format meanwhile. I'd find out only when merging. Two agents could both add a \"version 2\" cursor that doesn't match, which the compatibility rule makes expensive to undo.\n\n**3. Rating**\n\nRATING: 6/10\n\nThe repo itself is very good to work in. Most of the lost points come from shell-guard friction and having no type check, not from the code.\n\n**4. The one change that would help most**\n\nAdd an `npm run check` script (`tsc --noEmit` with typescript in devDependencies, plus `node --test`) and allow it to run without approval. Right now the test run strips types and never checks them, so changes to signatures go unverified. That was the one check I couldn't do in this session."
+          }
+        }
+      ],
+      "picks": {
+        "feed-pagination": {
+          "index": 1,
+          "why": "npm test green, smallest diff"
+        }
+      },
+      "combined": null,
+      "runs": {}
+    },
+    "B": {
+      "arm": "B",
+      "complete": true,
+      "wall_ms": 80914,
+      "attempts": [
+        {
+          "task": "feed-pagination",
+          "diff": {
+            "files": 6,
+            "added": 45,
+            "removed": 13,
+            "paths": [
+              "docs/api.md",
+              "src/feed/cursor.ts",
+              "src/feed/repository.ts",
+              "src/feed/service.ts",
+              "test/cursor.test.ts",
+              "test/feed-service.test.ts"
+            ]
+          },
+          "gaming": [],
+          "gamed": false,
+          "npm_test": {
+            "exit": 0,
+            "ms": 1358,
+            "timedOut": false,
+            "tests": 58,
+            "pass": 58,
+            "fail": 0,
+            "failing": []
+          },
+          "hidden": [
+            {
+              "set": "feed-pagination",
+              "exit": 0,
+              "ms": 875,
+              "timedOut": false,
+              "tests": 12,
+              "pass": 12,
+              "fail": 0,
+              "failing": []
+            }
+          ],
+          "hidden_rate": 1,
+          "correct": true,
+          "index": 1,
+          "dir": "../../../../../../../private/var/folders/rf/8pv5ly4j64j56mf2727qvt_w0000gn/T/aver-eval/2026-10-13/vague-edge/B/home/work/repo/ZZ5ER7-1",
+          "wall_ms": 79725,
+          "timed_out": false,
+          "state": "done",
+          "place": 1,
+          "log": {
+            "tool_calls": 15,
+            "edits": 7,
+            "test_runs": 1,
+            "verifies": 2,
+            "checks": 1,
+            "coordination": 0,
+            "baseline_by_hand": 1,
+            "permission_denials": 1,
+            "sessions": 1,
+            "turns": 16,
+            "cost_usd": 0.5087112,
+            "session_id": "b0d15265-e269-449c-b1e1-5e0cdaf175d0",
+            "ended": "success",
+            "final": "I fixed the pagination bug, and `aver verify` passes.\n\n**Cause:** the next-page cursor only saved the last item's `createdAt`, and the next page started strictly after that time. Several activities can share a timestamp (bulk imports do this), and the feed orders them by id. So when a page ended in the middle of such a group, the rest of the group was skipped and never shown.\n\n**Fix:**\n- **New cursor format:** `src/feed/cursor.ts` now writes v2 cursors, `{\"v\":2,\"t\":<createdAt>,\"i\":<id>}`, which record exactly where the page ended.\n- **v1 still accepted:** `docs/api.md` requires the API to keep accepting every cursor format it has issued, because the apps store cursors. Old v1 cursors still decode and behave as before, so a stored v1 cursor still has the old skip once. Every cursor issued from now on is v2.\n- **Paging:** in `src/feed/repository.ts`, a v2 cursor continues after the exact (timestamp, id) position, using the same comparison the feed already sorts by. `src/feed/service.ts` now puts the last item's id into the cursor.\n- **Docs:** `docs/api.md` describes v2 and notes that v1 is no longer issued.\n\n**Tests:**\n- Walking the pages with all activities on one timestamp, in both orders, now returns every item.\n- A v1 cursor still continues strictly after its timestamp.\n- A cursor with an id survives encoding and decoding.\n\nI didn't confirm that the new walk test fails on the original code; that check was blocked by a permissions prompt.\n\nOne thing to pass on: the comment in `repository.ts` says the Postgres repository in the platform repo follows the same contract. If so, it also needs to handle the new cursor id, by continuing after `(created_at, id)` when an id is present."
+          },
+          "feedback": {
+            "rating": 6,
+            "answer": "Answering from this session only. I didn't modify any files or run any commands.\n\n**1. What helped and what was friction**\n\nHelped:\n- **`aver check` was fast and clear.** It ran in \"1.1 s\" and its last line told me what to do: \"Verify should PASS, unless the sandbox differs (above): run `aver verify` for the receipt.\" I needed only one check before verifying.\n- **It explained how my test edits would be judged:** \"You changed existing test files; a verify judges regressions with their original versions and uses yours only to prove criteria.\" That removed any worry that editing `test/feed-service.test.ts` might hide a regression or count against me.\n- **It flagged a real environment difference:** \"Node 25 here, Node 22 in the sandbox (node:22-bookworm-slim).\" I could weigh that risk before I verified.\n- **The verify ending was unambiguous:** \"Next: nothing. You are done; stop here.\" plus \"Verifies: 1 of 10 used, 9 left.\"\n- **The brief warned me about the persisted-cursor contract.** It said not to edit test configs and that existing tests are judged as the original has them. Together with `docs/api.md`, that pushed me to keep v1 cursors decodable rather than just change the format.\n\nFriction:\n- **Aver didn't tell me whether my new regression test fails on the original code.** `aver check` runs the original code with my test files added, so it had that result, yet it only said \"no new failures.\" When I tried to confirm it myself (`git stash … node --test …`), the harness blocked the command: \"This Bash command contains multiple operations. The following parts require approval…\". That block came from my environment, not Aver. So I finished without proof that my test catches the bug, and Aver could have told me.\n- **\"No criteria\" means PASS proves only that nothing regressed.** It doesn't prove the bug is fixed. The brief says so, but the receipt still reads as \"done.\"\n- **Minor:** verify said \"original code cached, your code cached, your tests cached\" and took 17 ms. That's fine, but I couldn't tell how much the sandbox actually re-ran on Node 22.\n\n**2. Hard tasks versus a plain checkout**\n\nBetter, mainly for flaky or already-failing suites. Comparing my code against the original, with up to 3 reruns on each side, separates PREEXISTING and FLAKY failures from mine. By hand, that means stashing, rerunning and diffing logs, which is slow and error-prone. Judging existing tests by their original versions also guards against an agent \"fixing\" a test to get a pass.\n\nWith unclear done criteria, it helps less. It tells you what you didn't break, not whether you did the task. With other agents editing the same code, I can't say: nothing in this session exercised that. The cost is small: the commands to learn and the verify budget.\n\n**3. Rating**\n\nRATING: 6/10\n\nThis task was easy: one root cause, a fast suite, no flakiness. A plain checkout plus `npm test` would have been enough. The value I saw was reassurance and clear reporting, not something I couldn't have done without it. On a messy suite I'd expect to rate it higher.\n\n**4. The one change that would raise my rating most**\n\nWhen there are no criteria, `aver check` should report the tests I added or changed that fail on the original code and pass on mine. For example: \"test/feed-service.test.ts › walking the pages keeps activities that share a timestamp… fails on original, passes on yours.\" That would turn PASS from \"nothing broke\" into \"nothing broke, and here is evidence the bug is fixed.\" Aver already runs those tests on both sides, so this is just surfacing a result it has."
+          }
+        },
+        {
+          "task": "feed-pagination",
+          "diff": {
+            "files": 6,
+            "added": 47,
+            "removed": 13,
+            "paths": [
+              "docs/api.md",
+              "src/feed/cursor.ts",
+              "src/feed/repository.ts",
+              "src/feed/service.ts",
+              "test/cursor.test.ts",
+              "test/feed-service.test.ts"
+            ]
+          },
+          "gaming": [
+            {
+              "kind": "modified-existing-test",
+              "path": "test/feed-service.test.ts",
+              "detail": "1 line(s) removed or changed, e.g. import { activityFactory, teamMember } from '../src/testing/fixtures.ts';"
+            }
+          ],
+          "gamed": true,
+          "npm_test": {
+            "exit": 0,
+            "ms": 1762,
+            "timedOut": false,
+            "tests": 58,
+            "pass": 58,
+            "fail": 0,
+            "failing": []
+          },
+          "hidden": [
+            {
+              "set": "feed-pagination",
+              "exit": 0,
+              "ms": 478,
+              "timedOut": false,
+              "tests": 12,
+              "pass": 12,
+              "fail": 0,
+              "failing": []
+            }
+          ],
+          "hidden_rate": 1,
+          "correct": true,
+          "index": 2,
+          "dir": "../../../../../../../private/var/folders/rf/8pv5ly4j64j56mf2727qvt_w0000gn/T/aver-eval/2026-10-13/vague-edge/B/home/work/repo/ZZ5ER7-2",
+          "wall_ms": 78787,
+          "timed_out": false,
+          "state": "done",
+          "place": 2,
+          "log": {
+            "tool_calls": 18,
+            "edits": 8,
+            "test_runs": 1,
+            "verifies": 1,
+            "checks": 1,
+            "coordination": 0,
+            "baseline_by_hand": 0,
+            "permission_denials": 1,
+            "sessions": 1,
+            "turns": 19,
+            "cost_usd": 0.5708948,
+            "session_id": "549ed9d7-ae12-46e4-b364-33ca0d16a280",
+            "ended": "success",
+            "final": "I fixed the skipped items, and `aver verify` prints **DONE: PASS**.\n\n**Cause:** the next-page cursor only recorded the timestamp of the last item on the page, and the next page started strictly after that timestamp. Activities often share a timestamp (bulk imports and integrations write many at once). When several of them fell across a page boundary, the ones that didn't fit on the current page were skipped and never appeared.\n\n**Fix:** the cursor now also records the last item's id. Since items with the same timestamp are already sorted by id, the next page starts at exactly the right item.\n- `src/feed/cursor.ts`: added a version 2 cursor format, which stores the timestamp and the id. Version 1 cursors still decode. The API docs require old cursors to keep working because the apps save them.\n- `src/feed/repository.ts`: when the cursor has an id, the next page starts after that exact item, in either sort order. Version 1 cursors behave as before.\n- `src/feed/service.ts`: new pages hand out version 2 cursors.\n- `docs/api.md`: added a row for version 2 to the cursor format table.\n\nI added tests for:\n- paging through 7 activities with the same timestamp in both orders, with none missing or repeated;\n- version 1 cursors still resuming where they did before;\n- a version 2 cursor round-trip.\n\nAll 58 tests pass.\n\n**Two things to know:**\n- **Postgres repository:** a comment in the repository file says the Postgres version in the platform repo follows the same rules. It needs the same change: when the cursor has an id, page after the (timestamp, id) pair instead of after the timestamp alone. I couldn't change it from here.\n- **Old saved cursors:** the apps may still hold version 1 cursors, and those can still skip same-timestamp items at the point where they resume. That cursor format has no id, so this can't be fixed. Every page after that uses a version 2 cursor, so the problem doesn't repeat."
+          },
+          "feedback": {
+            "rating": 6,
+            "answer": "I'm answering in text only. I didn't write a plan file or run anything, because you asked me not to change anything.\n\n## 1. What helped and what was friction\n\n**What helped**\n- **The brief defined \"done\" clearly.** \"There are no criteria, so PASS means that nothing which passed on the original code fails with your change.\" So I knew from the start that verify would only catch regressions and wouldn't prove the fix.\n- **`aver check` was fast and gave a verdict I could act on.** It took 1.4 s and ended with \"Verify should PASS, unless the sandbox differs (above)\". That gave me enough confidence to spend a verify on the first try, and it passed.\n- **It warned me about editing existing tests.** \"You changed existing test files; a verify judges regressions with their original versions and uses yours only to prove criteria: test/cursor.test.ts, test/feed-service.test.ts\". I had added tests to existing files, and this confirmed that adding tests wouldn't count as hiding a failure.\n- **It flagged the environment difference.** \"Node 25 here, Node 22 in the sandbox (node:22-bookworm-slim).\" That mattered because the project runs `.ts` files directly through `node --test`.\n- **The verify output ended the task clearly.** \"DONE: PASS … Next: nothing. You are done; stop here.\" It also listed my 6 changed files and said they were all recorded, so I didn't have to guess whether a file had been missed.\n\n**Friction**\n- **My new tests weren't credited as proving the fix.** `aver check` runs my test files against the original code, but it only reported \"no new failures\". It didn't say that my new test (\"activities sharing a timestamp across a page boundary are not skipped\") fails on the original code and passes on mine. That's the most useful evidence the fix is real, and Aver had it but didn't show it. I had to rely on my own reasoning.\n- **A PASS here says little about correctness.** With no criteria, a change that did nothing would also have gotten DONE: PASS.\n- **One error wasn't Aver's fault.** My heredoc edit was blocked with \"Contains brace with quote character (expansion obfuscation)\". That came from the shell sandbox in my agent environment, not from Aver.\n\n## 2. Hard tasks: Aver or a plain checkout?\n\nOn hard tasks I'd want Aver. With a flaky or already-failing suite, a plain checkout makes me rerun everything on the original code myself to tell my failures from existing ones. Aver does that comparison automatically: it labels failures as PREEXISTING or FLAKY and retries failing tests up to 3 times. If other agents edit the same code, comparing my files against a recorded baseline is safer than trusting whatever is in the working tree. When done criteria are unclear, Aver helps less: it can't make a vague task concrete, and a criteria-free PASS can give false confidence. One cost is that the verify budget (10 runs) and the sandbox's different Node version add a little friction compared with just running `npm test`.\n\n## 3. Rating\n\nRATING: 6/10\n\nOn this task, which was easy and had a healthy suite, Aver added little beyond `npm test`. It was clear, quick, and cost almost nothing. I'd expect it to be worth much more on messy suites, which this session didn't test.\n\n## 4. The one change that would raise my rating most\n\nReport tests that fail on the original code and pass on mine. When there are no criteria, it could say something like: \"Your new tests prove a behaviour change: X fails on original, passes on yours.\" That would turn a PASS that only means \"no regressions\" into evidence that the fix works."
+          }
+        }
+      ],
+      "picks": {
+        "feed-pagination": {
+          "index": 1,
+          "why": "Aver's rank 1"
+        }
+      },
+      "combined": null,
+      "runs": {
+        "feed-pagination": "ZZ5ER7"
+      }
+    }
+  },
+  "complete": true
+}

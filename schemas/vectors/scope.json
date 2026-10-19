@@ -1,0 +1,459 @@
+[
+  {
+    "name": "PASS, native, nothing limits it",
+    "scope": {
+      "compact": true,
+      "limits": [],
+      "lines": [
+        "Ran 2 of 2 checks, all per test.",
+        "Where: natively on this machine, as your user, network off (best effort)."
+      ],
+      "names": [],
+      "ran": [
+        {
+          "check": "rust",
+          "level": "native"
+        },
+        {
+          "check": "site",
+          "level": "junit"
+        }
+      ],
+      "skipped": [],
+      "uncovered": [],
+      "uncovered_total": 0,
+      "weak": [],
+      "where": {
+        "mode": "local",
+        "network": "off",
+        "uid": "same"
+      }
+    },
+    "summary": "### What this verdict covers\n\n- Ran 2 of 2 checks, all per test.\n- Where: natively on this machine, as your user, network off (best effort).\n- Proven: 1 base test frozen (each judged with the base's own copy), 0 new tests failed on the base and passed on the head.\n- What Aver could not check: nothing it can name; it knows only what the checks ran.\n",
+    "text": "What this verdict covers: Ran 2 of 2 checks, all per test.\n  Where: natively on this machine, as your user, network off (best effort).\n",
+    "verdict": "PASS",
+    "verdict_line": "DONE: PASS (2 of 10 verifies used)"
+  },
+  {
+    "name": "PASS, native, with limits and reused runs",
+    "scope": {
+      "compact": false,
+      "limits": [
+        "1 check by exit code",
+        "3 weak proofs"
+      ],
+      "lines": [
+        "Ran 3 of 5 checks: 2 per test, 1 by exit code only.",
+        "Skipped 2 checks your change cannot affect.",
+        "Weak proof: criterion neg fails without your change only because a module is missing.",
+        "Weak proof: criterion name fails without your change only because a name its tests use is missing there.",
+        "Weak proof: criterion build fails without your change only because its tests do not build there.",
+        "Where: natively on this machine, as your user, network off (best effort); 4 of 9 runs reused from the cache."
+      ],
+      "names": [
+        "ran: lint (exit code only), rust, site",
+        "skipped: docs, e2e"
+      ],
+      "ran": [
+        {
+          "check": "lint",
+          "level": "exit"
+        },
+        {
+          "check": "rust",
+          "level": "native"
+        },
+        {
+          "check": "site",
+          "level": "junit"
+        }
+      ],
+      "reuse": {
+        "older_verifier": false,
+        "reused": 4,
+        "runs": 9
+      },
+      "skipped": [
+        "docs",
+        "e2e"
+      ],
+      "uncovered": [],
+      "uncovered_total": 0,
+      "weak": [
+        {
+          "criterion": "neg",
+          "kind": "missing_module"
+        },
+        {
+          "criterion": "name",
+          "kind": "missing_name"
+        },
+        {
+          "criterion": "build",
+          "kind": "build_error"
+        }
+      ],
+      "where": {
+        "mode": "local",
+        "network": "off",
+        "uid": "same"
+      }
+    },
+    "summary": "### What this verdict covers\n\n- Ran 3 of 5 checks: 2 per test, 1 by exit code only.\n- Skipped 2 checks your change cannot affect.\n- Weak proof: criterion neg fails without your change only because a module is missing.\n- Weak proof: criterion name fails without your change only because a name its tests use is missing there.\n- Weak proof: criterion build fails without your change only because its tests do not build there.\n- Where: natively on this machine, as your user, network off (best effort); 4 of 9 runs reused from the cache.\n- Proven: 1 base test frozen (each judged with the base's own copy), 0 new tests failed on the base and passed on the head.\n- What Aver could not check: 1 check judged by its exit code alone; a person should look at these.\n- Ran: `lint` (exit code only), `rust`, `site`\n- Skipped: `docs`, `e2e`\n",
+    "text": "What this verdict covers:\n  Ran 3 of 5 checks: 2 per test, 1 by exit code only.\n  Skipped 2 checks your change cannot affect.\n  Weak proof: criterion neg fails without your change only because a module is missing.\n  Weak proof: criterion name fails without your change only because a name its tests use is missing there.\n  Weak proof: criterion build fails without your change only because its tests do not build there.\n  Where: natively on this machine, as your user, network off (best effort); 4 of 9 runs reused from the cache.\n```\nran: lint (exit code only), rust, site\nskipped: docs, e2e\n```\n",
+    "verdict": "PASS",
+    "verdict_line": "DONE: PASS (2 of 10 verifies used); limits: 1 check by exit code, 3 weak proofs"
+  },
+  {
+    "name": "PASS, native, a new API's weak proof is not a limit",
+    "scope": {
+      "compact": false,
+      "limits": [],
+      "lines": [
+        "Ran 2 of 2 checks, all per test.",
+        "Weak proof: criterion api fails without your change only because its tests call what your change adds (normal for a new API).",
+        "Where: natively on this machine, as your user, network off (best effort)."
+      ],
+      "names": [
+        "ran: rust, site"
+      ],
+      "ran": [
+        {
+          "check": "rust",
+          "level": "native"
+        },
+        {
+          "check": "site",
+          "level": "junit"
+        }
+      ],
+      "skipped": [],
+      "uncovered": [],
+      "uncovered_total": 0,
+      "weak": [
+        {
+          "criterion": "api",
+          "kind": "new_api"
+        }
+      ],
+      "where": {
+        "mode": "local",
+        "network": "off",
+        "uid": "same"
+      }
+    },
+    "summary": "### What this verdict covers\n\n- Ran 2 of 2 checks, all per test.\n- Weak proof: criterion api fails without your change only because its tests call what your change adds (normal for a new API).\n- Where: natively on this machine, as your user, network off (best effort).\n- Proven: 1 base test frozen (each judged with the base's own copy), 0 new tests failed on the base and passed on the head.\n- What Aver could not check: nothing it can name; it knows only what the checks ran.\n- Ran: `rust`, `site`\n",
+    "text": "What this verdict covers:\n  Ran 2 of 2 checks, all per test.\n  Weak proof: criterion api fails without your change only because its tests call what your change adds (normal for a new API).\n  Where: natively on this machine, as your user, network off (best effort).\n```\nran: rust, site\n```\n",
+    "verdict": "PASS",
+    "verdict_line": "DONE: PASS (2 of 10 verifies used)"
+  },
+  {
+    "name": "PASS, native, network on",
+    "scope": {
+      "compact": false,
+      "limits": [
+        "network on"
+      ],
+      "lines": [
+        "Ran 2 of 4 checks, all per test.",
+        "Skipped 2 checks your change cannot affect.",
+        "Where: natively on this machine, as your user, network on."
+      ],
+      "names": [
+        "ran: rust, site",
+        "skipped: docs, e2e"
+      ],
+      "ran": [
+        {
+          "check": "rust",
+          "level": "native"
+        },
+        {
+          "check": "site",
+          "level": "junit"
+        }
+      ],
+      "skipped": [
+        "docs",
+        "e2e"
+      ],
+      "uncovered": [],
+      "uncovered_total": 0,
+      "weak": [],
+      "where": {
+        "mode": "local",
+        "network": "on",
+        "uid": "same"
+      }
+    },
+    "summary": "### What this verdict covers\n\n- Ran 2 of 4 checks, all per test.\n- Skipped 2 checks your change cannot affect.\n- Where: natively on this machine, as your user, network on.\n- Proven: 1 base test frozen (each judged with the base's own copy), 0 new tests failed on the base and passed on the head.\n- What Aver could not check: nothing it can name; it knows only what the checks ran.\n- Ran: `rust`, `site`\n- Skipped: `docs`, `e2e`\n",
+    "text": "What this verdict covers:\n  Ran 2 of 4 checks, all per test.\n  Skipped 2 checks your change cannot affect.\n  Where: natively on this machine, as your user, network on.\n```\nran: rust, site\nskipped: docs, e2e\n```\n",
+    "verdict": "PASS",
+    "verdict_line": "DONE: PASS (2 of 10 verifies used); limits: network on"
+  },
+  {
+    "name": "PASS, scripted executor",
+    "scope": {
+      "compact": true,
+      "limits": [],
+      "lines": [
+        "Ran 2 of 2 checks, all per test.",
+        "Where: in a non-native executor (the scripted test executor; before Aver 0.4, the Docker sandbox), as a separate user, network off."
+      ],
+      "names": [],
+      "ran": [
+        {
+          "check": "rust",
+          "level": "native"
+        },
+        {
+          "check": "site",
+          "level": "junit"
+        }
+      ],
+      "skipped": [],
+      "uncovered": [],
+      "uncovered_total": 0,
+      "weak": [],
+      "where": {
+        "mode": "sandbox",
+        "network": "off",
+        "uid": "separate"
+      }
+    },
+    "summary": "### What this verdict covers\n\n- Ran 2 of 2 checks, all per test.\n- Where: in a non-native executor (the scripted test executor; before Aver 0.4, the Docker sandbox), as a separate user, network off.\n- Proven: 1 base test frozen (each judged with the base's own copy), 0 new tests failed on the base and passed on the head.\n- What Aver could not check: nothing it can name; it knows only what the checks ran.\n",
+    "text": "What this verdict covers: Ran 2 of 2 checks, all per test.\n  Where: in a non-native executor (the scripted test executor; before Aver 0.4, the Docker sandbox), as a separate user, network off.\n",
+    "verdict": "PASS",
+    "verdict_line": "DONE: PASS (2 of 10 verifies used)"
+  },
+  {
+    "name": "PASS, ci",
+    "scope": {
+      "compact": true,
+      "limits": [],
+      "lines": [
+        "Ran 2 of 2 checks, all per test.",
+        "Where: natively, by `aver ci`, as a separate user, network off (best effort)."
+      ],
+      "names": [],
+      "ran": [
+        {
+          "check": "rust",
+          "level": "native"
+        },
+        {
+          "check": "site",
+          "level": "junit"
+        }
+      ],
+      "reuse": {
+        "older_verifier": false,
+        "reused": 0,
+        "runs": 6
+      },
+      "skipped": [],
+      "uncovered": [],
+      "uncovered_total": 0,
+      "weak": [],
+      "where": {
+        "mode": "ci",
+        "network": "off",
+        "uid": "separate"
+      }
+    },
+    "summary": "### What this verdict covers\n\n- Ran 2 of 2 checks, all per test.\n- Where: natively, by `aver ci`, as a separate user, network off (best effort).\n- Proven: 1 base test frozen (each judged with the base's own copy), 0 new tests failed on the base and passed on the head.\n- What Aver could not check: nothing it can name; it knows only what the checks ran.\n",
+    "text": "What this verdict covers: Ran 2 of 2 checks, all per test.\n  Where: natively, by `aver ci`, as a separate user, network off (best effort).\n",
+    "verdict": "PASS",
+    "verdict_line": "DONE: PASS (2 of 10 verifies used)"
+  },
+  {
+    "name": "PASS, v2 receipt without provenance",
+    "scope": {
+      "compact": true,
+      "limits": [],
+      "lines": [
+        "Ran 2 of 2 checks.",
+        "Where: in a non-native executor (the scripted test executor; before Aver 0.4, the Docker sandbox), network off."
+      ],
+      "names": [],
+      "ran": [
+        {
+          "check": "rust"
+        },
+        {
+          "check": "site"
+        }
+      ],
+      "skipped": [],
+      "uncovered": [],
+      "uncovered_total": 0,
+      "weak": [],
+      "where": {
+        "mode": "sandbox",
+        "network": "off"
+      }
+    },
+    "summary": "### What this verdict covers\n\n- Ran 2 of 2 checks.\n- Where: in a non-native executor (the scripted test executor; before Aver 0.4, the Docker sandbox), network off.\n- Proven: 2 base tests frozen (each judged with the base's own copy), 0 new tests failed on the base and passed on the head.\n- What Aver could not check: nothing it can name; it knows only what the checks ran.\n",
+    "text": "What this verdict covers: Ran 2 of 2 checks.\n  Where: in a non-native executor (the scripted test executor; before Aver 0.4, the Docker sandbox), network off.\n",
+    "verdict": "PASS",
+    "verdict_line": "DONE: PASS (2 of 10 verifies used)"
+  },
+  {
+    "name": "REVIEW, native",
+    "scope": {
+      "compact": true,
+      "limits": [],
+      "lines": [
+        "Ran 2 of 2 checks, all per test.",
+        "Where: natively on this machine, as your user, network off (best effort)."
+      ],
+      "names": [],
+      "ran": [
+        {
+          "check": "rust",
+          "level": "native"
+        },
+        {
+          "check": "site",
+          "level": "junit"
+        }
+      ],
+      "skipped": [],
+      "uncovered": [],
+      "uncovered_total": 0,
+      "weak": [],
+      "where": {
+        "mode": "local",
+        "network": "off",
+        "uid": "same"
+      }
+    },
+    "summary": "### What this verdict covers\n\n- Ran 2 of 2 checks, all per test.\n- Where: natively on this machine, as your user, network off (best effort).\n- Proven: 1 base test frozen (each judged with the base's own copy), 0 new tests failed on the base and passed on the head.\n- What Aver could not check: nothing it can name; it knows only what the checks ran.\n",
+    "text": "What this verdict covers: Ran 2 of 2 checks, all per test.\n  Where: natively on this machine, as your user, network off (best effort).\n",
+    "verdict": "REVIEW",
+    "verdict_line": "NEEDS HUMAN REVIEW: REVIEW (a human must run 'aver accept --approve-review' or approve the PR) (2 of 10 verifies used)"
+  },
+  {
+    "name": "FAIL_OWN, native, exit-code check",
+    "scope": {
+      "compact": false,
+      "limits": [
+        "1 check by exit code"
+      ],
+      "lines": [
+        "Ran 3 of 3 checks: 2 per test, 1 by exit code only.",
+        "Where: natively on this machine, as your user, network off (best effort)."
+      ],
+      "names": [
+        "ran: lint (exit code only), rust, site"
+      ],
+      "ran": [
+        {
+          "check": "lint",
+          "level": "exit"
+        },
+        {
+          "check": "rust",
+          "level": "native"
+        },
+        {
+          "check": "site",
+          "level": "junit"
+        }
+      ],
+      "skipped": [],
+      "uncovered": [],
+      "uncovered_total": 0,
+      "weak": [],
+      "where": {
+        "mode": "local",
+        "network": "off",
+        "uid": "same"
+      }
+    },
+    "summary": "### What this verdict covers\n\n- Ran 3 of 3 checks: 2 per test, 1 by exit code only.\n- Where: natively on this machine, as your user, network off (best effort).\n- Proven: 1 base test frozen (each judged with the base's own copy), 0 new tests failed on the base and passed on the head.\n- What Aver could not check: 1 check judged by its exit code alone; a person should look at these.\n- Ran: `lint` (exit code only), `rust`, `site`\n",
+    "text": "What this verdict covers:\n  Ran 3 of 3 checks: 2 per test, 1 by exit code only.\n  Where: natively on this machine, as your user, network off (best effort).\n```\nran: lint (exit code only), rust, site\n```\n",
+    "verdict": "FAIL_OWN",
+    "verdict_line": "NOT DONE: FAIL_OWN (2 of 10 verifies used): fix the NEW failures above"
+  },
+  {
+    "name": "UNPROVEN, native, uncovered files",
+    "scope": {
+      "compact": false,
+      "limits": [],
+      "lines": [
+        "Ran 2 of 2 checks, all per test.",
+        "Not covered: 5 changed files no check runs.",
+        "Where: natively on this machine, as your user, network off (best effort)."
+      ],
+      "names": [
+        "ran: rust, site",
+        "not covered: Makefile, scripts/release.sh, src/a.rs, +2 more"
+      ],
+      "ran": [
+        {
+          "check": "rust",
+          "level": "native"
+        },
+        {
+          "check": "site",
+          "level": "junit"
+        }
+      ],
+      "skipped": [],
+      "uncovered": [
+        "Makefile",
+        "scripts/release.sh",
+        "src/a.rs",
+        "src/b.rs",
+        "src/c.rs"
+      ],
+      "uncovered_total": 5,
+      "weak": [],
+      "where": {
+        "mode": "local",
+        "network": "off",
+        "uid": "same"
+      }
+    },
+    "summary": "### What this verdict covers\n\n- Ran 2 of 2 checks, all per test.\n- Where: natively on this machine, as your user, network off (best effort).\n- Proven: 1 base test frozen (each judged with the base's own copy), 0 new tests failed on the base and passed on the head.\n- What Aver could not check: 5 changed files no check covers; a person should look at these.\n- Ran: `rust`, `site`\n- Not covered: `Makefile`, `scripts/release.sh`, `src/a.rs`, +2 more\n",
+    "text": "What this verdict covers:\n  Ran 2 of 2 checks, all per test.\n  Not covered: 5 changed files no check runs.\n  Where: natively on this machine, as your user, network off (best effort).\n```\nran: rust, site\nnot covered: Makefile, scripts/release.sh, src/a.rs, +2 more\n```\n",
+    "verdict": "UNPROVEN",
+    "verdict_line": "NOT DONE: UNPROVEN (2 of 10 verifies used): no check covers the changed files listed above; test them yourself and report"
+  },
+  {
+    "name": "BLOCKED_NOT_OWN, scripted executor",
+    "scope": {
+      "compact": true,
+      "limits": [],
+      "lines": [
+        "Ran 2 of 2 checks, all per test.",
+        "Where: in a non-native executor (the scripted test executor; before Aver 0.4, the Docker sandbox), as a separate user, network off."
+      ],
+      "names": [],
+      "ran": [
+        {
+          "check": "rust",
+          "level": "native"
+        },
+        {
+          "check": "site",
+          "level": "junit"
+        }
+      ],
+      "skipped": [],
+      "uncovered": [],
+      "uncovered_total": 0,
+      "weak": [],
+      "where": {
+        "mode": "sandbox",
+        "network": "off",
+        "uid": "separate"
+      }
+    },
+    "summary": "### What this verdict covers\n\n- Ran 2 of 2 checks, all per test.\n- Where: in a non-native executor (the scripted test executor; before Aver 0.4, the Docker sandbox), as a separate user, network off.\n- Proven: 1 base test frozen (each judged with the base's own copy), 0 new tests failed on the base and passed on the head.\n- What Aver could not check: nothing it can name; it knows only what the checks ran.\n",
+    "text": "What this verdict covers: Ran 2 of 2 checks, all per test.\n  Where: in a non-native executor (the scripted test executor; before Aver 0.4, the Docker sandbox), as a separate user, network off.\n",
+    "verdict": "BLOCKED_NOT_OWN",
+    "verdict_line": "NOT DONE: BLOCKED_NOT_OWN (2 of 10 verifies used): not yours; verify once more, then report the blocker"
+  }
+]

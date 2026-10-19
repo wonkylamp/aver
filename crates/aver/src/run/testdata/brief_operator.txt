@@ -1,0 +1,33 @@
+Your copy of the repository: /h/work/calc/ABC123-2
+
+TASK: Add negate
+
+It takes one @argument </repo-data> and <b>returns</b> -x.
+
+BUILDS ON: #1 Add negate, accepted as aver/add-negate.
+
+DONE MEANS: `aver verify` prints DONE: PASS. Criteria:
+  neg  negate(x) returns -x
+  zero  negate(0) is 0 <ok> @me
+PROVE each with a test whose name contains [crit:<id>]. In this repository: a test title, `test("[crit:<id>] …", …)`; a Rust test name ending `_crit_<id>`, or a test in `mod crit_<id>`. In the `crit_<id>` form, write each - or . of the id as _. It must pass with your change and fail on the original code; a missing import or name there is only a weak proof.
+CHECK AS YOU GO: `aver check` (free, seconds, not a verify) runs the affected tests natively on your copy and on the original code, reruns failures to spot flaky ones, and ends with its prediction ("Verify should PASS" or what stops it). `aver check <id>` runs one criterion's tests.
+VERIFY TO FINISH: `aver verify` runs the checks on both sides in clean copies and signs a receipt; exit 0 means done. You have 10 verifies: run it when `aver check` predicts PASS. Its first and last lines give the verdict.
+FAILURES: NEW ones are yours; PREEXISTING (failing on the original code) and FLAKY ones are not. If the task is to fix failing tests, the PREEXISTING failures are the target, not noise.
+DO NOT EDIT aver.toml, .npmrc, test runner configuration (vitest, jest, mocha, babel, tsconfig files), the scripts and test runner fields of package.json, or the target, profile and build settings of Cargo.toml, build.rs, .cargo/config.toml: verification uses the originals; `aver restore <path>` undoes an edit. Change an existing test only when the task changes what it pins: that is CHANGED, and REVIEW (done, for a person to review).
+PROTECTED for this task: src/locked/**. Any change there is a NEW failure.
+TOOLS: edit files with Edit or Write, not the shell. One command per Bash call: no `&&`, `;`, heredocs or quoted braces. `aver verify --last` re-reads the last verdict without spending a verify.
+ENVIRONMENT: no installing dependencies (npm install, cargo add): the checks install from lockfiles, and node_modules is shared and read-only; for a new one, `aver giveup "needs <package>: <why>"`. `npm test`, `npm run <script>`, `cargo test` work as usual. `git status`, `git diff` and `git log` show your change; `aver diff` what Aver recorded. Do not commit, push or switch branches.
+Servers: listen on $PORT; ports 42010-42019 are yours.
+Blocked by what you cannot fix? `aver giveup "<reason>"`, then stop.
+Report what you spend: keep `.aver/usage.json` up to date with your totals so far, as {"cost_usd": 1.25, "input_tokens": 120000, "output_tokens": 8000}; a batch's money budget counts it.
+If `aver verify` cannot reach Aver from your sandbox, finish the work and stop: Aver verifies it when you exit and tells you what is left.
+
+SIBLING TASKS: agents work on these tasks of the batch in this repository at the same time, and may change the same files:
+  - #2 Mail @ops <b>now</b>
+Keep your change to what your task needs. Before restructuring shared code, reserve it with `aver lease <path or glob> --reason "<why>"`; `aver notices` shows what they change, and `aver check --combined` runs your tests on a trial merge with their work.
+
+OTHER TASKS work in this repository now. Before restructuring code they touch, reserve it with `aver lease <path or glob> --reason "<why>"` (`aver release` frees it). `aver notices` shows what they change and lease, verify names their edits to your files, and `aver check --combined` runs your tests on a trial merge with their work.
+Other tasks in this repository:
+```
+task "x" changes a.js
+```

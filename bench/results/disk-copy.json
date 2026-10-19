@@ -1,0 +1,95 @@
+{
+  "count": 5,
+  "machine": {
+    "arch": "aarch64",
+    "cores": 8,
+    "cpu": "Apple M1 Pro",
+    "load_average": [
+      57.5537109375,
+      45.220703125,
+      45.43701171875
+    ],
+    "model": "MacBookPro18,3",
+    "os": "macos"
+  },
+  "results": [
+    {
+      "bytes": 11284739,
+      "clone": "copy",
+      "create_first_ms": 838.512,
+      "create_warm": {
+        "max_ms": 378.877,
+        "n": 4,
+        "p50_ms": 368.895,
+        "p95_ms": 378.877
+      },
+      "deps_files": null,
+      "disk_per_workspace_bytes": 13754368.0,
+      "files": 2053,
+      "import_ms": 316.518,
+      "name": "repo",
+      "repo": "date-fns",
+      "snapshot_after_sync_ms": 28.911,
+      "sync_10_files": {
+        "max_ms": 83.577,
+        "n": 5,
+        "p50_ms": 51.122,
+        "p95_ms": 83.577
+      },
+      "sync_no_change": {
+        "max_ms": 132.268,
+        "n": 30,
+        "p50_ms": 47.816,
+        "p95_ms": 99.983
+      },
+      "worktree": {
+        "create": {
+          "max_ms": 458.292,
+          "n": 3,
+          "p50_ms": 416.4,
+          "p95_ms": 458.292
+        },
+        "disk_per_worktree_bytes": 18870272.0
+      }
+    },
+    {
+      "bytes": 2119077,
+      "clone": "copy",
+      "create_first_ms": 9317.962,
+      "create_warm": {
+        "max_ms": 1915.077,
+        "n": 4,
+        "p50_ms": 1877.049,
+        "p95_ms": 1915.077
+      },
+      "deps_files": 20000,
+      "disk_per_workspace_bytes": 93681254.4,
+      "files": 16004,
+      "import_ms": 3137.582,
+      "name": "synthetic",
+      "repo": "synthetic",
+      "snapshot_after_sync_ms": 28.825,
+      "sync_10_files": {
+        "max_ms": 33.215,
+        "n": 5,
+        "p50_ms": 32.466,
+        "p95_ms": 33.215
+      },
+      "sync_no_change": {
+        "max_ms": 81.643,
+        "n": 30,
+        "p50_ms": 34.397,
+        "p95_ms": 52.639
+      },
+      "worktree": {
+        "create": {
+          "max_ms": 1812.155,
+          "n": 3,
+          "p50_ms": 1806.303,
+          "p95_ms": 1812.155
+        },
+        "disk_per_worktree_bytes": 73921877.33333333
+      }
+    }
+  ]
+}

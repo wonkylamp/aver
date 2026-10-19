@@ -1,0 +1,9 @@
+{
+  "name": "flaky",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Aver test fixture: flaky. Zero npm dependencies.",
+  "scripts": {
+    "test": "node --test"
+  }
+}

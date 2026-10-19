@@ -1,0 +1,12 @@
+# What `aver verify` and CI run: the unit suite and the integration suite.
+[[check]]
+id = "unit"
+run = "node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=$AVER_OUT/unit.xml 'test/**/*.test.ts'"
+min_tests = 48
+timeout_s = 600
+
+[[check]]
+id = "integration"
+run = "node --test --test-concurrency=1 --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=$AVER_OUT/integration.xml 'integration/**/*.test.ts'"
+min_tests = 7
+timeout_s = 600

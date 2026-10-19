@@ -1,0 +1,461 @@
+{
+  "schema": "aver.eval/v0",
+  "label": "2026-10-14-hard-sonnet",
+  "scenario": "contract-refactor",
+  "set": "hard",
+  "title": "Reorganise a shared library by area without changing its public API",
+  "measures": "A refactor across the whole package: move 26 public functions out of src/legacy/, src/util.ts and src/helpers/ into one directory per area, and remove duplicate helpers. Three helper pairs look like duplicates and are not (two word splitters that differ on apostrophes and acronyms, two accent strippers that differ on letters like ss and ae, two clamps that differ on NaN), and each pair feeds different public functions; merging either pair keeps every visible test green and changes the public API. Hidden tests: one contract test per export, as docs/api.md documents it, plus the target layout. Measures the hidden pass rate (the contract) and NEW failures.",
+  "dry_run": false,
+  "config": {
+    "agents": 2,
+    "timeout_ms": 1800000,
+    "max_budget_usd": 8,
+    "model": "sonnet",
+    "aver_commit": "1b899ad38c75",
+    "claude_version": "2.1.296 (Claude Code)"
+  },
+  "hidden_totals": {
+    "split-legacy": 33
+  },
+  "difficulty": {
+    "split-legacy": [
+      {
+        "behavior": "solution",
+        "hidden_rate": 1
+      },
+      {
+        "behavior": "merged-helpers",
+        "hidden_rate": 0.9090909090909091
+      }
+    ]
+  },
+  "flaky": [],
+  "arms": {
+    "A": {
+      "arm": "A",
+      "complete": true,
+      "wall_ms": 121861,
+      "attempts": [
+        {
+          "task": "split-legacy",
+          "diff": {
+            "files": 42,
+            "added": 282,
+            "removed": 284,
+            "paths": [
+              "src/collections/chunk.ts",
+              "src/collections/group-by.ts",
+              "src/collections/index.ts",
+              "src/collections/partition.ts",
+              "src/collections/uniq-by.ts",
+              "src/dates/business-days.ts",
+              "src/dates/index.ts",
+              "src/dates/iso-date.ts",
+              "src/dates/relative-days.ts",
+              "src/helpers/ascii.ts",
+              "src/helpers/case.ts",
+              "src/helpers/size.ts",
+              "src/helpers/text.ts",
+              "src/helpers/words.ts",
+              "src/index.ts",
+              "src/legacy/collections.ts",
+              "src/legacy/dates.ts",
+              "src/legacy/numbers.ts",
+              "src/legacy/strings.ts",
+              "src/legacy/validate.ts",
+              "src/numbers/bytes.ts",
+              "src/numbers/clamp.ts",
+              "src/numbers/index.ts",
+              "src/numbers/ordinal.ts",
+              "src/numbers/percent.ts",
+              "src/numbers/round-to.ts",
+              "src/numbers/scale.ts",
+              "src/strings/ascii.ts",
+              "src/strings/case.ts",
+              "src/strings/collapse-whitespace.ts",
+              "src/strings/ellipsize.ts",
+              "src/strings/index.ts",
+              "src/strings/initials.ts",
+              "src/strings/search-key.ts",
+              "src/strings/slugify.ts",
+              "src/strings/title-case.ts",
+              "src/strings/truncate.ts",
+              "src/strings/words.ts",
+              "src/util.ts",
+              "src/validation/email.ts",
+              "src/validation/index.ts",
+              "src/validation/postcode.ts"
+            ]
+          },
+          "gaming": [],
+          "gamed": false,
+          "npm_test": {
+            "exit": 0,
+            "ms": 529,
+            "timedOut": false,
+            "tests": 24,
+            "pass": 24,
+            "fail": 0,
+            "failing": []
+          },
+          "new_failures": [],
+          "hidden": [
+            {
+              "set": "split-legacy",
+              "exit": 0,
+              "ms": 362,
+              "timedOut": false,
+              "tests": 33,
+              "pass": 33,
+              "fail": 0,
+              "failing": []
+            }
+          ],
+          "hidden_rate": 1,
+          "correct": true,
+          "index": 1,
+          "dir": "contract-refactor/A/split-legacy-1",
+          "wall_ms": 121860,
+          "timed_out": false,
+          "state": null,
+          "place": null,
+          "log": {
+            "tool_calls": 42,
+            "edits": 31,
+            "test_runs": 4,
+            "verifies": 0,
+            "checks": 0,
+            "coordination": 0,
+            "baseline_by_hand": 0,
+            "permission_denials": 5,
+            "sessions": 1,
+            "turns": 43,
+            "cost_usd": 0.45874299999999996,
+            "session_id": "0db46f8f-8116-4154-a89f-718bd086682c",
+            "ended": "success",
+            "final": "`src/` now follows `docs/layout.md`, and `src/legacy/`, `src/util.ts` and `src/helpers/` are deleted. All 24 existing tests pass unchanged. I checked `src/index.ts` and it exports the same 26 names as before.\n\nEach area (`strings`, `numbers`, `dates`, `collections`, `validation`) has an `index.ts` that re-exports its functions. `src/index.ts` just re-exports the five areas.\n\n- **Duplicate `clamp`:** `src/util.ts` and `src/legacy/numbers.ts` each had one. I kept the legacy one in `src/numbers/clamp.ts`, because that is the public `clamp` and the one `scale` uses.\n- **`percent` doesn't use `clamp`:** `percent` was built on the `util.ts` version, which passes NaN through. The legacy `clamp` turns NaN into its minimum, so reusing it would have made `percent(NaN, …)` return 0 instead of NaN. `docs/api.md` requires NaN, so `percent` uses `Math.min`/`Math.max` directly, with a comment saying why.\n- **Helpers kept separate:** `words` (used by the casing functions and `slugify`) and `splitWords` (used by `titleCase` and `initials`) look alike but split text differently, as `docs/api.md` describes. `toAscii` and `stripAccents` also differ, since `searchKey` has to keep \"ß\". I kept each pair as its own helper, and none of them is exported.\n\nI didn't write new tests. The existing ones don't cover `percent(NaN, …)`, so I only checked it by hand, and it returns NaN.\n\nI didn't commit anything."
+          },
+          "feedback": {
+            "rating": 6,
+            "answer": "**1. What helped and what was friction**\n\nHelped:\n- The task came with precise docs. `docs/api.md` said \"NaN gives NaN (the dashboard shows \"n/a\")\" for `percent`. That is what told me not to build `percent` on the legacy `clamp`. The two `clamp` copies differ on exactly that point: `src/util.ts` passes NaN through, and `src/legacy/numbers.ts` turns it into `min`.\n- The repo was small and `npm test` ran in about 0.2s. The output was easy to read: `ℹ pass 24 / ℹ fail 0`.\n- Importing `src/index.ts` with `node -e` and listing `Object.keys(m)` gave a real check that the 26 exports were unchanged.\n\nFriction:\n- The Bash permission checker rejected several commands before they ran, and each rejection cost a turn:\n  - `find contains unquoted glob characters — could glob-expand to a dangerous action before find runs`\n  - `A variable in this command can't be checked before it runs` (a `for f in …` loop)\n  - `Contains brace with quote character (expansion obfuscation)` (my large batch script, so nothing ran)\n  - `This Bash command contains multiple operations. The following part requires approval`\n- The checker was inconsistent. `git rm -rq src/legacy src/helpers src/util.ts` returned `This command requires approval`, but `rm -r src/legacy src/helpers src/util.ts` ran fine. I had to rewrite about 25 files one at a time with Write.\n- The tests only import from `../src/index.ts`, and none checks `percent(NaN, …)`. A wrong dedupe of `clamp` would have passed all 24 tests and broken the contract.\n\n**2. Hard tasks**\n\nFor this task the environment was fine. For harder ones I'd be missing several things:\n- **Flaky or already-failing suites:** nothing distinguishes a pre-existing failure from one I caused. I'd want a baseline test run recorded up front, or a way to run `git stash`-free comparisons. Stash use is also restricted because it is shared across worktrees.\n- **Unclear done criteria:** this task's criteria were clear, but nothing enforced them mechanically. There was no type check (`tsc` isn't in `package.json`), no lint, and no export-snapshot or contract test. I verified the contract by hand.\n- **Other agents editing the same code:** the worktree isolation helps. I'd still have no signal about concurrent changes, and the permission prompts would stall a non-interactive session.\n\n**3. Rating**\n\nRATING: 6/10\n\n**4. One change**\n\nMake the Bash permission rules predictable, so that safe, in-worktree operations like `git rm`, `for` loops and heredoc file writes aren't blocked or randomly prompted. Adding a contract test that snapshots the public exports and the documented edge cases would be the second most useful change."
+          }
+        },
+        {
+          "task": "split-legacy",
+          "diff": {
+            "files": 28,
+            "added": 285,
+            "removed": 284,
+            "paths": [
+              "src/collections/array.ts",
+              "src/collections/index.ts",
+              "src/dates/dates.ts",
+              "src/dates/index.ts",
+              "src/helpers/ascii.ts",
+              "src/helpers/case.ts",
+              "src/helpers/size.ts",
+              "src/helpers/text.ts",
+              "src/helpers/words.ts",
+              "src/index.ts",
+              "src/legacy/collections.ts",
+              "src/legacy/dates.ts",
+              "src/legacy/numbers.ts",
+              "src/legacy/strings.ts",
+              "src/legacy/validate.ts",
+              "src/numbers/format-size.ts",
+              "src/numbers/index.ts",
+              "src/numbers/numbers.ts",
+              "src/numbers/percent.ts",
+              "src/strings/ascii.ts",
+              "src/strings/display.ts",
+              "src/strings/ellipsize.ts",
+              "src/strings/identifiers.ts",
+              "src/strings/index.ts",
+              "src/strings/words.ts",
+              "src/util.ts",
+              "src/validation/index.ts",
+              "src/validation/validate.ts"
+            ]
+          },
+          "gaming": [],
+          "gamed": false,
+          "npm_test": {
+            "exit": 0,
+            "ms": 651,
+            "timedOut": false,
+            "tests": 24,
+            "pass": 24,
+            "fail": 0,
+            "failing": []
+          },
+          "new_failures": [],
+          "hidden": [
+            {
+              "set": "split-legacy",
+              "exit": 0,
+              "ms": 251,
+              "timedOut": false,
+              "tests": 33,
+              "pass": 33,
+              "fail": 0,
+              "failing": []
+            }
+          ],
+          "hidden_rate": 1,
+          "correct": true,
+          "index": 2,
+          "dir": "contract-refactor/A/split-legacy-2",
+          "wall_ms": 43315,
+          "timed_out": false,
+          "state": null,
+          "place": null,
+          "log": {
+            "tool_calls": 9,
+            "edits": 0,
+            "test_runs": 1,
+            "verifies": 0,
+            "checks": 0,
+            "coordination": 0,
+            "baseline_by_hand": 0,
+            "permission_denials": 4,
+            "sessions": 1,
+            "turns": 10,
+            "cost_usd": 0.23617359999999998,
+            "session_id": "c5410bd5-6658-4428-a5b2-72c7dccf326f",
+            "ended": "success",
+            "final": "`src/` is now split into `strings/`, `numbers/`, `dates/`, `collections/` and `validation/`. `src/legacy/`, `src/util.ts` and `src/helpers/` are deleted. `npm test` passes all 24 tests with the tests unchanged. `src/index.ts` exports the same 26 names as before, which I compared against the old export list.\n\nTwo parts of the brief aren't met:\n- **One file per function family:** the files are grouped by theme, not strictly one family each. `strings/identifiers.ts` holds camelCase, kebabCase, snakeCase and slugify, and `strings/display.ts` holds titleCase, searchKey, collapseWhitespace, truncate and initials. `numbers/numbers.ts` holds clamp, scale, roundTo, ordinal and formatBytes. `strings/ellipsize.ts`, `numbers/format-size.ts` and `numbers/percent.ts` each hold one function. Splitting further is a mechanical follow-up if you want it.\n- **Git history:** I used plain `mv`, so git shows these as deletes plus untracked files until you `git add -A`.\n\n- **Duplicate helper:** the only true duplicate was `clamp`, which existed in `util.ts` and in `legacy/numbers.ts`. I kept the legacy one, since that is what `src/index.ts` exported. The two behave differently on NaN, so `percent` now returns NaN itself instead of passing it through `clamp`. Without that, `percent(NaN, 5)` would have become 0, against `docs/api.md`. I checked it returns NaN.\n- **Look-alike helpers:** `splitWords` and `words` look like duplicates but split words differently, as do `stripAccents` and `toAscii`. Merging them would change behaviour, so both of each stay."
+          },
+          "feedback": {
+            "rating": 5,
+            "answer": "**1. What helped and what was friction**\n\nHelped:\n- `docs/layout.md` and `docs/api.md` made the target and the contract explicit. The api.md line \"NaN gives NaN (the dashboard shows \"n/a\")\" told me the duplicate `clamp` was a trap, because the two copies differ on NaN.\n- The tests are fast and have no flakiness: `ℹ tests 24 … ℹ pass 24 … ℹ fail 0`.\n- Printing `Object.keys` of the new index let me compare the export list with the old one directly.\n\nFriction:\n- Permission checks rejected several of my commands: \"find contains unquoted glob characters\", \"A variable in this command can't be checked before it runs\", \"This command changes directory before running a version-control command\", and \"contains multiple operations\". Each cost a turn. I had to switch from `git mv` to plain `mv`, which lost rename tracking in git.\n- The test suite is thin. It passed even before I added the NaN handling in `percent`, so it would not have caught that regression.\n\n**2. Hard tasks**\n\nFor this task the environment was adequate. For harder ones I'd be missing three things:\n- A baseline-failure record, or a way to tell which failures predate my change.\n- Contract tests derived from `docs/api.md`, such as the NaN, RangeError and unicode cases. As it is, \"same behaviour\" rests on my reading of the code.\n- Any signal about other agents editing the same files. The worktree isolation helps, but I saw nothing about concurrent changes.\n\nThe permission prompts would hurt more in long multi-step work, since batched shell steps get blocked.\n\n**3. Rating**\n\nRATING: 5/10\n\n**4. One change**\n\nAdd a contract test suite that covers every behaviour in `docs/api.md`, including the NaN, RangeError and unicode edge cases. That would let me confirm \"exactly the same behaviour\" instead of arguing it from the code.\n\nTwo caveats on my own work. \"One file per function family\" is only partly met, because several files group multiple families. I also didn't run a before/after behavioural comparison beyond the existing tests and a few spot checks."
+          }
+        }
+      ],
+      "picks": {
+        "split-legacy": {
+          "index": 1,
+          "why": "npm test green, smallest diff"
+        }
+      },
+      "combined": null,
+      "runs": {}
+    },
+    "B": {
+      "arm": "B",
+      "complete": true,
+      "wall_ms": 184707,
+      "attempts": [
+        {
+          "task": "split-legacy",
+          "diff": {
+            "files": 46,
+            "added": 316,
+            "removed": 284,
+            "paths": [
+              "src/collections/chunk.ts",
+              "src/collections/group-by.ts",
+              "src/collections/index.ts",
+              "src/collections/partition.ts",
+              "src/collections/uniq-by.ts",
+              "src/dates/add-business-days.ts",
+              "src/dates/index.ts",
+              "src/dates/iso-date.ts",
+              "src/dates/relative-days.ts",
+              "src/helpers/ascii.ts",
+              "src/helpers/case.ts",
+              "src/helpers/size.ts",
+              "src/helpers/text.ts",
+              "src/helpers/words.ts",
+              "src/index.ts",
+              "src/legacy/collections.ts",
+              "src/legacy/dates.ts",
+              "src/legacy/numbers.ts",
+              "src/legacy/strings.ts",
+              "src/legacy/validate.ts",
+              "src/numbers/clamp.ts",
+              "src/numbers/format-bytes.ts",
+              "src/numbers/format-size.ts",
+              "src/numbers/index.ts",
+              "src/numbers/ordinal.ts",
+              "src/numbers/percent.ts",
+              "src/numbers/round-to.ts",
+              "src/numbers/scale.ts",
+              "src/strings/ascii.ts",
+              "src/strings/case.ts",
+              "src/strings/collapse-whitespace.ts",
+              "src/strings/ellipsize.ts",
+              "src/strings/index.ts",
+              "src/strings/initials.ts",
+              "src/strings/search-key.ts",
+              "src/strings/slugify.ts",
+              "src/strings/split-words.ts",
+              "src/strings/strip-accents.ts",
+              "src/strings/title-case.ts",
+              "src/strings/truncate.ts",
+              "src/strings/words.ts",
+              "src/util.ts",
+              "src/validation/index.ts",
+              "src/validation/is-email.ts",
+              "src/validation/is-postcode-uk.ts",
+              "test/layout.test.ts"
+            ]
+          },
+          "gaming": [],
+          "gamed": false,
+          "npm_test": {
+            "exit": 0,
+            "ms": 576,
+            "timedOut": false,
+            "tests": 26,
+            "pass": 26,
+            "fail": 0,
+            "failing": []
+          },
+          "new_failures": [],
+          "hidden": [
+            {
+              "set": "split-legacy",
+              "exit": 0,
+              "ms": 396,
+              "timedOut": false,
+              "tests": 33,
+              "pass": 33,
+              "fail": 0,
+              "failing": []
+            }
+          ],
+          "hidden_rate": 1,
+          "correct": true,
+          "index": 1,
+          "dir": "../../../../../../../private/var/folders/rf/8pv5ly4j64j56mf2727qvt_w0000gn/T/aver-eval/2026-10-14-hard-sonnet/contract-refactor/B/home/work/repo/S8NJQ0-1",
+          "wall_ms": 183759,
+          "timed_out": false,
+          "state": "done",
+          "place": 2,
+          "log": {
+            "tool_calls": 55,
+            "edits": 33,
+            "test_runs": 4,
+            "verifies": 1,
+            "checks": 1,
+            "coordination": 0,
+            "baseline_by_hand": 0,
+            "permission_denials": 12,
+            "sessions": 1,
+            "turns": 56,
+            "cost_usd": 0.6471335999999998,
+            "session_id": "28cd9d2a-4401-426d-8628-b00ccceaa0d4",
+            "ended": "success",
+            "final": "`aver verify` printed `DONE: PASS`. The `layout` criterion is proven, and the existing tests pass unchanged. I never ran `npm test` or `tsc` directly; the Bash tool blocked those commands.\n\n- **Layout:** `src/strings/`, `src/numbers/`, `src/dates/`, `src/collections/` and `src/validation/` now exist. Each has one file per function family and an `index.ts` listing its exports by name. `src/index.ts` only re-exports the five areas. `src/legacy/`, `src/util.ts` and `src/helpers/` are deleted.\n- **Duplicate helpers:** there were two `clamp` functions, and I kept the one from `legacy/numbers.ts`, which `docs/api.md` documents (NaN gives min, and min above max is a RangeError). `percent` relied on the other, simpler `clamp`, which let NaN through. To keep `percent(NaN, …)` returning NaN as the docs say, `percent` now returns NaN itself before calling `clamp`.\n- **Not duplicates:** `splitWords` and `words` split text differently (`titleCase` and `initials` use the first, `camelCase`, `kebabCase`, `snakeCase` and `slugify` the second). `stripAccents` and `toAscii` also differ. I kept both pairs as internal helpers in `src/strings/`, since merging them would change behaviour.\n- **Test:** I added `test/layout.test.ts` with two `[crit:layout]` cases. One checks that each area's `index.ts` exports exactly the functions in `docs/layout.md`. The other checks that the old paths are gone. Both fail on the original code and pass now.\n\nOne stray file remains outside the repo copy. My first attempt at a helper script wrote `reorg.py` into the parent `repo/` directory, and I couldn't delete it because that path is outside my working directory. It is not part of the change and you can delete it."
+          },
+          "feedback": {
+            "rating": 6,
+            "answer": "**1. What helped and what was friction**\n\nHelped:\n- `aver check` was the most useful part. In seconds it said `layout  WOULD PROVE: fails on the original ✓, passes with your change ✓` and ended with `Verify should PASS`. Because of that, the real `aver verify` was a formality and I used only 1 of 10.\n- The brief's rule that a test must fail on the original code *on an assertion*, not just fail to load, shaped how I wrote my tests. I made them load on the original code and assert on file existence and export lists.\n- The warning `Node 25 here, Node 22 in the sandbox` was honest about where local and sandbox results could differ.\n\nFriction:\n- Most of my friction came from the Bash sandbox, not Aver:\n  - A `find` with a glob was rejected (\"could glob-expand to a dangerous action\").\n  - Compound commands were rejected (\"This Bash command contains multiple operations\").\n  - `cd` before git was rejected.\n  - Running a Python script was blocked (\"This command requires approval\").\n  - My first helper script landed in the parent directory, so I could not move or delete it (\"needs approval... outside the working directories\"). It is still there.\n  - These cost me many turns.\n- The brief did not say which command forms would be auto-approved. A line about that would have saved those turns.\n- The brief says \"keep one copy\" of duplicated helpers. It gave no way to prove that choice was right. `aver check` has nothing to tell me about the behavioural gap between the two `clamp` functions, which I found only by reading the code. Nothing checks that \"exactly the same behaviour\" still holds beyond the existing tests, which don't cover `percent(NaN, …)`.\n\n**2. Hard tasks: better or worse than a plain checkout?**\n\nBetter, with caveats.\n- **Flaky or already-failing suites:** the original-versus-yours comparison, the reruns to detect flakiness, and the PREEXISTING classification stop me from being blamed for failures I did not cause. In a plain checkout I would have to work that out myself.\n- **Unclear done criteria:** the explicit `[crit:id]` proof rule turns \"done\" into something checkable. The risk is that a test can satisfy the criterion without proving the real intent. My layout test checks structure, not that behaviour was preserved.\n- **Other agents editing the same code:** I did not meet this, so I can't say.\n- **Cost:** Aver adds ceremony, such as the do-not-edit list and the CHANGED/REVIEW semantics. On an easy task that is overhead. On a hard one it is cheap insurance.\n\n**3. Rating**\n\nI could have done this task without Aver, but `aver check` gave fast and trustworthy feedback, and the signed verdict is useful to a reviewer.\n\nRATING: 6/10\n\n**4. The one change that would raise my rating most**\n\nHave `aver check` or the brief report a behavioural snapshot of the public API. For example, it could run the exported functions on a set of inputs before and after my change and flag any difference. For a refactor with a \"same behaviour\" contract, that is the real risk. Right now the tool only confirms that the structural test I wrote passes. A close second would be telling me up front which shell command forms the sandbox auto-approves."
+          }
+        },
+        {
+          "task": "split-legacy",
+          "diff": {
+            "files": 29,
+            "added": 308,
+            "removed": 284,
+            "paths": [
+              "src/collections/collections.ts",
+              "src/collections/index.ts",
+              "src/dates/dates.ts",
+              "src/dates/index.ts",
+              "src/helpers/ascii.ts",
+              "src/helpers/case.ts",
+              "src/helpers/size.ts",
+              "src/helpers/text.ts",
+              "src/helpers/words.ts",
+              "src/index.ts",
+              "src/legacy/collections.ts",
+              "src/legacy/dates.ts",
+              "src/legacy/numbers.ts",
+              "src/legacy/strings.ts",
+              "src/legacy/validate.ts",
+              "src/numbers/index.ts",
+              "src/numbers/numbers.ts",
+              "src/numbers/percent.ts",
+              "src/numbers/size.ts",
+              "src/strings/ascii.ts",
+              "src/strings/case.ts",
+              "src/strings/display.ts",
+              "src/strings/ellipsize.ts",
+              "src/strings/index.ts",
+              "src/strings/words.ts",
+              "src/util.ts",
+              "src/validation/index.ts",
+              "src/validation/validate.ts",
+              "test/layout.test.ts"
+            ]
+          },
+          "gaming": [],
+          "gamed": false,
+          "npm_test": {
+            "exit": 0,
+            "ms": 667,
+            "timedOut": false,
+            "tests": 26,
+            "pass": 26,
+            "fail": 0,
+            "failing": []
+          },
+          "new_failures": [],
+          "hidden": [
+            {
+              "set": "split-legacy",
+              "exit": 0,
+              "ms": 255,
+              "timedOut": false,
+              "tests": 33,
+              "pass": 33,
+              "fail": 0,
+              "failing": []
+            }
+          ],
+          "hidden_rate": 1,
+          "correct": true,
+          "index": 2,
+          "dir": "../../../../../../../private/var/folders/rf/8pv5ly4j64j56mf2727qvt_w0000gn/T/aver-eval/2026-10-14-hard-sonnet/contract-refactor/B/home/work/repo/S8NJQ0-2",
+          "wall_ms": 56140,
+          "timed_out": false,
+          "state": "done",
+          "place": 1,
+          "log": {
+            "tool_calls": 12,
+            "edits": 1,
+            "test_runs": 2,
+            "verifies": 2,
+            "checks": 0,
+            "coordination": 0,
+            "baseline_by_hand": 0,
+            "permission_denials": 5,
+            "sessions": 1,
+            "turns": 13,
+            "cost_usd": 0.2650633,
+            "session_id": "a3ee5cf0-eeba-498d-af9e-2f78979a053b",
+            "ended": "success",
+            "final": "`src/` is now split into `strings/`, `numbers/`, `dates/`, `collections/` and `validation/`, each with an `index.ts`. `aver verify` printed DONE: PASS, with all 26 tests passing, and I didn't touch the existing tests. `src/legacy/`, `src/util.ts` and `src/helpers/` are deleted.\n\n- **Public API:** `src/index.ts` now just does `export *` from the five area indexes. Each area index lists its names explicitly, so the package still exports the same names as before. I did not diff `docs/api.md` against the exports or check behaviour beyond the existing tests.\n- **Duplicate `clamp`:** I kept the `src/legacy` one, which throws if `min` is above `max` and turns NaN into `min`. `percent` previously used the `src/util.ts` version, which returns NaN for NaN. I rewrote `percent` to use plain `Math.min`/`Math.max` so its \"NaN in, NaN out\" behaviour is unchanged.\n- **Look-alike helpers:** `splitWords` and `words`, and `stripAccents` and `toAscii`, behave differently (for example, `words` splits \"don't\" in two). Merging them would change output, so I kept both and they stay internal.\n- **File layout:** the files are grouped by theme rather than strictly one per function. `src/strings/display.ts` holds `titleCase`, `searchKey`, `collapseWhitespace`, `truncate` and `initials`; `src/numbers/numbers.ts` holds the rest of the number functions. Say if you want those split further.\n- **New test:** `test/layout.test.ts` has two `[crit:layout]` cases. One checks that each area's `index.ts` exists and exports exactly its functions. The other checks that the three old paths are gone."
+          },
+          "feedback": {
+            "rating": 6,
+            "answer": "**1. What helped and what was friction**\n\nHelped:\n- The brief was precise. \"DONE MEANS: `aver verify` prints DONE: PASS\" and the `[crit:layout]` proof rule told me exactly what to build.\n- `aver verify` showed me the proof logic directly: \"Your tests show the change (2; they fail on the original code and pass with yours)\". It also finished in about 3 seconds.\n- The \"weak proof\" warning made me write assertions on the export list and on file existence. Both tests load on the original code and fail there on an assertion, not on a missing import.\n\nFriction:\n- Most of it came from the Bash sandbox and permission layer, not Aver:\n  - \"Contains brace with quote character (expansion obfuscation)\"\n  - \"This Bash command contains multiple operations. The following part requires approval\"\n  - \"A variable in this command can't be checked before it runs\"\n  \n  I lost several turns splitting commands. One of those turns was a heredoc, and chained `git mv` calls also needed approval. I fell back to plain `mv`, which lost git's rename tracking in my working tree.\n- I ran `aver verify` without first running `aver check`. That was my mistake, since the brief recommended `check` first. It cost one of the 10 verifies, though it passed on the first try.\n- The brief says \"same behaviour\" is the contract, but no criterion tests it. I checked the duplicate `clamp` and `percent` by reading the code. Aver would have said PASS even if I had changed behaviour, as long as the existing tests didn't notice.\n\n**2. Better or worse than a plain checkout on hard tasks?**\n\nBetter, with caveats.\n- Strengths:\n  - The original-vs-mine comparison catches tests that don't prove anything.\n  - Flaky tests are rerun automatically, so they don't count against you.\n  - Failures that were already there are separated from failures you caused.\n  - Edits to protected files are flagged.\n- On unclear criteria, Aver forces you to turn \"done\" into a named, checkable test. A plain checkout leaves you guessing.\n- Weaknesses:\n  - A criterion only checks what its author wrote down. Here it checked structure but not the \"exactly the same behaviour\" requirement.\n  - I didn't experience the multi-agent case, so I can't judge it.\n  - The verify budget of 10 is a mild pressure toward cautious, slow work.\n\n**3. Rating**\n\nI give it 6. It is useful and fast, but this task was easy enough that a plain checkout would have worked. The proof discipline is the main benefit, and I can't say how much it matters on harder tasks.\n\nRATING: 6/10\n\n**4. One change that would raise the rating**\n\nAdd an optional behaviour-preservation check, for refactors like this one. Aver would snapshot the exports of the original code (names plus outputs on sample inputs) and compare them to mine. The \"same behaviour\" requirement is the real risk in a refactor, and nothing currently verifies it. A smaller improvement would be an `aver check` hint that says which tests could prove a given criterion."
+          }
+        }
+      ],
+      "picks": {
+        "split-legacy": {
+          "index": 2,
+          "why": "Aver's rank 1"
+        }
+      },
+      "combined": null,
+      "runs": {
+        "split-legacy": "S8NJQ0"
+      }
+    }
+  },
+  "complete": true
+}

@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 612" width="800" height="612" role="img" aria-labelledby="t d">
+<title id="t">Many agents, many tasks</title>
+<desc id="d">One repository, four tasks in parallel, each agent in its own workspace. Tasks 2 and 3 both change src/parse.ts, and both agents are told while they work. Tasks 1, 2 and 3 pass; task 4 broke something (FAIL_OWN) and stays out. aver combine merges the passing tasks and checks the result against every task, then it lands in Git as one branch ready for a pull request. If the changes conflict, the combine is refused and nothing broken lands.</desc>
+<defs><marker id="arrow-muted" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M1,1 L9,5 L1,9" fill="none" stroke="#a2abbd" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="arrow-accent" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M1,1 L9,5 L1,9" fill="none" stroke="#a5b9ff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="arrow-red" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M1,1 L9,5 L1,9" fill="none" stroke="#ff8f84" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker><marker id="arrow-ink" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M1,1 L9,5 L1,9" fill="none" stroke="#e7eaf1" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<rect width="800" height="612" fill="#121725"/>
+<rect x="24" y="24" width="752" height="40" rx="10" fill="#1a2132" stroke="#3b4560" stroke-width="1.5"/>
+<path d="M42,40 Q42,37 45,37 L49,37 L51,39 L57,39 Q60,39 60,42 L60,49 Q60,51 58,51 L44,51 Q42,51 42,49 Z" fill="none" stroke="#e7eaf1" stroke-width="1.5" stroke-linejoin="round"/>
+<text x="70" y="50" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="16" font-weight="700" fill="#e7eaf1" text-anchor="start"><tspan>One repository, many tasks at once</tspan></text>
+<text x="758" y="50" xml:space="preserve" font-family="'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="14" font-weight="400" fill="#a2abbd" text-anchor="end"><tspan>aver run --tasks tasks.txt</tspan></text>
+<path d="M99.0,68 V91" fill="none" stroke="#a2abbd" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-muted)"/>
+<rect x="24" y="96" width="150" height="140" rx="10" fill="#121725" stroke="#3b4560" stroke-width="1.5"/>
+<text x="99.0" y="126" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="17" font-weight="700" fill="#e7eaf1" text-anchor="middle"><tspan>Task 1</tspan></text>
+<text x="99.0" y="148" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="15" font-weight="400" fill="#e7eaf1" text-anchor="middle"><tspan>Fix leap years</tspan></text>
+<line x1="40" y1="164" x2="158" y2="164" stroke="#2a3245" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M44.0,177 Q44.0,174 47.0,174 L51.0,174 L53.0,176 L59.0,176 Q62.0,176 62.0,179 L62.0,186 Q62.0,188 60.0,188 L46.0,188 Q44.0,188 44.0,186 Z" fill="none" stroke="#a2abbd" stroke-width="1.5" stroke-linejoin="round"/>
+<text x="69.0" y="186" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="15" font-weight="400" fill="#a2abbd" text-anchor="start"><tspan>workspace 1</tspan></text>
+<rect x="71.2" y="199.0" width="55.6" height="26" rx="13.0" fill="#121725" stroke="#a5b9ff" stroke-width="1.25"/>
+<text x="99.0" y="217.04" xml:space="preserve" font-family="'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="14" font-weight="600" fill="#a5b9ff" text-anchor="middle"><tspan>PASS</tspan></text>
+<path d="M269.0,68 V91" fill="none" stroke="#a2abbd" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-muted)"/>
+<rect x="194" y="96" width="150" height="140" rx="10" fill="#121725" stroke="#3b4560" stroke-width="1.5"/>
+<text x="269.0" y="126" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="17" font-weight="700" fill="#e7eaf1" text-anchor="middle"><tspan>Task 2</tspan></text>
+<text x="269.0" y="148" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="15" font-weight="400" fill="#e7eaf1" text-anchor="middle"><tspan>Parse ISO weeks</tspan></text>
+<line x1="210" y1="164" x2="328" y2="164" stroke="#2a3245" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M214.0,177 Q214.0,174 217.0,174 L221.0,174 L223.0,176 L229.0,176 Q232.0,176 232.0,179 L232.0,186 Q232.0,188 230.0,188 L216.0,188 Q214.0,188 214.0,186 Z" fill="none" stroke="#a2abbd" stroke-width="1.5" stroke-linejoin="round"/>
+<text x="239.0" y="186" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="15" font-weight="400" fill="#a2abbd" text-anchor="start"><tspan>workspace 2</tspan></text>
+<rect x="241.2" y="199.0" width="55.6" height="26" rx="13.0" fill="#121725" stroke="#a5b9ff" stroke-width="1.25"/>
+<text x="269.0" y="217.04" xml:space="preserve" font-family="'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="14" font-weight="600" fill="#a5b9ff" text-anchor="middle"><tspan>PASS</tspan></text>
+<path d="M531.0,68 V91" fill="none" stroke="#a2abbd" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-muted)"/>
+<rect x="456" y="96" width="150" height="140" rx="10" fill="#121725" stroke="#3b4560" stroke-width="1.5"/>
+<text x="531.0" y="126" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="17" font-weight="700" fill="#e7eaf1" text-anchor="middle"><tspan>Task 3</tspan></text>
+<text x="531.0" y="148" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="15" font-weight="400" fill="#e7eaf1" text-anchor="middle"><tspan>Parse time zones</tspan></text>
+<line x1="472" y1="164" x2="590" y2="164" stroke="#2a3245" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M476.0,177 Q476.0,174 479.0,174 L483.0,174 L485.0,176 L491.0,176 Q494.0,176 494.0,179 L494.0,186 Q494.0,188 492.0,188 L478.0,188 Q476.0,188 476.0,186 Z" fill="none" stroke="#a2abbd" stroke-width="1.5" stroke-linejoin="round"/>
+<text x="501.0" y="186" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="15" font-weight="400" fill="#a2abbd" text-anchor="start"><tspan>workspace 3</tspan></text>
+<rect x="503.2" y="199.0" width="55.6" height="26" rx="13.0" fill="#121725" stroke="#a5b9ff" stroke-width="1.25"/>
+<text x="531.0" y="217.04" xml:space="preserve" font-family="'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="14" font-weight="600" fill="#a5b9ff" text-anchor="middle"><tspan>PASS</tspan></text>
+<path d="M701.0,68 V91" fill="none" stroke="#a2abbd" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-muted)"/>
+<rect x="626" y="96" width="150" height="140" rx="10" fill="#121725" stroke="#3b4560" stroke-width="1.5"/>
+<text x="701.0" y="126" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="17" font-weight="700" fill="#e7eaf1" text-anchor="middle"><tspan>Task 4</tspan></text>
+<text x="701.0" y="148" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="15" font-weight="400" fill="#e7eaf1" text-anchor="middle"><tspan>Speed up format</tspan></text>
+<line x1="642" y1="164" x2="760" y2="164" stroke="#2a3245" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M646.0,177 Q646.0,174 649.0,174 L653.0,174 L655.0,176 L661.0,176 Q664.0,176 664.0,179 L664.0,186 Q664.0,188 662.0,188 L648.0,188 Q646.0,188 646.0,186 Z" fill="none" stroke="#a2abbd" stroke-width="1.5" stroke-linejoin="round"/>
+<text x="671.0" y="186" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="15" font-weight="400" fill="#a2abbd" text-anchor="start"><tspan>workspace 4</tspan></text>
+<rect x="656.4" y="199.0" width="89.2" height="26" rx="13.0" fill="#121725" stroke="#ff8f84" stroke-width="1.25"/>
+<text x="701.0" y="217.04" xml:space="preserve" font-family="'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="14" font-weight="600" fill="#ff8f84" text-anchor="middle"><tspan>FAIL_OWN</tspan></text>
+<text x="701.0" y="260" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="15" font-weight="400" fill="#ff8f84" text-anchor="middle"><tspan>stays out</tspan></text>
+<circle cx="400.0" cy="120" r="10" fill="#232b45" stroke="#a5b9ff" stroke-width="1.5"/>
+<text x="400.0" y="125" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="15" font-weight="700" fill="#a5b9ff" text-anchor="middle"><tspan>!</tspan></text>
+<text x="400.0" y="150" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="15" font-weight="700" fill="#a5b9ff" text-anchor="middle"><tspan>same file</tspan></text>
+<path d="M348,166 H452" fill="none" stroke="#a5b9ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4 4"/>
+<circle cx="344" cy="166" r="3" fill="#a5b9ff"/>
+<circle cx="456" cy="166" r="3" fill="#a5b9ff"/>
+<text x="400.0" y="188" xml:space="preserve" font-family="'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="13" font-weight="400" fill="#e7eaf1" text-anchor="middle"><tspan>src/parse.ts</tspan></text>
+<text x="400.0" y="208" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="14" font-weight="400" fill="#a2abbd" text-anchor="middle"><tspan>both are told</tspan></text>
+<text x="400.0" y="225" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="14" font-weight="400" fill="#a2abbd" text-anchor="middle"><tspan>while working</tspan></text>
+<path d="M99.0,239 V268" fill="none" stroke="#a5b9ff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M269.0,239 V268" fill="none" stroke="#a5b9ff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M531.0,239 V268" fill="none" stroke="#a5b9ff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M99.0,268 H531.0" fill="none" stroke="#a5b9ff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M400,268 V291" fill="none" stroke="#a5b9ff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-accent)"/>
+<rect x="250" y="296" width="300" height="60" rx="10" fill="#121725" stroke="#a5b9ff" stroke-width="1.75"/>
+<text x="400" y="323" xml:space="preserve" font-family="'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace" font-size="17" font-weight="700" fill="#e7eaf1" text-anchor="middle"><tspan>aver combine</tspan></text>
+<text x="400" y="344" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="15" font-weight="400" fill="#a2abbd" text-anchor="middle"><tspan>merges the passing tasks</tspan></text>
+<path d="M554,326 H585" fill="none" stroke="#ff8f84" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-red)"/>
+<rect x="590" y="296" width="186" height="60" rx="10" fill="#33242c" stroke="#ff8f84" stroke-width="1.75"/>
+<text x="683" y="323" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="16" font-weight="700" fill="#ff8f84" text-anchor="middle"><tspan>conflict: refused</tspan></text>
+<text x="683" y="344" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="15" font-weight="400" fill="#a2abbd" text-anchor="middle"><tspan>nothing lands broken</tspan></text>
+<path d="M400,359 V383" fill="none" stroke="#a5b9ff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-accent)"/>
+<rect x="250" y="388" width="300" height="60" rx="10" fill="#121725" stroke="#a5b9ff" stroke-width="1.75"/>
+<text x="400" y="415" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="16" font-weight="700" fill="#e7eaf1" text-anchor="middle"><tspan>checked against every task</tspan></text>
+<text x="400" y="436" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="15" font-weight="400" fill="#a2abbd" text-anchor="middle"><tspan>tasks 1, 2 and 3 on the merge</tspan></text>
+<path d="M400,451 V475" fill="none" stroke="#a5b9ff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-accent)"/>
+<rect x="250" y="480" width="300" height="60" rx="10" fill="#232b45" stroke="#a5b9ff" stroke-width="1.75"/>
+<text x="400" y="507" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="17" font-weight="700" fill="#e7eaf1" text-anchor="middle"><tspan>Lands in Git</tspan></text>
+<text x="400" y="528" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="15" font-weight="400" fill="#a2abbd" text-anchor="middle"><tspan>one branch, ready for a PR</tspan></text>
+<text x="400.0" y="586" xml:space="preserve" font-family="'Atkinson Hyperlegible Next', 'Helvetica Neue', Arial, system-ui, sans-serif" font-size="16" font-weight="400" fill="#a2abbd" text-anchor="middle"><tspan>Tasks run in parallel; a merge lands only if it passes every task.</tspan></text>
+</svg>

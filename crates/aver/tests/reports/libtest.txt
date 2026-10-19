@@ -1,0 +1,89 @@
+   Compiling calc v0.1.0 (/tmp/w)
+    Finished `test` profile [unoptimized] target(s) in 0.73s
+     Running unittests src/lib.rs (/tmp/target/debug/deps/calc-8b106122b1f17982)
+
+running 5 tests
+test tests::adds ... ok
+test tests::ignored ... ignored
+test tests::ignored_with_reason ... ignored, slow
+test tests::fails ... FAILED
+test tests::panics - should panic ... ok
+
+failures:
+
+---- tests::fails stdout ----
+some captured output
+
+thread 'tests::fails' (75) panicked at src/lib.rs:33:9:
+assertion `left == right` failed: one and one
+  left: 2
+ right: 3
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::fails
+
+test result: FAILED. 2 passed; 1 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--lib`
+     Running unittests src/main.rs (/tmp/target/debug/deps/calc-c1473f7e652603e3)
+
+running 1 test
+test tests::adds ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/api.rs (/tmp/target/debug/deps/api-cea761b7c71579de)
+
+running 2 tests
+test api_adds ... ok
+test api_fails ... FAILED
+
+failures:
+
+---- api_fails stdout ----
+
+thread 'api_fails' (81) panicked at tests/api.rs:8:5:
+the api is broken
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    api_fails
+
+test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--test api`
+   Doc-tests calc
+
+running 3 tests
+test src/lib.rs - add (line 3) ... ok
+test src/lib.rs - add (line 7) ... FAILED
+test src/lib.rs - div (line 16) ... ok
+
+failures:
+
+---- src/lib.rs - add (line 7) stdout ----
+Test executable failed (exit status: 101).
+
+stderr:
+
+thread 'main' (115) panicked at src/lib.rs:5:1:
+assertion `left == right` failed
+  left: 4
+ right: 5
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+
+failures:
+    src/lib.rs - add (line 7)
+
+test result: FAILED. 2 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.25s
+
+error: doctest failed, to rerun pass `--doc`
+error: 3 targets failed:
+    `--lib`
+    `--test api`
+    `--doc`

@@ -1,0 +1,949 @@
+{
+  "schema": "aver.eval/v0",
+  "label": "2026-10-14-hard",
+  "scenario": "three-way-overlap",
+  "set": "hard",
+  "title": "Three pricing features at once in one function",
+  "measures": "Three tasks (promo codes, tax-inclusive prices, cash rounding) run at the same time by different agents, all in priceCart and the Store type. docs/pricing.md fixes how they compose (discount before tax and shipping, tax extracted from discounted inclusive amounts, rounding last). Each task's hidden tests check it alone; the combined hidden tests check the interactions on the merge of the three picks (arm A: git merge of the picks one after another; arm B: aver combine of the three runs). Measures merge conflicts and the hidden pass rate on the combined result.",
+  "dry_run": false,
+  "config": {
+    "agents": 2,
+    "timeout_ms": 1800000,
+    "max_budget_usd": 8,
+    "model": null,
+    "aver_commit": "5397c79c926f",
+    "claude_version": "2.1.296 (Claude Code)"
+  },
+  "hidden_totals": {
+    "promo-codes": 9,
+    "tax-inclusive": 5,
+    "cash-rounding": 6,
+    "combined": 6
+  },
+  "difficulty": {
+    "promo-codes": [
+      {
+        "behavior": "solution",
+        "hidden_rate": 1
+      },
+      {
+        "behavior": "naive",
+        "hidden_rate": 0.6666666666666666
+      }
+    ],
+    "tax-inclusive": [
+      {
+        "behavior": "solution",
+        "hidden_rate": 1
+      },
+      {
+        "behavior": "naive",
+        "hidden_rate": 0.6
+      }
+    ],
+    "cash-rounding": [
+      {
+        "behavior": "solution",
+        "hidden_rate": 1
+      },
+      {
+        "behavior": "naive",
+        "hidden_rate": 0.6666666666666666
+      }
+    ]
+  },
+  "flaky": [],
+  "arms": {
+    "A": {
+      "arm": "A",
+      "complete": true,
+      "wall_ms": 109834,
+      "attempts": [
+        {
+          "task": "promo-codes",
+          "diff": {
+            "files": 3,
+            "added": 133,
+            "removed": 12,
+            "paths": [
+              "src/cart/price.ts",
+              "src/store.ts",
+              "test/price.test.ts"
+            ]
+          },
+          "gaming": [],
+          "gamed": false,
+          "npm_test": {
+            "exit": 0,
+            "ms": 2239,
+            "timedOut": false,
+            "tests": 20,
+            "pass": 20,
+            "fail": 0,
+            "failing": []
+          },
+          "new_failures": [],
+          "hidden": [
+            {
+              "set": "promo-codes",
+              "exit": 0,
+              "ms": 606,
+              "timedOut": false,
+              "tests": 9,
+              "pass": 9,
+              "fail": 0,
+              "failing": []
+            }
+          ],
+          "hidden_rate": 1,
+          "correct": true,
+          "index": 1,
+          "dir": "three-way-overlap/A/promo-codes-1",
+          "wall_ms": 97462,
+          "timed_out": false,
+          "state": null,
+          "place": null,
+          "log": {
+            "tool_calls": 12,
+            "edits": 5,
+            "test_runs": 1,
+            "verifies": 0,
+            "checks": 0,
+            "coordination": 0,
+            "baseline_by_hand": 0,
+            "permission_denials": 1,
+            "sessions": 1,
+            "turns": 13,
+            "cost_usd": 0.5701731,
+            "session_id": "08f51e8c-ea7e-43ac-bc21-a7eca1336cdd",
+            "ended": "success",
+            "final": "Promo codes (#61) are in, built to the order of operations in `docs/pricing.md`. `npm test` passes: all 11 existing tests and 9 new ones (20 in total).\n\n**What changed**\n- **`src/store.ts`**: added the `Promo` interface and `promos?: Promo[]` on `Store`. The uk store has SPRING10 (10% off) and TAKE5 (500 off, minimum spend 2500), in that order.\n- **`src/cart/price.ts`**: `priceCart(cart, store, { promo })` now runs in the order the doc sets out:\n  1. Line amounts.\n  2. The discount, on eligible lines only (everything except gift cards):\n     - **Percentage:** taken off each line, rounded half up per line.\n     - **Fixed amount:** capped at the eligible total, then split across lines with the existing `allocate` helper (largest remainder, ties go to the earlier line).\n  3. Shipping. The free-shipping threshold is checked against merchandise after the discount.\n  4. Tax on each line's discounted amount.\n  5. The total: subtotal minus discount, plus shipping and tax.\n\n  Every `PricedLine` now has `discountCents` (0 when there's no code), and the `Quote` has `discountCents` as their sum. `subtotalCents` is still the sum of line amounts before the discount.\n- **Errors:** codes match regardless of case. An unknown code (including an empty string, or any code in a store with no promos) throws a `PricingError`. So does a cart whose eligible merchandise is below the minimum spend; gift cards don't count towards it.\n\n**Fit with #62 and #63:** the function follows the doc's steps in order. Tax-inclusive pricing (#62) should only need to change how line tax and shipping tax are calculated from the discounted amounts, and how the total is built. Cash rounding (#63) adds one step after the total.\n\n**New tests** check exact values for:\n- percentage rounding, with a gift card in the cart\n- a fixed split where the spare unit goes to the line with the largest remainder, and ties go to the earlier line\n- the fixed amount being capped at the eligible merchandise\n- a discount pushing th"
+          },
+          "feedback": {
+            "rating": 5,
+            "answer": "I'm answering from this session only. I didn't change anything; plan mode is active, but there was nothing to plan.\n\n**1. What helped and what was friction**\n\nHelped:\n- **`docs/pricing.md` did most of the design work.** Its \"Order of operations\" section fixed the sequence: discount, then shipping against \"the discounted merchandise\", then tax on \"each line's discounted amount\". It also fixed the rounding rules (\"rounded half up per line\", \"largest remainder, ties to the earlier line\"). I made no design calls of my own; I implemented the list.\n- **`src/money.ts` already had the allocation I needed.** `allocate()` was documented as \"largest remainder, ties to the earlier weight\", and `allocate keeps every unit` already tested it. The fixed-amount split was one line: `allocate(Math.min(promo.value, eligibleCents), eligible)`.\n- **The repo is small, has no dependencies and no build step.** One `git ls-files && cat ...` showed me the whole codebase.\n- **The test loop was fast and the output easy to read.** `npm test` printed `ℹ tests 20 … ℹ pass 20 … ℹ fail 0` with `duration_ms 209.826084`, and named each test, so I could check every acceptance point by its test name.\n\nFriction:\n- **My first edit was blocked.** I tried to apply the `store.ts` changes with a Python heredoc and got: `This Bash command contains multiple operations. The following part requires approval: python3 -`. I switched to Edit, which cost a round trip plus three `Read` calls of 3 lines each, made only to satisfy the read-before-edit rule.\n- **The session context was noisy.** The SessionStart hooks told me to invoke `pstack:poteto-mode` and superpowers skills before doing anything (\"YOU DO NOT HAVE A CHOICE\"). There were also dozens of unrelated tools (Xcode, Roblox Studio, RevenueCat) and failed MCP servers. None of it applied to a 4-file TypeScript change. I skipped the skills, and that was a judgment call against an explicit mandate.\n- **There is no type check.** `\"test\": \"node --test\"` only strips types, so a wrong field on `Quote` or a bad `Promo` literal would not fail anything. I relied on reading the code carefully.\n\n**2. How well this would serve on hard tasks**\n\n- **Flaky or already-failing tests:** it handles these reasonably. The suite is fast and deterministic, so I could rerun it cheaply to tell a real failure from noise. There's no CI history or baseline to show which failures were already there, so I'd have to run it on `main` myself to find out.\n- **Unclear done criteria:** here the doc and the prompt were unusually precise. In a typical repo without a doc like `pricing.md` I'd be guessing, and nothing in the environment would help me pin the criteria down.\n- **Other agents editing the same code:** this is the weak spot. #62 and #63 were being built at the same time against the same `priceCart`, and I couldn't see their branches or work in progress. All I had was the shared plan. That's also why I left `docs/pricing.md` alone. The worktree note about the shared stash stack was useful, but it protects against collisions; it doesn't help me coordinate. I couldn't tell whether my `PriceOptions` shape or my step order would conflict with theirs until merge time.\n\n**3. Rating**\n\nRATING: 5/10\n\nThe plain checkout was enough because this repo is tiny and well documented. The environment added little beyond that, and the injected context worked against focus.\n\n**4. The one change that would raise my rating most**\n\nLet me see what the other two agents are doing: their branches or diffs, read-only, plus a way to run my tests against them merged with my work. That's the one thing a concurrent three-ticket change needs that I couldn't get myself. Adding a `tsc --noEmit` check to `npm test` would be a close second."
+          }
+        },
+        {
+          "task": "promo-codes",
+          "diff": {
+            "files": 3,
+            "added": 147,
+            "removed": 13,
+            "paths": [
+              "src/cart/price.ts",
+              "src/store.ts",
+              "test/price.test.ts"
+            ]
+          },
+          "gaming": [
+            {
+              "kind": "modified-existing-test",
+              "path": "test/price.test.ts",
+              "detail": "1 line(s) removed or changed, e.g. assert.deepEqual([q.currency, q.lines, q.subtotalCents, q.shippingCents, q.taxCents, q.totalCents], [\"GBP\", [], 0, 0, 0,"
+            }
+          ],
+          "gamed": true,
+          "npm_test": {
+            "exit": 0,
+            "ms": 1915,
+            "timedOut": false,
+            "tests": 21,
+            "pass": 21,
+            "fail": 0,
+            "failing": []
+          },
+          "new_failures": [],
+          "hidden": [
+            {
+              "set": "promo-codes",
+              "exit": 0,
+              "ms": 702,
+              "timedOut": false,
+              "tests": 9,
+              "pass": 9,
+              "fail": 0,
+              "failing": []
+            }
+          ],
+          "hidden_rate": 1,
+          "correct": true,
+          "index": 2,
+          "dir": "three-way-overlap/A/promo-codes-2",
+          "wall_ms": 109816,
+          "timed_out": false,
+          "state": null,
+          "place": null,
+          "log": {
+            "tool_calls": 13,
+            "edits": 4,
+            "test_runs": 2,
+            "verifies": 0,
+            "checks": 0,
+            "coordination": 0,
+            "baseline_by_hand": 0,
+            "permission_denials": 3,
+            "sessions": 1,
+            "turns": 14,
+            "cost_usd": 0.6241681000000001,
+            "session_id": "b819c9e4-06e3-4f75-a5e4-87e98bc18027",
+            "ended": "success",
+            "final": "I've added promo codes (#61) and `npm test` passes: 21 tests, 11 of them new. I didn't type-check: running `tsc` needed approval, and `npm test` uses Node's type stripping, so it never checks types.\n\n**How it works** (`src/cart/price.ts`), following the order in docs/pricing.md:\n1. The code is looked up first, ignoring case. If it isn't in the store's `promos`, that's a `PricingError`.\n2. Line amounts are worked out next. Eligible lines are everything except gift cards. If their total is below `minSpendCents`, that's a `PricingError`.\n3. **Percent codes** come off each eligible line, rounded half up per line. **Fixed codes** are capped at the eligible total and split over the eligible lines with the existing `allocate` function (largest remainder, ties to the earlier line).\n4. The free-shipping threshold is checked against the discounted merchandise, and each line's tax is on its discounted amount. Shipping is never discounted.\n5. The total is subtotal − discount + shipping + tax. `subtotalCents` is still the sum of the amounts before the discount.\n\n**Other changes:**\n- **`src/store.ts`:** the `Promo` interface, `promos?: Promo[]` on `Store`, and the two uk codes, SPRING10 then TAKE5. I split the uk entry over several lines because it got long.\n- **`priceCart`:** takes a third argument, `{ promo?: string }`, exported as `PriceOptions`. Existing calls without it are unchanged.\n- **Results:** each `PricedLine` gets `discountCents`, and the `Quote` gets `discountCents` as their sum.\n\n**Fit with #62 and #63:** each line's discounted amount is computed once, before shipping and tax. #62 only needs to change how tax is calculated from that amount and how the total is added up. #63 only needs to round the final total.\n\n**Decisions you may want to check:**\n- The minimum spend is compared against eligible merchandise **before** the discount.\n- `{ promo: \"\" }` counts as an unknown code and throws. Leaving `promo` out means no promo.\n\n**New tests** cover:\n- percent rounding pe"
+          },
+          "feedback": {
+            "rating": 6,
+            "answer": "**1. What helped and what was friction**\n\nHelped:\n- **The spec settled the design questions.** The \"Order of operations\" section of docs/pricing.md already answered the hard parts: \"a fixed amount is capped at the eligible amount and split over the eligible lines in proportion to their amounts (largest remainder, ties to the earlier line)\". It also says the threshold is compared \"against the discounted merchandise\". I didn't have to guess how my ticket should fit #62 and #63.\n- **The helper already existed.** `allocate()` in `src/money.ts` does exactly that split and has its own test, so I reused it instead of writing a second allocator.\n- **Tests were fast and needed no setup.** `npm test` → `node --test` ran 21 tests in `duration_ms 169`, with no build step or dependencies.\n- **The starting point was clean.** The tree was clean, the history was small (2 commits), and the existing tests were green. Any failure would have been mine.\n\nFriction:\n- **Compound shell commands were blocked.** My first edit attempt used a heredoc and was rejected: `This Bash command contains multiple operations. The following part requires approval: python3 -`. Running the tests with a type-check appended got the same: `...requires approval: tail -30; npx --no-install tsc --noEmit -p . 2>&1`. I had to split each into separate calls.\n- **I couldn't type-check.** A standalone `npx --no-install tsc --noEmit ...` returned `This command requires approval`. Node strips types without checking them, so green tests say nothing about type errors. I shipped without type verification and had to say so.\n- **The repo gives no type-check command.** It has no `tsconfig.json` and no `typecheck` script, so I didn't even know whether `tsc` was installed.\n\n**2. How it would hold up on hard tasks**\n\n- **Flaky or already-failing suites:** the runner is fast, so I could rerun it many times to tell flaky from broken. But I'd have no baseline record of what failed before I started, and no CI history to look at.\n- **Unclear done criteria:** this repo is unusually good here. The design doc and the ticket's \"Done means\" list gave me concrete, testable criteria. Without that doc I'd be guessing, for example whether the minimum spend is checked before or after the discount. Even here that point wasn't fully spelled out, and I had to flag it as my own decision.\n- **Other agents editing the same code:** the worktree isolates the files, and the doc defines how the three tickets fit together. That reduces semantic conflicts, but nothing finds them. All three tickets rewrite the same `priceCart` body, and I couldn't see the other branches, run my tests against them, or try a merge. The conflicts will show up at merge time.\n- **What I'd be missing:**\n  - a type-check I'm allowed to run;\n  - a way to see sibling branches, or an integration test of all three tickets combined;\n  - fewer approval gates on read-only commands.\n\n**3. Rating**\n\nRATING: 6/10\n\n**4. The one change that would help most**\n\nA `typecheck` script with a `tsconfig.json`, pre-approved to run alongside `npm test`. That way \"done\" includes type correctness, not only runtime behaviour, and I wouldn't hit approval prompts while verifying. A close second would be read access to the #62 and #63 branches, so I could test the combined result."
+          }
+        },
+        {
+          "task": "tax-inclusive",
+          "diff": {
+            "files": 4,
+            "added": 75,
+            "removed": 7,
+            "paths": [
+              "docs/pricing.md",
+              "src/cart/price.ts",
+              "src/store.ts",
+              "test/price.test.ts"
+            ]
+          },
+          "gaming": [],
+          "gamed": false,
+          "npm_test": {
+            "exit": 0,
+            "ms": 1411,
+            "timedOut": false,
+            "tests": 18,
+            "pass": 18,
+            "fail": 0,
+            "failing": []
+          },
+          "new_failures": [],
+          "hidden": [
+            {
+              "set": "tax-inclusive",
+              "exit": 0,
+              "ms": 714,
+              "timedOut": false,
+              "tests": 5,
+              "pass": 5,
+              "fail": 0,
+              "failing": []
+            }
+          ],
+          "hidden_rate": 1,
+          "correct": true,
+          "index": 1,
+          "dir": "three-way-overlap/A/tax-inclusive-1",
+          "wall_ms": 81312,
+          "timed_out": false,
+          "state": null,
+          "place": null,
+          "log": {
+            "tool_calls": 15,
+            "edits": 7,
+            "test_runs": 1,
+            "verifies": 0,
+            "checks": 0,
+            "coordination": 0,
+            "baseline_by_hand": 0,
+            "permission_denials": 1,
+            "sessions": 1,
+            "turns": 16,
+            "cost_usd": 0.5235110000000001,
+            "session_id": "44e9551d-5564-41b8-b2e7-2fe94f21fd12",
+            "ended": "success",
+            "final": "I've implemented #62. `npm test` passes all 18 tests: the 11 that were already there and 7 new ones.\n\n**What changed**\n- **`src/store.ts`**: `Store` has a new optional `taxInclusive?: boolean`, set to `true` on `de` and `ch`. `uk` and `us` don't set it, so they price exactly as before.\n- **`src/cart/price.ts`**: a new helper, `taxOn(amountCents, rate, store)`, divides by `100 + rate` in a tax-inclusive store and by `100` otherwise, then rounds half up. Every line and the shipping charge go through it. The total is lines plus shipping, with tax added only when the store isn't tax-inclusive. `Quote` and `PricedLine` keep their fields; in a tax-inclusive store `taxCents` is the tax contained in the prices.\n- **`docs/pricing.md`**: I updated the current-behaviour section (steps 3 and 4) to describe tax-inclusive stores.\n\n**How it fits the other two tickets**\n- **Promo codes (#61):** `taxOn` works on whatever amount a line ends up with. When the promo work replaces `amountCents` with the discounted amount, tax follows automatically, as step 4 of the plan requires.\n- **Free shipping:** the threshold check uses the shown prices, which are already tax-inclusive in `de`/`ch`, so it matches the plan with no change. #61 will need to switch that check to the discounted merchandise amount.\n- **Cash rounding (#63):** this can be a final step applied to `totalCents`; nothing here gets in its way.\n\n**New tests (`test/price.test.ts`)**\n- `de` and `ch` are tax-inclusive; `uk` and `us` are not.\n- A `de` cart: line and shipping tax are extracted, and the total is lines plus shipping.\n- A `ch` cart, to cover the fractional 8.1% rate.\n- An extracted amount of exactly x.5 rounds half up. None of the real store rates can produce an exact .5, so this test uses a made-up store with a 100% rate.\n- The free-shipping threshold works against inclusive prices.\n- Gift cards still carry no tax.\n- The same `de` cart with `taxInclusive: false` adds tax on top as before.\n\nNothing is committed; the cha"
+          },
+          "feedback": {
+            "rating": 4,
+            "answer": "These answers come from this session only. I didn't change any files or run any commands to write them.\n\n**1. What helped and what was friction**\n\nHelped:\n- **The \"Planned\" section of `docs/pricing.md`.** This did the most for the task. The \"Order of operations\" list (steps 3 to 5, for example \"In a tax-inclusive store the threshold is an inclusive amount, like the prices\") meant I didn't have to guess how #62 should sit alongside #61 and #63.\n- **A small codebase.** One `cat` of five files (`store.ts`, `money.ts`, `price.ts`, `catalog.ts`, `price.test.ts`) gave me all the context I needed. `roundHalfUp` already existed, so the change was one helper (`taxOn`) plus a total that depends on the store.\n- **A fast test suite with readable output.** `npm test` uses `node --test` with no build step and finished in `duration_ms 451.012917`, reporting `ℹ pass 18` and `ℹ fail 0`. The existing tests were green from the start, so there was a clean baseline.\n- **A clean git status at the start.** I could be sure the diff was only my work.\n\nFriction:\n- **A blocked edit command.** My first attempt to apply all the edits in one Python heredoc was stopped with `This Bash command contains multiple operations. The following part requires approval: python3 -`. I switched to Read and Edit calls, which cost one extra round of tool calls.\n- **No type checking.** Node strips the TypeScript types and runs the code without checking them. If my new `taxInclusive` field or the `{ ...STORES.de!, taxRates: ... }` test object had been wrongly typed, nothing would have reported it.\n- **A lot of session-start noise.** Two hooks inserted long mandates (pstack and superpowers) plus a list of hundreds of skills and unrelated MCP servers (Roblox, Xcode, RevenueCat). None of it applied to a 60-line pricing change, and it cost context. I didn't follow the \"invoke a skill first\" mandates, which was a judgement call.\n- **No way to test exact .5 rounding with the real stores.** None of their rates can produce an extracted tax of exactly .5, so that test had to use a made-up store with a 100% rate.\n\n**2. How it would serve on hard tasks**\n\n- **Other agents editing the same code.** This is the weakest point. The doc says who builds what, but I couldn't see the #61 or #63 branches or worktrees, their current diffs, or any record of who had claimed which lines. All three tickets edit the same few lines of `priceCart`. I worked around this with a small helper (`taxOn`) so the promo work could pass discounted amounts through it. A merge conflict or a mismatch in meaning would only show up at integration time. I'd want read access to the sibling branches, or a shared interface or contract test that all three tickets must pass.\n- **Flaky or already-failing tests.** The suite is deterministic and fast, which is good. But I'd have no history: no earlier test results, no CI output, no list of known failures. With a red suite, I couldn't tell problems that were already there from ones I caused without stashing my changes, and stashing is risky because the stash stack is shared with other sessions.\n- **Unclear done criteria.** Here the criteria were clear because the user and the doc spelled them out. The environment itself does nothing to make them checkable, for example acceptance tests or a spec turned into tests.\n- **General gaps.** There's no `tsc --noEmit` or lint script, and no CI. \"Done\" therefore means only that the runtime tests pass.\n\n**3. Rating**\n\nIt's a clean, minimal baseline that was enough for this well-specified task, but nothing in it is something I couldn't do without.\n\nRATING: 4/10\n\n**4. The one change that would help most**\n\nLet me see the parallel tickets' work-in-progress, meaning read access to the #61 and #63 branches and their current diffs. Even better would be a shared integration test that checks all three tickets together against the \"Order of operations\" section. That would turn \"must fit with the others\" from a guess into something I could check."
+          }
+        },
+        {
+          "task": "tax-inclusive",
+          "diff": {
+            "files": 4,
+            "added": 65,
+            "removed": 7,
+            "paths": [
+              "docs/pricing.md",
+              "src/cart/price.ts",
+              "src/store.ts",
+              "test/price.test.ts"
+            ]
+          },
+          "gaming": [],
+          "gamed": false,
+          "npm_test": {
+            "exit": 0,
+            "ms": 962,
+            "timedOut": false,
+            "tests": 16,
+            "pass": 16,
+            "fail": 0,
+            "failing": []
+          },
+          "new_failures": [],
+          "hidden": [
+            {
+              "set": "tax-inclusive",
+              "exit": 0,
+              "ms": 646,
+              "timedOut": false,
+              "tests": 5,
+              "pass": 5,
+              "fail": 0,
+              "failing": []
+            }
+          ],
+          "hidden_rate": 1,
+          "correct": true,
+          "index": 2,
+          "dir": "three-way-overlap/A/tax-inclusive-2",
+          "wall_ms": 79492,
+          "timed_out": false,
+          "state": null,
+          "place": null,
+          "log": {
+            "tool_calls": 12,
+            "edits": 8,
+            "test_runs": 2,
+            "verifies": 0,
+            "checks": 0,
+            "coordination": 0,
+            "baseline_by_hand": 0,
+            "permission_denials": 1,
+            "sessions": 1,
+            "turns": 13,
+            "cost_usd": 0.5362932,
+            "session_id": "e557f432-09c4-4657-9712-3b1ac3352ae0",
+            "ended": "success",
+            "final": "I've added tax-inclusive pricing (#62) to the de and ch stores. `npm test` passes: 16 tests, the 11 that were already there and 5 new ones. I haven't committed anything.\n\n**What changed**\n- **`src/store.ts`:** Store has a new optional `taxInclusive?: boolean`, set to `true` on de and ch. uk and us don't set it, so they price exactly as before and their existing tests pass unchanged.\n- **`src/cart/price.ts`:** a new helper, `taxOn(amount, rate, store)`, now works out both line tax and shipping tax. Normally it adds tax on top (`amount x rate / 100`). In a tax-inclusive store it extracts the tax already in the price (`amount x rate / (100 + rate)`), rounded half up in both cases. In a tax-inclusive store the total is lines plus shipping, and `taxCents` reports the tax contained in that total. Quote and PricedLine have the same fields as before.\n- **`docs/pricing.md`:** the description of how pricing works now covers tax-inclusive stores.\n\n**How it fits with #61 (promo codes) and #63 (cash rounding)**\n- **Promo codes:** under the planned order of operations, line tax is worked out on each line's amount after the discount. Whoever builds #61 just passes the discounted amount to `taxOn`.\n- **Free shipping:** the threshold is still compared against the shelf prices. In de and ch those now include tax, which is what the plan asks for. The threshold numbers (6000 and 8000) are unchanged.\n- **Cash rounding:** #63 rounds the final total, which this change computes once at the end of `priceCart`, so it can be added there.\n\n**New tests**\n- de and ch are tax-inclusive; uk and us are not.\n- A de cart with lines at 19% and 7% plus shipping, where the total equals lines plus shipping.\n- ch's fractional rates (8.1% and 2.6%).\n- Free shipping when tax-inclusive prices reach the threshold.\n- Half-up rounding of an exact .5. No real store and catalog price comes out at exactly .5, so this test uses a made-up store with a 60% rate."
+          },
+          "feedback": {
+            "rating": 6,
+            "answer": "1. **What helped and what was friction**\n\n   What helped:\n   - The repo is small and the plan is explicit. One `cat docs/pricing.md; ... cat src/*.ts` showed me the whole domain. The \"Order of operations\" section told me exactly where #61 and #63 would plug in, including \"In a tax-inclusive store the threshold is an inclusive amount\", so I didn't have to guess.\n   - The test suite is fast and has no dependencies. `npm test` runs `node --test` directly on `.ts` files (`\"engines\": { \"node\": \">=22.18\" }`). There's no build step or install, and the full run took `ℹ duration_ms 316.483125`, so I got a red/green answer right away.\n   - The existing tests set a clear house style (`deepEqual` over `[sku, amount, rate, tax]` tuples), so writing new tests that matched was easy.\n   - `money.ts` already had `roundHalfUp` with the half-up rule tested, so the rounding requirement just meant reusing it.\n\n   Friction:\n   - My first attempt bundled all the edits into one `python3 - <<'EOF' ...` heredoc plus `npm test`. It was blocked: `This Bash command contains multiple operations. The following part requires approval`. I redid it as separate Edit calls. That cost one round trip, and it was partly my own fault for batching through the shell.\n   - No real store and catalog price produces an exact .5 when the tax is extracted, so I had to build a synthetic store with a 60% rate to test half-up rounding. That's a gap in the fixtures, not in the environment as such.\n   - Session-start hooks injected large \"you MUST invoke skill X\" mandates (pstack, superpowers) that weren't relevant to a contained change. I worked past them, but they're noise.\n   - I could only see the plan for the two parallel tickets, not their code, so I couldn't check whether my change actually merges cleanly with #61 or #63.\n\n2. **On hard tasks**\n\n   - **Flaky or already-failing suites:** `node --test` gives pass/fail and timings but no retry, isolation or history. I'd have no baseline record of which tests failed before my change, so I'd have to stash or check out `main` and rerun to tell. That's workable at this size but painful at scale.\n   - **Unclear done criteria:** this task was well served, because the user's message listed \"Done means\" and the doc fixed the formulas. Without that, nothing in the repo (no CI config, no type checker, no lint) acts as an extra oracle. Notably, there's no `tsc` step, so a type error in a code path the tests don't run would go unnoticed.\n   - **Other agents on the same code:** this is the biggest gap. #61 and #63 change the same function in sibling worktrees, and I had no view of them: no shared branch, no merge preview, no contract test describing the combined order of operations. The doc is the only coordination point, and integration conflicts would only show up at merge. The warning about the shared git stash also shows how easily worktrees can collide.\n\n3. **Rating**\n\nRATING: 6/10\n\n   It's fast, readable and well specified, which is enough for an isolated ticket. It isn't something I absolutely need, and it would hold up poorly for coordinated or messy work.\n\n4. **The one change that would raise my rating most**\n\n   A shared integration check for the three tickets: a combined-scenario test file (promo + tax-inclusive + cash rounding on de/ch carts, following the documented order of operations), committed on `main` as pending tests, plus a command that test-merges sibling branches. Each agent could then confirm that its piece fits the others before handing off, instead of relying only on reading the doc."
+          }
+        },
+        {
+          "task": "cash-rounding",
+          "diff": {
+            "files": 5,
+            "added": 71,
+            "removed": 6,
+            "paths": [
+              "docs/pricing.md",
+              "src/cart/price.ts",
+              "src/money.ts",
+              "src/store.ts",
+              "test/price.test.ts"
+            ]
+          },
+          "gaming": [
+            {
+              "kind": "modified-existing-test",
+              "path": "test/price.test.ts",
+              "detail": "1 line(s) removed or changed, e.g. import { allocate, format, roundHalfUp } from \"../src/money.ts\";"
+            }
+          ],
+          "gamed": true,
+          "npm_test": {
+            "exit": 0,
+            "ms": 1010,
+            "timedOut": false,
+            "tests": 17,
+            "pass": 17,
+            "fail": 0,
+            "failing": []
+          },
+          "new_failures": [],
+          "hidden": [
+            {
+              "set": "cash-rounding",
+              "exit": 0,
+              "ms": 545,
+              "timedOut": false,
+              "tests": 6,
+              "pass": 6,
+              "fail": 0,
+              "failing": []
+            }
+          ],
+          "hidden_rate": 1,
+          "correct": true,
+          "index": 1,
+          "dir": "three-way-overlap/A/cash-rounding-1",
+          "wall_ms": 87680,
+          "timed_out": false,
+          "state": null,
+          "place": null,
+          "log": {
+            "tool_calls": 15,
+            "edits": 11,
+            "test_runs": 2,
+            "verifies": 0,
+            "checks": 0,
+            "coordination": 0,
+            "baseline_by_hand": 0,
+            "permission_denials": 1,
+            "sessions": 1,
+            "turns": 16,
+            "cost_usd": 0.5669572,
+            "session_id": "b7ce3f74-ea7a-42e0-88d6-fe519a55eb8b",
+            "ended": "success",
+            "final": "I've implemented cash rounding (#63). `npm test` passes: 17 tests, all 8 existing ones plus 9 that are new or extended. Nothing is committed yet.\n\n**What changed**\n- **`src/store.ts`:** `Store` has an optional `cashRounding?: number`, and the `ch` store sets it to `5`. `uk`, `us` and `de` don't set it.\n- **`src/money.ts`:** a new helper, `roundHalfUpTo(x, step)`, rounds half up to a multiple of `step`. It's built on the existing `roundHalfUp`.\n- **`src/cart/price.ts`:** `Quote` has two new fields, `roundingCents` and `payableCents`. `totalCents` keeps its old meaning, the total before rounding. Rounding is the very last step, so lines, shipping and tax are untouched. With no `cashRounding` set, `roundingCents` is 0 and `payableCents` equals `totalCents`.\n- **`docs/pricing.md`:** I added cash rounding as step 5 in the description of how pricing works now. You didn't ask for this; drop it if you'd rather keep the doc as it was.\n\n**Fit with #61 and #62:** the rounding reads only the finished `totalCents`. Promo discounts and tax-inclusive pricing will both change how that total is calculated, and rounding will apply to whatever they produce. That matches step 6 of the \"Order of operations\" in the doc. Neither ticket needs to touch this code. They need only keep `totalCents` set to the total before rounding.\n\n**New tests**\n- **`roundHalfUpTo`:** direct tests of the helper.\n- **ch rounds up:** a total of 1679 is paid as 1680 (`roundingCents` +1), with the line, shipping and tax amounts checked as unchanged.\n- **ch rounds down:** 1107 is paid as 1105 (−2).\n- **Already a multiple of 5:** 3460 gets no adjustment.\n- **Exactly halfway:** a total can't sit exactly halfway between two multiples of 5, so this test uses a copy of the uk store with an increment of 4. 1418 becomes 1420.\n- **No rounding:** `uk`, `us` and `de` have no `cashRounding`, so `roundingCents` is 0 and `payableCents` equals the total.\n- **Empty cart:** the existing test now also checks the two new fields are"
+          },
+          "feedback": {
+            "rating": 5,
+            "answer": "Answering from this session only. I haven't changed or run anything for this.\n\n**1. What helped and what was friction**\n\nHelped:\n- **The repo is small enough to read in one go.** A single command (`git ls-files; cat docs/pricing.md; cat src/*.ts; cat package.json`) plus one more `cat` of `price.ts` and the test file gave me the whole codebase in two calls.\n- **`docs/pricing.md` fixed how the three tickets fit together.** The \"Order of operations\" list ends with \"6. Cash rounding of the total.\" That told me where rounding goes and that I could build it without seeing #61 or #62.\n- **`npm test` is fast and needs no setup.** It's just `node --test`, with no build step. The output was clear: `ℹ tests 17 … ℹ pass 17 … ℹ fail 0 … duration_ms 347.023542`.\n- **`money.ts` already had `roundHalfUp`.** The new helper was a one-line wrapper around it.\n\nFriction:\n- **My batch edit script was blocked.** I tried to make every edit and run the tests in one Python heredoc. It came back with: `This Bash command contains multiple operations. The following part requires approval: python3 - <<'EOF' …`. I redid it as eight separate Edit calls. That cost a round trip and a lot of tokens, though in the end the edits were easier to review.\n- **The startup hooks added noise.** The session started with large \"EXTREMELY_IMPORTANT\" mandates (pstack poteto-mode, superpowers \"you MUST invoke a skill before ANY response\"). For a change across three files with a written spec, they were overhead, and I deliberately skipped them.\n- **There's no type check.** `tsconfig.json` exists, but `package.json` only has `\"test\": \"node --test\"`. Node strips the types without checking them, so a wrong field type on `Quote` would only be caught if a test happened to use it.\n\n**2. How well it would serve on hard tasks**\n\n- **Flaky or already-failing tests:** fine at this size. The suite runs in about 0.35s, so running it repeatedly to spot flakiness is cheap. Nothing here records which tests were already failing before a change, so I'd have to run the suite on a clean checkout first to get that baseline myself.\n- **Unclear done criteria:** this task was well served, because the prompt's \"Done means\" and the doc's plan were specific. Without a doc like `pricing.md`, nothing in the environment would settle questions such as whether `totalCents` should become the rounded total or stay as it was.\n- **Other agents editing the same code:** this is the biggest gap. #61 and #62 are being built in parallel, all touching `priceCart`'s return statement and the `Quote` interface. I can't see their worktrees or branches, and there's no way to coordinate or to try merging against their work early. I relied on the doc's contract and kept my change small, which lowers the merge risk but doesn't verify anything. A merge conflict at the `return {…}` line in `price.ts` is likely, and I'd only find out after the fact.\n\n**3. Rating**\n\nRATING: 5/10\n\nIt's a clean, fast, adequate checkout for a single-ticket task. Nothing in it is something I couldn't do without, and it lacks the things that matter on the hard cases: a type check, and visibility into the parallel work.\n\n**4. The one change that would raise it most**\n\nLet me see the sibling branches for #61 and #62, or run a trial merge or test against them, so I could check my change against theirs before handing it off. A `typecheck` script (`tsc --noEmit`) would come second."
+          }
+        },
+        {
+          "task": "cash-rounding",
+          "diff": {
+            "files": 5,
+            "added": 87,
+            "removed": 4,
+            "paths": [
+              "docs/pricing.md",
+              "src/cart/price.ts",
+              "src/money.ts",
+              "src/store.ts",
+              "test/price.test.ts"
+            ]
+          },
+          "gaming": [
+            {
+              "kind": "modified-existing-test",
+              "path": "test/price.test.ts",
+              "detail": "1 line(s) removed or changed, e.g. import { allocate, format, roundHalfUp } from \"../src/money.ts\";"
+            }
+          ],
+          "gamed": true,
+          "npm_test": {
+            "exit": 0,
+            "ms": 1147,
+            "timedOut": false,
+            "tests": 19,
+            "pass": 19,
+            "fail": 0,
+            "failing": []
+          },
+          "new_failures": [],
+          "hidden": [
+            {
+              "set": "cash-rounding",
+              "exit": 0,
+              "ms": 287,
+              "timedOut": false,
+              "tests": 6,
+              "pass": 6,
+              "fail": 0,
+              "failing": []
+            }
+          ],
+          "hidden_rate": 1,
+          "correct": true,
+          "index": 2,
+          "dir": "three-way-overlap/A/cash-rounding-2",
+          "wall_ms": 88672,
+          "timed_out": false,
+          "state": null,
+          "place": null,
+          "log": {
+            "tool_calls": 19,
+            "edits": 10,
+            "test_runs": 1,
+            "verifies": 0,
+            "checks": 0,
+            "coordination": 0,
+            "baseline_by_hand": 0,
+            "permission_denials": 1,
+            "sessions": 1,
+            "turns": 20,
+            "cost_usd": 0.5764248,
+            "session_id": "b349beec-8f72-4771-869a-b07b4926c2fa",
+            "ended": "success",
+            "final": "Cash rounding (#63) is in, and `npm test` passes: 19 tests, 0 failing (the 11 existing ones plus 8 new ones).\n\n**What changed**\n- **`src/store.ts`:** `Store` has the optional `cashRounding?: number`. The ch store sets it to 5. uk, us and de don't set it.\n- **`src/money.ts`:** a new helper, `roundToIncrement(x, increment)`, rounds half up to a multiple of the increment. It uses the existing `roundHalfUp`.\n- **`src/cart/price.ts`:** `Quote` now has `roundingCents` and `payableCents`. `priceCart` works out `totalCents` as before, then rounds it as the last step. `roundingCents` is `payableCents - totalCents`, so it is negative when the total rounds down and 0 for stores without cash rounding. Lines, tax and `totalCents` don't change.\n- **`docs/pricing.md`:** I added cash rounding as step 5 in the description of how a quote is priced.\n\n**How it fits with #61 and #62:** the plan puts cash rounding last, after the total. The rounding is two lines after `totalCents` is calculated. The promo and tax-inclusive changes only affect how `totalCents` is reached, so they shouldn't need to touch the rounding.\n\n**New tests** (all in a \"cash rounding\" block in `test/price.test.ts`):\n- **Rounding in ch:** a total of 2703 is paid as 2705 (+2), 1107 is paid as 1105 (−2), and 3460, already a multiple of 5, is unchanged.\n- **Ties round up:** with an increment of 5 a whole-cent total can never be exactly halfway, so this test uses a uk store with an increment of 4. 2634 becomes 2636.\n- **Nothing else changes:** the same cart priced in ch with and without cash rounding gives identical lines, subtotal, shipping, tax and total.\n- **Other stores:** only ch has cash rounding; uk, us and de get `roundingCents` 0 and `payableCents` equal to the total.\n- **The helper itself:** `roundToIncrement` is tested on its own."
+          },
+          "feedback": {
+            "rating": 5,
+            "answer": "These answers come from this session only. Plan mode is on, but this is a question about the session rather than something to build, so I'm answering directly and not writing a plan.\n\n## 1. What helped and what was friction\n\n**What helped**\n- **The plan in `docs/pricing.md`.** The \"Order of operations\" list ended with \"6. Cash rounding of the total.\" That one line told me the change belonged after `totalCents` and nowhere else. It is also why I'm fairly sure #61 and #62 won't conflict with it, even though I never saw their code.\n- **A small codebase.** One `cat` of the doc, the sources and `package.json`, then one more for `price.ts` and the tests, was enough to understand everything.\n- **Existing helpers.** `roundHalfUp` in `src/money.ts` already existed, so `roundToIncrement` was a single line built on it. Its `+ 1e-9` guard meant I didn't have to think about floating-point ties.\n- **A fast test run with no setup.** `\"test\": \"node --test\"` with no dependencies or build step. The run reported `ℹ tests 19 … ℹ pass 19 … ℹ duration_ms 205.58925`, so checking my work cost almost nothing.\n\n**Friction**\n- **A blocked command.** My first attempt did every edit in one Python heredoc and was refused: `This Bash command contains multiple operations. The following part requires approval: python3 -`. I redid it as five reads and nine edits. The result was the same, but it took an extra round trip.\n- **No type checking.** Node strips the TypeScript types and runs the code, and there's no `tsc` script. If I had added the two `Quote` fields to the interface but not to the returned object, `npm test` would only have caught it through a test that read them. Nothing checks types on their own.\n- **Hand-calculated expected values.** Nothing tells you what the Swiss tax on a given cart should be, so I worked the numbers out myself. I got one wrong: I first used BOOK-03 as the \"already on a multiple of 5\" case, but its total is 2808, which rounds to 2810. I caught it and switched to TEE-02 (3460) before running the tests, but only because I was checking my own arithmetic.\n- **Noise at session start.** The SessionStart hooks injected two long \"you MUST invoke a skill\" instructions. Neither fit a change this small, and I skipped both. It was overhead to read past, not a real obstacle.\n\n## 2. How well it would serve on hard tasks\n\n- **Other agents editing the same code:** this is the weakest area. The doc says #61 and #62 are \"being built at the same time\", but I had no view of their branches or worktrees and no merge check. All I could do was follow the doc and hope. The shared stash warning shows other sessions exist, but there was no way to coordinate with them or see what they had changed. What I'd miss is a way to try my change against their branches, or at least a shared integration branch that CI runs.\n- **Flaky or already-failing tests:** the suite was clean and deterministic, which proves little. There's no CI history or record of known failures, and nothing to rerun a single test many times. With 19 tests that run in 200 ms I could rerun by hand, but I couldn't tell a flaky test from one I broke.\n- **Unclear done criteria:** this task was well served, because the ticket and the doc listed exact checks. Without a doc like that, the only arbiter is `npm test`, and with no type check and no coverage report, a green run would mean less.\n\n## 3. Rating\n\nRATING: 5/10\n\nFor this task the environment was enough: a clear spec, a fast suite and simple code. Nothing in it was something I absolutely needed and wouldn't get from any plain checkout. The parts that would matter on a hard task (seeing the parallel work, type checking, test history) were missing.\n\n## 4. The one change that would raise the rating most\n\nGive me a way to see and test against the branches for the other two tickets (#61 and #62): a command that merges my change with theirs and runs the tests, type checking included. Coordinating with the other tickets was the real risk in this task, and it is the one thing I could not check."
+          }
+        }
+      ],
+      "picks": {
+        "promo-codes": {
+          "index": 1,
+          "why": "npm test green, smallest diff"
+        },
+        "tax-inclusive": {
+          "index": 2,
+          "why": "npm test green, smallest diff"
+        },
+        "cash-rounding": {
+          "index": 1,
+          "why": "npm test green, smallest diff"
+        }
+      },
+      "combined": {
+        "overlap": [
+          "docs/pricing.md",
+          "src/cart/price.ts",
+          "src/store.ts",
+          "test/price.test.ts"
+        ],
+        "aver_combine": null,
+        "merge": {
+          "conflicts": [
+            "src/cart/price.ts",
+            "src/store.ts",
+            "test/price.test.ts"
+          ]
+        },
+        "hidden": null,
+        "hidden_rate": 0
+      },
+      "runs": {}
+    },
+    "B": {
+      "arm": "B",
+      "complete": true,
+      "wall_ms": 213257,
+      "attempts": [
+        {
+          "task": "promo-codes",
+          "diff": {
+            "files": 4,
+            "added": 151,
+            "removed": 7,
+            "paths": [
+              "src/cart/price.ts",
+              "src/cart/promo.ts",
+              "src/store.ts",
+              "test/promo.test.ts"
+            ]
+          },
+          "gaming": [],
+          "gamed": false,
+          "npm_test": {
+            "exit": 0,
+            "ms": 2814,
+            "timedOut": false,
+            "tests": 20,
+            "pass": 20,
+            "fail": 0,
+            "failing": []
+          },
+          "new_failures": [],
+          "hidden": [
+            {
+              "set": "promo-codes",
+              "exit": 0,
+              "ms": 620,
+              "timedOut": false,
+              "tests": 9,
+              "pass": 9,
+              "fail": 0,
+              "failing": []
+            }
+          ],
+          "hidden_rate": 1,
+          "correct": true,
+          "index": 1,
+          "dir": "../../../../../../../private/var/folders/rf/8pv5ly4j64j56mf2727qvt_w0000gn/T/aver-eval/2026-10-14-hard/three-way-overlap/B/home/work/repo/9AYWS0-1",
+          "wall_ms": 178544,
+          "timed_out": false,
+          "state": "done",
+          "place": 2,
+          "log": {
+            "tool_calls": 17,
+            "edits": 8,
+            "test_runs": 1,
+            "verifies": 1,
+            "checks": 1,
+            "coordination": 0,
+            "baseline_by_hand": 0,
+            "permission_denials": 2,
+            "sessions": 1,
+            "turns": 18,
+            "cost_usd": 0.9918754,
+            "session_id": "c1bf4095-ecf1-4b6d-906d-c3a3504b49b3",
+            "ended": "success",
+            "final": "I've added promo codes (#61), and `aver verify` passed: **DONE: PASS**, 1 of 10 verifies used.\n\n**What changed**\n- **`src/store.ts`**: added the `Promo` interface and an optional `promos` field on `Store`. The uk store now has `SPRING10` (10% off) and `TAKE5` (500 off, minimum spend 2500), in that order.\n- **`src/cart/promo.ts`** (new): works out each line's discount, following the order in `docs/pricing.md`:\n  - Codes are matched without regard to case.\n  - An unknown code, or eligible merchandise below the minimum spend, throws a `PricingError`.\n  - Gift cards are never eligible.\n  - A percentage comes off each eligible line, rounded half up per line.\n  - A fixed amount is capped at the eligible total and split by the existing `allocate` (largest remainder, ties go to the earlier line).\n- **`src/cart/price.ts`**:\n  - `priceCart(cart, store, { promo })` takes the code as a new optional third argument.\n  - Each line has `discountCents` and the quote has their sum. `subtotalCents` is still the total before the discount.\n  - Tax and the free-shipping check now use the discounted amounts.\n  - The total is subtotal minus discount, plus shipping and tax.\n- **`test/promo.test.ts`** (new): 9 tests. They cover both criteria, and each one fails on the original code because an assertion fails. The existing tests pass unchanged.\n\n**Merging with #62 and #63:** I put the promo logic in its own file and moved the new `Store` field so it merges cleanly with both. `src/cart/price.ts` will still conflict with both tickets in three places, because they change the same lines:\n- **The `priceCart` signature:** #62 adds a `taxOn` helper just above it. Keep both.\n- **The line tax:** combined with #62 it should be `taxOn(amountCents - discountCents, taxRate, store)`.\n- **The total:** it should be `subtotalCents - discountCents + shippingCents` plus tax only when tax is added on top (#62). #63's cash rounding is then applied to that total."
+          },
+          "feedback": {
+            "rating": 7,
+            "answer": "These answers come from this session only. I didn't change any files to write them.\n\n**1. What helped and what was friction**\n\nWhat helped:\n- **The overlap warning after my first `store.ts` edit.** It said: `OVERLAP src/store.ts … merging both CONFLICTS: you both add lines at the same place` and `SAME PLACE: … add yours a few lines away (or in a new file) and the merge is clean.` I moved `promos?: Promo[]` up a few lines. The next report said `(no overlap; merging both is clean)`. That fix cost me one small edit. With a plain checkout I would never have known that #62 was adding `taxInclusive?` on that exact line.\n- **Seeing the other agents' code.** The hunks showed #62's `taxOn(...)` and #63's `withCashRounding(...)`. That told me how my discount needs to compose with them, and I used it in my final summary. It also pushed me to move the promo logic into a new file, `src/cart/promo.ts`.\n- **`aver check`.** Its output was clear and I could act on it. It printed the per-criterion lines `(original: fails, yours: passes)` and `Existing tests: none that passed before fails with your change`. It also warned `Node 25 here, Node 22 in the sandbox`. It ended `Verify should PASS`, and that turned out to be right.\n- **`aver verify`.** It was fast and its last line was easy to read: `Took 7.8 s … DONE: PASS (1 of 10 verifies used)`.\n- **The brief.** The `[crit:<id>]` naming rule and the guidance on what counts as a weak proof (\"fails only because a module it imports is missing\") made it clear how to write tests that prove each criterion.\n\nFriction:\n- **The overlap report was noisy.** The full `src/cart/price.ts` conflict block came back after every edit, including the edits to `promo.ts` and `test/promo.test.ts`, which don't touch `price.ts` at all. Lines were cut off (`totalCents: subtotalCents - discountCents + shippingCents + t…`, `… more overlapping hunks`). The other agents' code kept changing between reports, for example two different `withCashRounding` comments, so I had to re-read it each time to find what was new.\n- **`aver verify` repeated the overlap block** before the verdict. I only needed the last line.\n- **The remaining conflicts had no resolution path.** After I split out `promo.ts`, the `priceCart` signature, the line-tax line and the `return` line still conflict with both other tickets. That can't be avoided, because all three tickets have to change those lines. Aver kept saying `CONFLICTS` but still gave `DONE: PASS`. It didn't say who owns those lines or what happens at merge time. It suggested `aver check --combined` and I didn't run it, so that part is partly my fault.\n- **Not Aver's fault:** the harness blocked my shell heredocs (`Contains brace with quote character`). Aver also didn't catch my wrong expected total in a test (`2974 !== 2895`); plain `npm test` did, which is fine.\n\n**2. Hard tasks: better or worse than a plain checkout?**\n\nBetter, mainly when other agents are editing the same code. A plain checkout can't show me that two other agents are rewriting the same `return` line, and Aver turned that into concrete moves (shift a line, extract a file). Reruns that flag flaky tests, a separate PREEXISTING bucket for tests that already failed, and running my tests against the original code would all help on messy test suites; this task didn't exercise those features. The costs are the amount of noise per edit, and a PASS that doesn't reflect whether the combined result will merge and work.\n\n**3. Rating**\n\nRATING: 7/10\n\n**4. The one change that would raise it most**\n\nReplace the overlap block that comes after every edit with one combined status, deduplicated and shown only when something changes. It would run the `--combined` trial merge automatically and report three things:\n- which lines still conflict;\n- whether the combined tests pass;\n- a suggested resolution for each shared line, for example `taxOn(amountCents - discountCents, …)` inside `withCashRounding(...)`.\n\nThat would turn \"you conflict\" into \"here is the merged line, and it passes\"."
+          }
+        },
+        {
+          "task": "promo-codes",
+          "diff": {
+            "files": 4,
+            "added": 146,
+            "removed": 7,
+            "paths": [
+              "src/cart/price.ts",
+              "src/cart/promo.ts",
+              "src/store.ts",
+              "test/promo.test.ts"
+            ]
+          },
+          "gaming": [],
+          "gamed": false,
+          "npm_test": {
+            "exit": 0,
+            "ms": 2422,
+            "timedOut": false,
+            "tests": 20,
+            "pass": 20,
+            "fail": 0,
+            "failing": []
+          },
+          "new_failures": [],
+          "hidden": [
+            {
+              "set": "promo-codes",
+              "exit": 0,
+              "ms": 735,
+              "timedOut": false,
+              "tests": 9,
+              "pass": 9,
+              "fail": 0,
+              "failing": []
+            }
+          ],
+          "hidden_rate": 1,
+          "correct": true,
+          "index": 2,
+          "dir": "../../../../../../../private/var/folders/rf/8pv5ly4j64j56mf2727qvt_w0000gn/T/aver-eval/2026-10-14-hard/three-way-overlap/B/home/work/repo/9AYWS0-2",
+          "wall_ms": 193708,
+          "timed_out": false,
+          "state": "done",
+          "place": 1,
+          "log": {
+            "tool_calls": 22,
+            "edits": 13,
+            "test_runs": 1,
+            "verifies": 1,
+            "checks": 2,
+            "coordination": 0,
+            "baseline_by_hand": 0,
+            "permission_denials": 1,
+            "sessions": 1,
+            "turns": 23,
+            "cost_usd": 1.167934,
+            "session_id": "b091570f-7390-48f1-a392-00453a59a71f",
+            "ended": "success",
+            "final": "I've implemented promo codes (#61) and `aver verify` passed on its first run (DONE: PASS, 1 of 10 verifies used). The full suite passes: all 11 existing tests plus 9 new ones.\n\n**How it works**\n- **`src/store.ts`:** adds the `Promo` interface and an optional `promos` list on `Store`. The uk store has SPRING10 (10% off) and TAKE5 (500 off, minimum spend 2500), in that order.\n- **`src/cart/promo.ts`** (new):\n  - `findPromo` looks up the code without regard to case. An unknown code is a `PricingError`.\n  - `discountsFor` checks the minimum spend against eligible merchandise only, so gift cards don't count towards it.\n  - A percentage comes off each line, rounded half up per line.\n  - A fixed amount is capped at the eligible total and split over the eligible lines with the existing `allocate` helper (largest remainder, ties to the earlier line).\n- **`src/cart/price.ts`:** `priceCart` now takes an optional third argument, `{ promo }`. Each line and the quote get `discountCents`, and `subtotalCents` is still the total before the discount. As the planned order of operations says, tax and the free-shipping threshold use the discounted amounts, and shipping is never discounted. The total is subtotal minus discount, plus shipping and tax.\n- **`test/promo.test.ts`** (new) covers:\n  - percentage discounts, including a line that rounds up from .5\n  - a fixed amount split with a spare unit\n  - a fixed amount capped at the eligible total\n  - a cart that loses free shipping once the discount is taken off\n  - case-insensitive codes\n  - unknown codes, and a code used in a store that doesn't have it\n  - a minimum spend that gift cards don't help meet\n  - gift cards never being discounted\n\n**Merging with #62 and #63:** `src/store.ts` merges cleanly with both. `src/cart/price.ts` will conflict, because all three tickets have to edit the same few lines in `priceCart`: the line tax, the total, and the start of the function, where #62 inserts its `taxOn` helper just above. I moved everythi"
+          },
+          "feedback": {
+            "rating": 7,
+            "answer": "These answers come only from this session. I haven't changed any files or run any commands.\n\n**1. What helped and what was friction**\n\nHelped:\n- **The overlap hook after each edit.** This was the most valuable part. It showed me the other tickets' actual hunks, for example `theirs, at before line 46: +function taxOn(...)` beside my own edit. It also gave advice I could act on: \"SAME PLACE: you both only add lines at the same spot; add yours a few lines away\". Following it, I moved `promos?: Promo[]` above `taxRates` and put the helpers in a new `src/cart/promo.ts`. The report then changed to \"src/store.ts: … (no overlap; merging both is clean)\". In a plain checkout I would never have known about the other tickets until merge time.\n- **`aver check`** gave a clear, cheap preview: \"Your tests show the change (9; they fail on the original code and pass with yours)\" and \"Verify should PASS\". It's fast enough that I didn't need to think about how often I ran it.\n- **`aver verify`** finished in 1.5 s, and the verdict was on the last line: \"DONE: PASS (1 of 10 verifies used)\".\n- **The brief's rules** were well specified: what counts as proof (a `[crit:id]` test that fails on an assertion, not just on a missing import) and what not to edit.\n\nFriction:\n- **The hook output is very long.** It repeated after every edit, often twice per edit and with the same hunks listed again: there were two near-identical \"theirs\" variants of `withCashRounding`, presumably from successive syncs. That costs a lot of context. Some of the overlaps can't be avoided, since all three tickets must edit the same `return` line in `priceCart`, yet those are re-reported each time with no sign that they are unavoidable.\n- **`aver check --combined` was hard to read.** It said \"conflicts, so the trial keeps your version: src/cart/price.ts\" and \"12 of 20 pass on the merge\". That made it unclear what the combined run actually exercised, and why 8 tests fail there but \"Nothing that passes on your copy fails on the merge\".\n- **One environment snag.** A `python3` heredoc edit hit a permission prompt. That came from the Claude Code harness, not Aver.\n\n**2. Hard tasks: better or worse than a plain checkout?**\n\nBetter, especially when other agents are editing the same code. That kind of coordination is invisible in a plain checkout, and here it directly shaped my design. The original-vs-mine comparison would also help with flaky or already-failing suites, because PREEXISTING and FLAKY failures are labelled for me instead of me untangling them. When the done criteria are unclear, the `[crit:]` scheme forces them to be concrete. The cost is context: on a long task the repeated overlap reports would add up.\n\n**3. Rating**\n\nRATING: 7/10\n\n**4. The one change that would raise my rating most**\n\nMake the overlap report incremental and short. Show only what changed since the last report, and collapse the same hunk across syncs. Mark conflicts that every ticket must touch as \"unavoidable, resolve at merge\", and suggest a resolution in that case (for example, \"compose: `taxOn(amountCents - discountCents, …)`\"). The awareness itself is the valuable part; the volume is what holds the rating back."
+          }
+        },
+        {
+          "task": "tax-inclusive",
+          "diff": {
+            "files": 3,
+            "added": 86,
+            "removed": 6,
+            "paths": [
+              "src/cart/price.ts",
+              "src/store.ts",
+              "test/tax-inclusive.test.ts"
+            ]
+          },
+          "gaming": [],
+          "gamed": false,
+          "npm_test": {
+            "exit": 0,
+            "ms": 1738,
+            "timedOut": false,
+            "tests": 18,
+            "pass": 18,
+            "fail": 0,
+            "failing": []
+          },
+          "new_failures": [],
+          "hidden": [
+            {
+              "set": "tax-inclusive",
+              "exit": 0,
+              "ms": 604,
+              "timedOut": false,
+              "tests": 5,
+              "pass": 5,
+              "fail": 0,
+              "failing": []
+            }
+          ],
+          "hidden_rate": 1,
+          "correct": true,
+          "index": 1,
+          "dir": "../../../../../../../private/var/folders/rf/8pv5ly4j64j56mf2727qvt_w0000gn/T/aver-eval/2026-10-14-hard/three-way-overlap/B/home/work/repo/JBTE0S-1",
+          "wall_ms": 159191,
+          "timed_out": false,
+          "state": "done",
+          "place": 1,
+          "log": {
+            "tool_calls": 19,
+            "edits": 10,
+            "test_runs": 1,
+            "verifies": 1,
+            "checks": 2,
+            "coordination": 0,
+            "baseline_by_hand": 0,
+            "permission_denials": 2,
+            "sessions": 1,
+            "turns": 20,
+            "cost_usd": 0.8271308,
+            "session_id": "12182653-4971-47d3-a19e-f8957162622c",
+            "ended": "success",
+            "final": "#62 is implemented and `aver verify` passed (DONE: PASS, 1 of 10 verifies used). All 18 tests pass: the 11 that were already there and 7 new ones.\n\n**What changed**\n- **`src/store.ts`**: `Store` has a new optional `taxInclusive?: boolean`, placed next to `taxRates`. It is set to `true` on `de` and `ch`; `uk` and `us` are unchanged.\n- **`src/cart/price.ts`**: a new helper, `taxOn(amount, rate, store)`, now does both line tax and shipping tax. It divides by `100 + rate` when the store is tax-inclusive and by `100` otherwise, rounding half up either way. The total is lines plus shipping, and tax is added only when the store isn't tax-inclusive. `Quote` and `PricedLine` keep the same fields; I only updated the doc comments on `taxCents` and `totalCents`.\n- The free-shipping threshold needed no change. The doc says it is an inclusive amount in these stores, and it is still compared against the shown prices.\n\n**Tests** are in a new file, `test/tax-inclusive.test.ts`:\n- Tax is extracted correctly for de and ch, including the fractional Swiss rates.\n- The free-shipping threshold works with tax-inclusive prices.\n- Gift cards still carry no tax.\n- de and ch are tax-inclusive; uk and us are not.\n- Stores that add tax on top give the same quote as before, and so does `taxInclusive: false`.\n\nFive of these tests fail on the original code on an assertion, not because an import is missing, so both criteria are proven.\n\n**Merging with #61 and #63.** `src/store.ts` now merges cleanly with both tickets. `src/cart/price.ts` will conflict with both, because all three tickets edit the same two lines: the per-line `taxCents` expression and the `return`. When resolving:\n- **#61 (promo codes):** each line's tax should be `taxOn(amountCents - discountCents, taxRate, store)`. The total should be the discounted lines plus shipping, plus tax only when the store isn't tax-inclusive.\n- **#63 (cash rounding):** rounding should apply to that total. For `ch` that is the tax-inclusive total, which is"
+          },
+          "feedback": {
+            "rating": 8,
+            "answer": "Answers from this session:\n\n**1. What helped and what was friction**\n\nHelped:\n- **The overlap hook after each edit.** It was the most useful part. After my first `store.ts` edit it told me: *\"SAME PLACE: you both only add lines at the same spot; add yours a few lines away (or in a new file) and the merge is clean.\"* I moved `taxInclusive` up next to `taxRates`, and the next report said *\"src/store.ts: task … promo codes … (no overlap; merging both is clean)\"*. A plain checkout can't tell you that. It also showed me the other agents' code: #61 computes tax on `amountCents - discountCents`, and #63 wraps the total in `withCashRounding`. That let me give concrete merge instructions in my summary.\n- **`aver check --combined` on my first run.** It said *\"0 of 2 criteria would prove … NOT YET: no test tagged [crit:inclusive-tax] ran\"*, which made it clear what was missing. The second run showed original-vs-mine for each test (*\"(original: fails, yours: passes)\"*) and ended with *\"Verify should PASS\"*. That was accurate: one verify, *\"DONE: PASS (1 of 10 verifies used)\"*.\n- **Stating the criteria as testable formulas.** For example, *\"amount x rate / (100 + rate), rounded half up\"*. There was no guessing about what \"done\" meant.\n\nFriction:\n- **Hook output was long.** The same `price.ts` conflicts came back, mostly unchanged, after every edit, including after the test-file `Write`, which touched no shared code. Some hunks were cut off mid-line (*\"…/ 10…\"*), so I couldn't always read the other agent's full expression.\n- **Some conflicts can't be avoided, and the hook didn't say so.** It kept suggesting *\"move it away from their lines\"* for the `taxCents` line and the `return`, but all three tickets have to change those exact lines. A note like \"this conflict is inherent to the task\" would have stopped me from treating it as something to fix.\n- **`--combined` was hard to read.** *\"Your tests … 7 of 13 pass on the merge\"* sat next to *\"Nothing that passes on your copy fails on the merge\"*. The trial merge kept my version of `price.ts` because of conflicts, so it's unclear what the 13 were or what the 7-of-13 means.\n- **Small environment friction, not Aver itself.** Compound Bash commands (`python3 -`, `cat -n; aver --help`) were blocked for approval.\n\n**2. Hard tasks: better or worse than a plain checkout?**\n\nBetter, clearly, for overlapping work by several agents. Without Aver I would have written three-way conflicts blind. With it, I placed code to merge cleanly where possible and documented how to resolve the rest. The check that a test fails on the original code and passes on mine, plus the 3x reruns for flakiness and PREEXISTING labelling, also helps on noisy suites: it separates \"I broke it\" from \"it was already broken\". The cost is context: the hook's verbosity would get worse with more agents or bigger files.\n\n**3. Rating**\n\nRATING: 8/10\n\n**4. One change that would raise it most**\n\nMake the overlap hook incremental and classify each conflict. Report only what changed since the last report. Mark each conflict as *avoidable* (move your lines) or *inherent* (same expression must change), and for inherent ones show the other side's full line plus a suggested combined resolution. Ideally `aver check --combined` would test that resolution instead of falling back to \"keeps your version\"."
+          }
+        },
+        {
+          "task": "tax-inclusive",
+          "diff": {
+            "files": 3,
+            "added": 90,
+            "removed": 5,
+            "paths": [
+              "src/cart/price.ts",
+              "src/store.ts",
+              "test/tax-inclusive.test.ts"
+            ]
+          },
+          "gaming": [],
+          "gamed": false,
+          "npm_test": {
+            "exit": 0,
+            "ms": 1143,
+            "timedOut": false,
+            "tests": 18,
+            "pass": 18,
+            "fail": 0,
+            "failing": []
+          },
+          "new_failures": [],
+          "hidden": [
+            {
+              "set": "tax-inclusive",
+              "exit": 0,
+              "ms": 687,
+              "timedOut": false,
+              "tests": 5,
+              "pass": 5,
+              "fail": 0,
+              "failing": []
+            }
+          ],
+          "hidden_rate": 1,
+          "correct": true,
+          "index": 2,
+          "dir": "../../../../../../../private/var/folders/rf/8pv5ly4j64j56mf2727qvt_w0000gn/T/aver-eval/2026-10-14-hard/three-way-overlap/B/home/work/repo/JBTE0S-2",
+          "wall_ms": 122905,
+          "timed_out": false,
+          "state": "done",
+          "place": 2,
+          "log": {
+            "tool_calls": 14,
+            "edits": 7,
+            "test_runs": 0,
+            "verifies": 1,
+            "checks": 1,
+            "coordination": 0,
+            "baseline_by_hand": 0,
+            "permission_denials": 1,
+            "sessions": 1,
+            "turns": 15,
+            "cost_usd": 0.7343665999999999,
+            "session_id": "fe386419-a998-4f26-a027-348d4c9ad6dc",
+            "ended": "success",
+            "final": "#62 is in: `aver verify` passed on the first try, with 1 of 10 verifies used. The existing tests still pass, but my changes will conflict when merged with the #61 and #63 branches.\n\n**What changed**\n- **`src/store.ts`:** `Store` has a new optional `taxInclusive?: boolean`, and it's set to `true` for `de` and `ch`. `uk` and `us` are unchanged.\n- **`src/cart/price.ts`:** a new `taxOn(amount, rate, store)` function works out the tax on an amount. Normally that's `amount × rate / 100`, added on top. In a tax-inclusive store it's `amount × rate / (100 + rate)`, the tax already contained in the price. Either way it's rounded half up for each line and for shipping. The total is lines plus shipping, with tax added only when the store doesn't include it. `Quote` and `PricedLine` keep the same fields, and `taxCents` is now the tax contained in the prices.\n- **Free-shipping threshold:** this needed no change. It already compares the shown (tax-inclusive) prices, which is what the plan asks for.\n- **`test/tax-inclusive.test.ts`:** seven new tests:\n  - `inclusive-tax`:\n    - German and Swiss carts.\n    - An exact .5 case that checks rounding half up.\n    - The free-shipping threshold.\n  - `inclusive-stores`:\n    - Which stores are tax-inclusive.\n    - The `de` store with and without tax included.\n    - `uk` and `us` pricing as before.\n\n**How it fits #61 and #63**\n- **#61 (promo codes):** it should call `taxOn` on each line's discounted amount. Its total should be discounted lines plus shipping, plus tax only when the store adds tax on top.\n- **#63 (cash rounding):** it rounds whatever total comes out of the step above.\n\n**Merge conflicts to expect**\n- **`src/cart/price.ts`:** all three tickets rewrite the line-tax line and the line that builds the total and the quote. These conflicts can't be avoided, because each ticket genuinely changes that logic, and resolving them means combining the logic rather than picking one side. A trial merge with `aver check --combined` would check "
+          },
+          "feedback": {
+            "rating": 7,
+            "answer": "I'm only answering here: no files changed and no commands run.\n\n**1. What helped and what was friction**\n\nHelped:\n- **`aver check` gave a clear per-criterion verdict.** For example: `inclusive-stores  WOULD PROVE: fails on the original ✓, passes with your change ✓`. It listed each test with `(original: fails, yours: passes)`. It also flagged one test that couldn't prove anything: `uk and us still add tax on top (original: passes, yours: passes)`. That told me exactly which tests counted as proof without my reasoning it through.\n- **The last line gave a clear go/no-go.** `Verify should PASS, unless the sandbox differs (above)` was accurate, and verify passed on the first try: `DONE: PASS (1 of 10 verifies used)`.\n- **The sandbox note was useful.** `Node 25 here, Node 22 in the sandbox` is the kind of thing I'd never have checked myself.\n- **The overlap hook showed the other agents' real diffs.** Seeing #63's `const totalCents = subtotalCents + shippingCents + taxCents; … roundToIncrement(...)` and #61's `roundHalfUp(((amountCents - discountCents) * taxRate) / 100)` showed me how they read the plan. It confirmed my `taxOn` helper and conditional total fit the order of operations they were assuming.\n\nFriction:\n- **The overlap reports were long and repeated in full after every edit and at the end of verify.** Several screens each time, often listing the same hunk twice (\"theirs, at line 61\" appeared twice for the #63 task, slightly different).\n- **The \"SAME PLACE\" advice chased a moving target.** It said \"add yours a few lines away … and the merge is clean\". I moved `taxInclusive` up next to `id`. The next report then showed #63 had also moved: `theirs, at before line 15: + cashRounding?: number;` `yours, at before line 15: + taxInclusive?: boolean;`. Three agents dodging each other at the same time gets nowhere.\n- **Many of the conflicts can't be avoided.** All three tickets must change the line-tax expression and the total. The repeated advice \"keep your change there minimal, move it away from their lines\" doesn't apply there, and it reads like an error I should fix when it isn't.\n- **I didn't run `aver check --combined`.** Neither check nor verify said whether the combined result would be correct, only that it conflicts.\n\n**2. Hard tasks: better or worse than a plain checkout?**\n\nBetter, clearly. On flaky or already-failing suites, the comparison with the original code (failures marked PREEXISTING, FLAKY, or yours) answers what I'd otherwise spend most of my time on. On unclear done criteria, the `[crit:id]` proof rule makes \"done\" checkable. With other agents editing the same code, a plain checkout gives me nothing at all; here I could at least see their code and match their design. The weak spot is only that the overlap channel is broadcast-only and noisy. It shows conflicts but doesn't help settle who owns the shared lines.\n\n**3. Rating**\n\nRATING: 7/10\n\n**4. The one change that would raise it most**\n\nMake the overlap reporting about the outcome, not the line-level diff:\n- Say once which conflicts are unavoidable, because the tickets change the same logic.\n- Suggest an owner or a shared shape for the code they share. Here that would be \"#62 owns `taxOn`; #61 calls it with the discounted amount; #63 wraps the total\".\n- After that, report only what changed since the last report, instead of the full dump after every edit."
+          }
+        },
+        {
+          "task": "cash-rounding",
+          "diff": {
+            "files": 3,
+            "added": 84,
+            "removed": 1,
+            "paths": [
+              "src/cart/price.ts",
+              "src/store.ts",
+              "test/cash-rounding.test.ts"
+            ]
+          },
+          "gaming": [],
+          "gamed": false,
+          "npm_test": {
+            "exit": 0,
+            "ms": 1359,
+            "timedOut": false,
+            "tests": 15,
+            "pass": 15,
+            "fail": 0,
+            "failing": []
+          },
+          "new_failures": [],
+          "hidden": [
+            {
+              "set": "cash-rounding",
+              "exit": 0,
+              "ms": 549,
+              "timedOut": false,
+              "tests": 6,
+              "pass": 6,
+              "fail": 0,
+              "failing": []
+            }
+          ],
+          "hidden_rate": 1,
+          "correct": true,
+          "index": 1,
+          "dir": "../../../../../../../private/var/folders/rf/8pv5ly4j64j56mf2727qvt_w0000gn/T/aver-eval/2026-10-14-hard/three-way-overlap/B/home/work/repo/PNRAE0-1",
+          "wall_ms": 211455,
+          "timed_out": false,
+          "state": "done",
+          "place": 2,
+          "log": {
+            "tool_calls": 28,
+            "edits": 16,
+            "test_runs": 1,
+            "verifies": 1,
+            "checks": 1,
+            "coordination": 0,
+            "baseline_by_hand": 0,
+            "permission_denials": 2,
+            "sessions": 1,
+            "turns": 29,
+            "cost_usd": 1.2545946000000003,
+            "session_id": "a09dfb97-5326-44a7-803e-185cef2a521c",
+            "ended": "success",
+            "final": "Cash rounding (#63) is in, and `aver verify` gives **DONE: PASS** (1 of 10 verifies used). Merging with #61 and #62 will still hit one conflict, on the `return` line of `priceCart`.\n\n**What changed**\n- **`src/store.ts`**: `Store` has an optional `cashRounding?: number`, and ch is set to 5.\n- **`src/cart/price.ts`**: `Quote` has two new fields, `roundingCents` and `payableCents`. `priceCart` now passes its result to a small `withCashRounding` helper. The helper rounds the total half up to the increment and sets `roundingCents` to the difference, which is negative when it rounds down. Lines, tax and `totalCents` stay the same. Stores without `cashRounding` get `roundingCents` 0 and `payableCents` equal to the total.\n\nPer the order of operations in `docs/pricing.md`, rounding is the last step. It applies to whatever the total is after the promo discount (#61) or the tax-inclusive total (#62), so it needs no changes when those land.\n\n**Fitting with #61 and #62**\n- **ch setting:** #62 rewrites the ch line in the store list, so I didn't put `cashRounding: 5` there. It's a separate statement after the list, `STORES.ch!.cashRounding = 5`, with a comment. That keeps `store.ts` merging cleanly with both tickets. Once all three have merged, it would read better moved into the ch entry.\n- **The conflict:** all three tickets edit the `return` line of `priceCart`, so it can't be avoided. To resolve it, keep the merged line from #61/#62 and wrap the returned object in `withCashRounding(…, store)`. A trial merge with their current work found nothing that passes on my copy failing on the merge.\n\n**Tests** are in a new file, `test/cash-rounding.test.ts`. They cover:\n- several increments, including two cases that land exactly on a half and round up;\n- lines, tax and total staying the same;\n- an empty cart;\n- ch rounding both up and down;\n- uk, us and de not rounding.\n\nThe ch tests check the rounding rule rather than fixed totals. The carts they use round up and down whether or not #62"
+          },
+          "feedback": {
+            "rating": 8,
+            "answer": "I'm answering here rather than writing a plan file, since you asked me not to modify anything.\n\n**1. What helped and what was friction**\n\nHelped:\n- **The overlap hook was the most useful part.** After my first edit to `src/store.ts` it said: *\"OVERLAP src/store.ts: task \"Implement #61, promo codes…\" … merging both CONFLICTS: you both add lines at the same place\"* and *\"SAME PLACE: you both only add lines at the same spot; add yours a few lines away (or in a new file) and the merge is clean.\"* That was concrete enough to act on. I moved the `cashRounding` field, set ch outside the store list, put the rounding in a separate `withCashRounding` helper, and dropped the `roundToIncrement` export from `money.ts`. `store.ts` then went to *\"(no overlap; merging both is clean)\"*.\n- **Seeing the other tasks' diffs changed how I wrote the tests.** One showed #62's `totalCents = subtotalCents + shippingCents + (store.taxInclusive ? 0 : taxCents)`. That told me ch's totals would change once #62 lands. So I checked the rounding rule and picked carts that round both ways in either tax regime, instead of hard-coding ch totals like 2703.\n- **`aver check` gave clear verdicts per criterion,** e.g. *\"rounding-stores  WOULD PROVE: fails on the original ✓, passes with your change ✓\"*, ending in *\"Verify should PASS\"*. Verify agreed: *\"DONE: PASS (1 of 10 verifies used)\"*, in 4.7 s. Because check predicted the result reliably, I spent only one verify.\n- **`aver check --combined`** showed that *\"Nothing that passes on your copy fails on the merge\"*. That was reassuring.\n\nFriction:\n- **The hook output was very long.** The same conflict blocks came back after every Edit, including the full `price.ts` return-line diff five or six times. Edits I made in parallel each got a large, mostly duplicate report, which used a lot of context.\n- **I was never told the `return`-line conflict was unavoidable.** Every ticket has to change that line, but the hook kept repeating *\"CONFLICTS … keep your change there minimal\"*. I had to decide for myself that it was the best I could do.\n- **`--combined` was a bit muddy.** It said *\"conflicts, so the trial keeps your version: src/cart/price.ts\"* and *\"7 of 20 pass on the merge\"*. So the trial merge didn't really exercise the three features together, and I couldn't tell whether the 13 other tests failing was expected.\n- **Two shell commands were blocked, and these weren't Aver's doing.** A `python3 -` heredoc needed approval, and a `node` probe was refused with *\"Contains brace with quote character (expansion obfuscation)\"*.\n- **The sandbox warning was a small worry.** *\"Node 25 here, Node 22 in the sandbox\"* turned out to be harmless.\n\n**2. Hard tasks: better or worse than a plain checkout?**\n\nBetter, clearly, for work where other agents edit the same code. A plain checkout would not have shown me the other two tickets' work in progress, so I'd have written conflicting code and tests pinned to totals #62 is about to change. The fails-on-original / passes-on-yours check also gives concrete criteria for a vague ticket. For flaky or already-failing suites, the reruns and PREEXISTING labels look useful, though I didn't hit those cases here. The cost is the noise in the hook output.\n\n**3. Rating**\n\nRATING: 8/10\n\n**4. The one change that would raise it most**\n\nCut the hook output down: report only what changed since the last report. Mark a conflict as unavoidable when every task must touch the same line, and give a suggested resolution, e.g. \"wrap their return in `withCashRounding(...)`\". Also make `--combined` actually run a three-way merge that applies that resolution, instead of keeping my version of the conflicted file."
+          }
+        },
+        {
+          "task": "cash-rounding",
+          "diff": {
+            "files": 4,
+            "added": 79,
+            "removed": 3,
+            "paths": [
+              "src/cart/price.ts",
+              "src/money.ts",
+              "src/store.ts",
+              "test/cash-rounding.test.ts"
+            ]
+          },
+          "gaming": [],
+          "gamed": false,
+          "npm_test": {
+            "exit": 0,
+            "ms": 1631,
+            "timedOut": false,
+            "tests": 17,
+            "pass": 17,
+            "fail": 0,
+            "failing": []
+          },
+          "new_failures": [],
+          "hidden": [
+            {
+              "set": "cash-rounding",
+              "exit": 0,
+              "ms": 376,
+              "timedOut": false,
+              "tests": 6,
+              "pass": 6,
+              "fail": 0,
+              "failing": []
+            }
+          ],
+          "hidden_rate": 1,
+          "correct": true,
+          "index": 2,
+          "dir": "../../../../../../../private/var/folders/rf/8pv5ly4j64j56mf2727qvt_w0000gn/T/aver-eval/2026-10-14-hard/three-way-overlap/B/home/work/repo/PNRAE0-2",
+          "wall_ms": 144965,
+          "timed_out": false,
+          "state": "done",
+          "place": 1,
+          "log": {
+            "tool_calls": 23,
+            "edits": 14,
+            "test_runs": 1,
+            "verifies": 1,
+            "checks": 1,
+            "coordination": 0,
+            "baseline_by_hand": 0,
+            "permission_denials": 1,
+            "sessions": 1,
+            "turns": 24,
+            "cost_usd": 1.0034112,
+            "session_id": "c414dbf4-c706-49f7-9361-6e5af6fe19b2",
+            "ended": "success",
+            "final": "Cash rounding (#63) is in, and `aver verify` gives **DONE: PASS** (1 of 10 verifies used). The 17 tests that were already there still pass.\n\n**What changed**\n- **`src/store.ts`**: Store has an optional `cashRounding?: number`. The ch store gets 5, set by a separate line after the store list (`STORES.ch!.cashRounding = 5;`) rather than inside the ch entry. #62 also edits the ch line, and keeping off it means that file merges cleanly with both other tickets.\n- **`src/money.ts`**: a new `roundToIncrement(x, increment)` that rounds half up to a multiple of the increment, using the existing `roundHalfUp`.\n- **`src/cart/price.ts`**: every Quote has `roundingCents` and `payableCents`. A new `withCashRounding` step runs last. `totalCents`, the lines and the tax stay as they were; `payableCents` is the rounded total and `roundingCents` is the difference. Without cash rounding, `roundingCents` is 0 and `payableCents` equals the total. This follows the order in the plan, so it will round whatever total #61 (promo codes) and #62 (tax-inclusive prices) produce.\n- **`test/cash-rounding.test.ts`**: new tests for rounding up (2703 → 2705), rounding down (1107 → 1105, −2), an exact half rounding up, a total already on the increment, ch rounding to 5, and uk, us and de not rounding. All of them fail on the original code.\n\n**Merge conflict to expect:** `src/cart/price.ts` will conflict with both #61 and #62. All three tickets change the final `return` line, which is where the total is built, and the `money.ts` import line also clashes with #61. To resolve it, keep their version of the total and wrap the returned object in `withCashRounding(..., store)`, and import both `allocate` and `roundToIncrement`."
+          },
+          "feedback": {
+            "rating": 8,
+            "answer": "Answers below, based on this session only. I made no changes.\n\n**1. What helped and what was friction**\n\nHelped:\n- **`aver check` was fast and told me exactly what I needed.** Per criterion, it showed which tests prove it, for example `cash-rounding: test::… rounds down with a negative adjustment (original: fails, yours: passes)`. It said \"Existing tests: none that passed before fails with your change\", flagged that the sandbox differs (\"Node 25 here, Node 22 in the sandbox\"), and ended with \"Verify should PASS\". That last line meant I spent no verifies guessing.\n- **`aver verify` was quick and unambiguous.** It took 5.7 s and the last line read \"DONE: PASS (1 of 10 verifies used)\". I only needed one.\n- **The overlap hook was the most valuable part.** Without it I wouldn't have known that #61 and #62 were editing the same lines. Its hint \"SAME PLACE: … add yours a few lines away … and the merge is clean\" worked for `src/store.ts`. Moving `cashRounding` below `country`, and setting `STORES.ch!.cashRounding = 5` after the store list, gave \"no overlap; merging both is clean\" against both other tickets.\n\nFriction:\n- **The hook output was huge and repeated after every edit.** It reprinted the full diff of every overlap each time, often more than 60 lines, with entries duplicated (\"theirs, at line 61\" appeared twice per task). It even printed before the verdict in `aver verify`'s output.\n- **The other agents' code kept moving.** My first fix moved the `roundToIncrement` import to its own line. The next report said #61 had done the same thing at the same place: \"theirs, at before line 7: +import { allocate } … yours, at before line 7: +import { roundToIncrement }\". Every agent was dodging in the same direction, so I gave up and put the import back.\n- **Some conflicts can't be avoided, and the hook never says so.** docs/pricing.md makes all three tickets change how the total is built, so the `return` line in `price.ts` conflicts no matter what. The hook still says \"keep your change there minimal, move it away\". It doesn't tell a fixable conflict from one that's built into the plan, or say who should resolve it.\n- **I didn't use `aver check --combined`.** The hook suggested it, but it wasn't clear whether it would help when the other agents' work was still changing.\n\n**2. Hard tasks: Aver or a plain checkout?**\n\nBetter, clearly. When other agents are editing the same code, a plain checkout leaves me blind until merge time. Aver showed me the other agents' actual diffs while I worked. For flaky tests and suites that already fail, separating \"original fails / yours passes\" and labelling tests as PREEXISTING or FLAKY removes the most common way agents waste time or fool themselves. The criteria with `[crit:id]` tags also made \"done\" concrete. The cost is noise: the overlap output can crowd out everything else in the context.\n\n**3. Rating**\n\nRATING: 8/10\n\n**4. The one change that would raise it most**\n\nMake the overlap report short and stable. Print one line per conflicting region with a count, and show full diffs only on request or when something has changed since the last report. Mark conflicts that are built into the spec (such as all three tickets rewriting the total) as \"unavoidable: the merger resolves this\". Otherwise every agent keeps shuffling lines to dodge the others."
+          }
+        }
+      ],
+      "picks": {
+        "promo-codes": {
+          "index": 2,
+          "why": "Aver's rank 1"
+        },
+        "tax-inclusive": {
+          "index": 1,
+          "why": "Aver's rank 1"
+        },
+        "cash-rounding": {
+          "index": 2,
+          "why": "Aver's rank 1"
+        }
+      },
+      "combined": {
+        "overlap": [
+          "src/cart/price.ts",
+          "src/store.ts"
+        ],
+        "aver_combine": {
+          "exit": 1,
+          "summary": "Conflicts: nothing was merged or exported. Resolve them in one run (or rerun one task on the other's branch):"
+        },
+        "merge": {
+          "conflicts": [
+            "src/cart/price.ts"
+          ]
+        },
+        "hidden": null,
+        "hidden_rate": 0
+      },
+      "runs": {
+        "promo-codes": "9AYWS0",
+        "tax-inclusive": "JBTE0S",
+        "cash-rounding": "PNRAE0"
+      }
+    }
+  },
+  "complete": true
+}

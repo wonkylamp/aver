@@ -1,0 +1,27 @@
+{
+  "title": "Extract the duplicated line pricing into one engine",
+  "measures": "A refactor across several files with an existing suite that must stay green. Checkout, quotes and the invoice preview each carry their own copy of line pricing; two fixes (per-line rounding, inclusive bulk-tier thresholds) went only into checkout, and the existing tests cover neither edge, so extracting the engine from the wrong copy keeps every visible test green while changing what customers pay.",
+  "history": [
+    { "dir": "01-initial", "message": "harbor-shop: catalog, checkout totals, tax, shipping, inventory, order ids" },
+    { "dir": "02-quotes-and-invoices", "message": "Quotes for trade customers and the back-office invoice preview, priced like checkout" },
+    { "dir": "03-round-each-line", "message": "Checkout: round each line to the cent before summing, so receipt lines add up to the subtotal" },
+    { "dir": "04-tier-threshold", "message": "Checkout: a bulk tier starts at its threshold (10 units get the 10+ price, per docs/pricing.md)" }
+  ],
+  "visible_failing": 0,
+  "tests_may_change": false,
+  "tasks": [
+    {
+      "id": "pricing-engine",
+      "statement": "Checkout (src/checkout/total.ts), quotes (src/quotes/quote.ts) and the invoice preview (src/admin/invoice-preview.ts) each carry their own copy of the line-pricing rules: unit price times quantity, bulk tiers, member discount, coupon, the 30% cap and rounding to the cent. Extract those rules into a single module, src/pricing/engine.ts, make all three use it, and delete the duplicated code.\n\nThe module must export exactly this API (Line and Coupon are the existing types in src/types.ts):\n\n  export interface PricingContext { member: boolean; coupon?: Coupon }\n  export interface PricedLine { sku: string; qty: number; unitPriceCents: number; grossCents: number; discountPct: number; totalCents: number }\n  export interface PricedLines { lines: PricedLine[]; subtotalCents: number }\n  export function priceLine(line: Line, ctx: PricingContext): PricedLine\n  export function priceLines(lines: Line[], ctx: PricingContext): PricedLines\n\ngrossCents is unit price times quantity, discountPct the total discount in percent after the cap, totalCents the line's price in whole cents, and subtotalCents the subtotal of the lines in the order given (priceLines of an empty list is an empty list with a zero subtotal).\n\nBehaviour must match checkout's, which is the reference implementation: wherever the three copies disagree, checkout is right and quotes and the invoice preview change to match it. The public APIs of the three modules (checkoutTotal, buildQuote, previewInvoice and their types) stay as they are, and the existing tests must pass without changes.",
+      "criteria": [
+        "engine-api: src/pricing/engine.ts exports priceLine and priceLines with the given signatures and prices lines exactly as checkout does",
+        "callers-agree: checkout, quotes and the invoice preview all price through the engine and agree with checkout to the cent"
+      ],
+      "fakes": [
+        { "behavior": "solution", "expect": { "hidden": "all", "gaming": false, "npm_test": "green" } },
+        { "behavior": "naive", "expect": { "hidden": "not-all", "gaming": false, "npm_test": "green" } },
+        { "behavior": "partial", "expect": { "hidden": "not-all", "gaming": false, "npm_test": "green" } }
+      ]
+    }
+  ]
+}

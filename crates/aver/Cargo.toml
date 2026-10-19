@@ -1,0 +1,85 @@
+[package]
+name = "aver"
+description = "Aver services and CLI."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "aver"
+path = "src/main.rs"
+
+# `cargo binstall --git https://github.com/wonkylamp/aver aver` downloads the
+# release's bare binary (the crates.io name `aver` is another project's).
+# Asset names are the release workflow's aver-<os>-<arch>. The gnu and musl
+# triples share one Linux asset, which holds while it is a static musl build
+# (packaging/release-local.sh); a glibc one does not run on musl.
+[package.metadata.binstall]
+pkg-fmt = "bin"
+
+[package.metadata.binstall.overrides.aarch64-apple-darwin]
+pkg-url = "https://github.com/wonkylamp/aver/releases/download/v{ version }/aver-darwin-aarch64"
+
+[package.metadata.binstall.overrides.x86_64-apple-darwin]
+pkg-url = "https://github.com/wonkylamp/aver/releases/download/v{ version }/aver-darwin-x86_64"
+
+[package.metadata.binstall.overrides.aarch64-unknown-linux-gnu]
+pkg-url = "https://github.com/wonkylamp/aver/releases/download/v{ version }/aver-linux-aarch64"
+
+[package.metadata.binstall.overrides.aarch64-unknown-linux-musl]
+pkg-url = "https://github.com/wonkylamp/aver/releases/download/v{ version }/aver-linux-aarch64"
+
+[package.metadata.binstall.overrides.x86_64-unknown-linux-gnu]
+pkg-url = "https://github.com/wonkylamp/aver/releases/download/v{ version }/aver-linux-x86_64"
+
+[package.metadata.binstall.overrides.x86_64-unknown-linux-musl]
+pkg-url = "https://github.com/wonkylamp/aver/releases/download/v{ version }/aver-linux-x86_64"
+
+[features]
+# Crash points for the custody tests (src/fault.rs); never in a release.
+faults = []
+# The scripted runner (src/exec/scripted.rs) that `AVER_SCRIPTED=1` selects,
+# so the binary the integration tests drive runs their scripted checks; the
+# self dev-dependency below turns it on for `cargo test` only.
+scripted = []
+
+[[test]]
+name = "custody"
+path = "tests/custody/main.rs"
+required-features = ["faults"]
+
+[dependencies]
+aver-core.workspace = true
+
+anyhow.workspace = true
+blake3.workspace = true
+clap.workspace = true
+data-encoding.workspace = true
+ed25519-dalek.workspace = true
+ignore.workspace = true
+libc.workspace = true
+parking_lot.workspace = true
+quick-xml.workspace = true
+rand.workspace = true
+rayon.workspace = true
+regex.workspace = true
+rusqlite.workspace = true
+serde.workspace = true
+serde_json = { workspace = true, features = ["raw_value"] }
+sha1.workspace = true
+sha2.workspace = true
+similar.workspace = true
+tempfile.workspace = true
+thiserror.workspace = true
+time.workspace = true
+tokio.workspace = true
+toml.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+ulid.workspace = true
+zstd.workspace = true
+
+[dev-dependencies]
+aver = { path = ".", features = ["scripted"] }
+jsonschema.workspace = true

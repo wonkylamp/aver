@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; connect-src 'self' https: http:; style-src 'self'; font-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<title>Receipt viewer: Aver</title>
+<meta name="description" content="Check an Aver receipt's content id and Ed25519 signature in your browser, then read its verdict, criteria and attributed failures.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preload" href="fonts/atkinson-hyperlegible-next-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css">
+<script type="module" src="viewer.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="wrap site-head">
+  <a class="mark" href="./" aria-label="Aver home">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="5" width="28" height="5" rx="1" class="bar-new"/><rect x="2" y="13.5" width="22" height="5" rx="1" class="bar-pre"/><rect x="2" y="22" width="28" height="5" rx="1" class="bar-pass"/></svg>
+    aver
+  </a>
+  <nav class="site-nav" aria-label="Site">
+    <a href="./#install">Install</a>
+    <a href="./#rules">How it decides</a>
+    <a href="./#setup">Set up CI</a>
+    <a href="receipt.html" aria-current="page">Receipt viewer</a>
+    <a href="https://github.com/wonkylamp/aver">GitHub</a>
+  </nav>
+</header>
+
+<main id="main" class="wrap">
+  <div class="viewer-intro">
+    <h1>Check a receipt</h1>
+    <p>Paste or drop an Aver receipt to check its content id and signature, then see what the change fixed and what it broke. Everything runs in this page. Nothing is uploaded.</p>
+  </div>
+
+  <form class="receipt-form" id="receipt-form" novalidate>
+    <div class="field drop" id="drop">
+      <label for="receipt-text">Receipt JSON</label>
+      <textarea id="receipt-text" spellcheck="false" autocomplete="off" aria-describedby="drop-hint" placeholder='{"receipt_id": "rcpt_…", "receipt": { … }}'></textarea>
+      <div class="drop-foot" id="drop-hint">
+        <span>A bare receipt, the <code>receipt.json</code> the GitHub Action uploads, or the output of <code>aver verify --json</code>. Drop a file here or</span>
+        <input type="file" id="file" accept=".json,application/json" aria-label="Choose a receipt file">
+      </div>
+    </div>
+
+    <div class="side-panel">
+      <div class="field">
+        <label for="key">Verifier public key</label>
+        <input type="text" id="key" spellcheck="false" autocomplete="off" inputmode="text" aria-describedby="key-hint" placeholder="43 characters of base64url">
+        <p class="hint" id="key-hint">From the action's <code>public-key.txt</code>, or the <code>public_key</code> field of <code>$AVER_HOME/keys/server.json</code> on the machine that issued the receipt. Without it, the page computes the id but cannot check the signature.</p>
+      </div>
+      <div class="actions">
+        <button class="button primary" type="submit">Check receipt</button>
+        <button class="button" type="button" id="example">Load example</button>
+        <button class="button" type="button" id="forge">Forge the verdict</button>
+      </div>
+      <p class="hint">The example is a real receipt from the <code>calc</code> test fixture, signed by a throwaway local verifier key. Forge the verdict to see what tampering looks like.</p>
+      <p class="message" id="input-message" role="status" aria-live="polite"></p>
+    </div>
+  </form>
+
+  <output class="result" id="result" for="receipt-text key" aria-live="polite"></output>
+</main>
+
+<footer class="wrap site-foot">
+  <p>Verification uses the canonical JSON, BLAKE3 id and Ed25519 signing rules of Aver's object store, bundled for the browser.</p>
+  <p>This page sets no cookies, has no analytics and loads nothing from other servers.</p>
+</footer>
+</body>
+</html>

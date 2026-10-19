@@ -1,0 +1,23 @@
+{
+  "name": "aver-site",
+  "version": "0.0.0",
+  "description": "Static landing page and receipt viewer for Aver",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=24.2"
+  },
+  "scripts": {
+    "build": "node build.ts",
+    "test": "node --test 'test/**/*.test.ts'",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@noble/ed25519": "3.2.0",
+    "@noble/hashes": "2.4.0",
+    "@types/node": "25.9.9",
+    "esbuild": "0.28.2",
+    "linkedom": "0.18.13",
+    "typescript": "7.0.2"
+  }
+}

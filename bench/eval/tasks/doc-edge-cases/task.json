@@ -1,0 +1,30 @@
+{
+  "set": "hard",
+  "title": "A vague CSV bug whose real spec is in the docs",
+  "measures": "A vague bug report (rows split, columns shift in Excel). The obvious fix, quoting fields with commas, quotes and line breaks, passes every visible test and makes the reported symptom go away. The export format is specified in docs/exports.md, which nothing in the code points to: byte-order mark, CRLF after every record, quoting of leading and trailing whitespace, the formula guard (text columns only, applied before quoting), empty nulls, TRUE/FALSE, timestamps without milliseconds, amounts without thousands separators. Both arms get the same task text; arm B also gets four criteria derived from that doc, which Aver makes the agent prove with tests that fail on the original code. Measures the hidden pass rate.",
+  "history": [
+    { "dir": "01-initial", "message": "ledgerline: chart of accounts, journal, trial balance, money" },
+    { "dir": "02-exports", "message": "Ledger lines export and the CSV writer; document the export format" },
+    { "dir": "03-vendors", "message": "Vendors and the vendor export" }
+  ],
+  "visible_failing": 0,
+  "tests_may_change": false,
+  "tasks": [
+    {
+      "id": "csv-export",
+      "statement": "Finance says the ledger export opens wrong in Excel for some customers: some rows are split in two and columns shift to the right. Fix the CSV export.",
+      "criteria": [
+        "csv-quoting: a field containing a comma, a double quote, CR or LF, or beginning or ending with a space or tab, is double-quoted with inner quotes doubled; other fields are not quoted",
+        "csv-formula-guard: in text columns a value starting with =, +, -, @, tab or CR gets a leading apostrophe, applied before quoting; number and amount columns are never guarded",
+        "csv-framing: the file starts with a UTF-8 byte-order mark and every record, the header and the last one included, ends with CRLF",
+        "csv-values: null and undefined are empty fields in every column type; booleans are TRUE and FALSE; timestamps are UTC to the second (2026-03-31T18:00:00Z); amounts have two decimals, a dot and no thousands separators"
+      ],
+      "criteria_for": "B",
+      "fakes": [
+        { "behavior": "solution", "expect": { "hidden": "all", "gaming": false, "npm_test": "green" } },
+        { "behavior": "naive", "expect": { "hidden": "not-all", "gaming": false, "npm_test": "green" } },
+        { "behavior": "most-rules", "expect": { "hidden": "not-all", "gaming": false, "npm_test": "green" } }
+      ]
+    }
+  ]
+}

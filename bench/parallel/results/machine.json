@@ -1,0 +1,33 @@
+{
+  "date": "2026-10-13",
+  "model": "MacBookPro18,3",
+  "cpu": "Apple M1 Pro",
+  "cores": 8,
+  "memory_gib": 16,
+  "os": "macOS 27.0.1",
+  "filesystem": "APFS",
+  "docker": "29.2.1",
+  "node": "v25.8.1",
+  "npm": "11.11.0",
+  "pnpm": "12.11.2",
+  "git": "2.54.0 (Apple Git-157)",
+  "sessions": [
+    {
+      "date": "2026-10-13 00:15 UTC",
+      "repos": [
+        "tailadmin"
+      ],
+      "free_disk_gib_at_start": 9.8,
+      "load_average_at_start": [
+        44,
+        60,
+        87
+      ],
+      "load_average_at_end": [
+        40,
+        66,
+        74
+      ]
+    }
+  ]
+}

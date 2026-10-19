@@ -1,0 +1,14 @@
+{
+  "name": "relay-desk",
+  "version": "1.4.0",
+  "description": "Helpdesk backend: customer accounts, tickets, and email in and out",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "test": "node --test 'test/**/*.test.ts'",
+    "start": "node src/main.ts"
+  }
+}

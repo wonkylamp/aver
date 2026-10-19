@@ -1,0 +1,9 @@
+# Aver test fixture: a Rust crate with no dependencies and no aver.toml, so
+# generic mode detects it. Its own [workspace] keeps it out of Aver's.
+[package]
+name = "calc"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[workspace]

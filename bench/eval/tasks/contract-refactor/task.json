@@ -1,0 +1,25 @@
+{
+  "set": "hard",
+  "title": "Reorganise a shared library by area without changing its public API",
+  "measures": "A refactor across the whole package: move 26 public functions out of src/legacy/, src/util.ts and src/helpers/ into one directory per area, and remove duplicate helpers. Three helper pairs look like duplicates and are not (two word splitters that differ on apostrophes and acronyms, two accent strippers that differ on letters like ss and ae, two clamps that differ on NaN), and each pair feeds different public functions; merging either pair keeps every visible test green and changes the public API. Hidden tests: one contract test per export, as docs/api.md documents it, plus the target layout. Measures the hidden pass rate (the contract) and NEW failures.",
+  "history": [
+    { "dir": "01-initial", "message": "textkit 4.2: strings, numbers, dates, collections and validation (split out of the old single file)" },
+    { "dir": "02-helpers", "message": "textkit 4.3: casing, slugs, ellipsize, formatSize and percent for the CMS and dashboards" },
+    { "dir": "03-plan", "message": "Document the public API contract and the target source layout" }
+  ],
+  "visible_failing": 0,
+  "tests_may_change": false,
+  "tasks": [
+    {
+      "id": "split-legacy",
+      "statement": "Reorganise src/ by area as docs/layout.md describes: src/strings/, src/numbers/, src/dates/, src/collections/ and src/validation/, one file per function family and an index.ts per area that re-exports it, with src/index.ts re-exporting the areas. Move everything out of src/legacy/, src/util.ts and src/helpers/ and delete them; where the same helper exists twice, keep one copy.\n\nOther services import this package, so src/index.ts must export exactly the same names with exactly the same behaviour as today (docs/api.md is the contract). The existing tests must pass unchanged.",
+      "criteria": [
+        "layout: each area of docs/layout.md has a directory under src/ with an index.ts exporting that area's functions, and src/legacy/, src/util.ts and src/helpers/ no longer exist"
+      ],
+      "fakes": [
+        { "behavior": "solution", "delete": ["src/legacy", "src/util.ts", "src/helpers"], "expect": { "hidden": "all", "gaming": false, "npm_test": "green", "new_failures": 0 } },
+        { "behavior": "merged-helpers", "delete": ["src/legacy", "src/util.ts", "src/helpers"], "expect": { "hidden": "not-all", "gaming": false, "npm_test": "green", "new_failures": 0 } }
+      ]
+    }
+  ]
+}

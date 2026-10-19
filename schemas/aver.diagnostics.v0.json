@@ -1,0 +1,337 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aver.build/schemas/diagnostics/v0",
+  "title": "Diagnostics",
+  "description": "Unsigned explanations stored beside a receipt (ARCHITECTURE.md §1.9.4): derived data, not evidence, not content-addressed. Every string that came from the repository or a sandbox (message, location.file, output, closest, test_changes items, import paths) is untrusted data. timings and import appear only in the diagnostics.json aver ci writes.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "receipt", "failures", "unproven"],
+  "properties": {
+    "schema": { "const": "aver.diagnostics/v0" },
+    "receipt": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/ReceiptId" },
+    "failures": {
+      "description": "Every receipt entry with a cause or a head that is not pass, in receipt order.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "cause"],
+        "properties": {
+          "id": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/EntryId" },
+          "cause": { "enum": ["NEW", "PREEXISTING", "FLAKY", "ENV", "CHANGED", null] },
+          "message": { "type": "string", "maxLength": 2048 },
+          "location": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["file", "line"],
+            "properties": {
+              "file": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/Path" },
+              "line": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/U32" }
+            }
+          },
+          "output": { "description": "The first 2 KiB and last 6 KiB of the run's output.", "type": "string" },
+          "note": { "description": "Aver's explanation: why the entry holds the verdict at BLOCKED_NOT_OWN although its cause does not (a command-level entry failing on both sides, or an entry flaky on the base that failed on every head run), why it is CHANGED, or why it is ENV because a dependency the head added could not be built in the sandbox.", "type": "string" },
+          "own": { "description": "For a NEW or CHANGED test or check: how the head's own version of it fared in the head-tests run; absent means the head deleted it.", "enum": ["pass", "fail", "absent", "infra"] },
+          "file": { "description": "For a CHANGED test: the existing test file the head modified or deleted that defines it.", "$ref": "https://aver.build/schemas/defs/v0#/$defs/Path" }
+        }
+      }
+    },
+    "unproven": {
+      "description": "Every unproven criterion, in criteria order.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["criterion", "reason", "entries"],
+        "properties": {
+          "criterion": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/CriterionId" },
+          "reason": {
+            "enum": ["not_claimed", "claimed_test_not_found", "no_test_names", "passes_without_change", "fails_at_head", "judging_files_changed", "blocked", "weak_proof", "untested_hunk"]
+          },
+          "entries": { "type": "array", "items": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/EntryId" } },
+          "closest": { "type": "array", "minItems": 1, "maxItems": 5, "items": { "type": "string" } }
+        }
+      }
+    },
+    "test_changes": {
+      "description": "The receipt's test_changes with up to 1000 items per list, in the same order.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["files_added", "files_modified", "files_deleted", "tests_removed", "tests_skipped", "harness_changed"],
+      "properties": {
+        "files_added": { "$ref": "#/$defs/Listing" },
+        "files_modified": { "$ref": "#/$defs/Listing" },
+        "files_deleted": { "$ref": "#/$defs/Listing" },
+        "tests_removed": { "$ref": "#/$defs/Listing" },
+        "tests_skipped": { "$ref": "#/$defs/Listing" },
+        "harness_changed": { "$ref": "#/$defs/Listing" }
+      }
+    },
+    "evidence": {
+      "description": "What the change's tests show about it, with or without criteria: shows_change lists tests in test files the head added or changed that fail (fail) or do not load or run (absent) on the transplant and pass with the change, at most 1000, in id order, missing_module set when the transplant failure only says a module or export is missing, missing_name when it only says a name the test uses is not defined there; fixed lists tests that failed on every base run and pass on the head; still_failing lists PREEXISTING entries, which fail on both sides. Tests that prove no criterion come from transplant runs the receipt does not record.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["shows_change", "shows_change_omitted", "fixed", "still_failing"],
+      "properties": {
+        "shows_change": {
+          "type": "array",
+          "maxItems": 1000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "original"],
+            "properties": {
+              "id": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/EntryId" },
+              "original": { "enum": ["fail", "absent"] },
+              "missing_module": { "const": true },
+              "missing_name": { "const": true },
+              "name": { "description": "The name the change adds that the transplant failure says is missing.", "type": "string" }
+            }
+          }
+        },
+        "shows_change_omitted": { "type": "integer", "minimum": 0 },
+        "fixed": { "$ref": "#/$defs/Listing" },
+        "still_failing": { "$ref": "#/$defs/Listing" }
+      }
+    },
+    "weak_proofs": {
+      "description": "Criteria whose every passing proof failed on the transplant only because something it uses is missing there (absent, a missing module or export, a missing name, or a build failure): weak proofs alone never prove, so each is unproven with reason weak_proof.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["criterion", "entries", "reason"],
+        "properties": {
+          "criterion": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/CriterionId" },
+          "entries": { "type": "array", "minItems": 1, "items": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/EntryId" } },
+          "reason": { "enum": ["missing_module", "missing_name", "build_error"] },
+          "new_api": { "description": "For build_error: every build error is a name the original code does not define and the head does (a test of a new API).", "const": true },
+          "name": { "description": "For missing_name: the name the change adds that a proof's failure on the original code says is missing.", "type": "string" }
+        }
+      }
+    },
+    "cap": {
+      "description": "What held a verdict that would be PASS below it whatever the runs found: no check counted a runtime test on the base (UNPROVEN), or the checks are the change's own proposed aver.toml (REVIEW).",
+      "enum": ["no_runtime_tests", "proposed_contract"]
+    },
+    "reason": {
+      "description": "Why the change rewrites what it does, as the agent (aver verify --reason) or the head commit's Aver-Why: trailer states it, at most 2000 bytes. Unchecked agent or repository data; never read by the verdict.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000
+    },
+    "proof_sources": {
+      "description": "For up to 10 criteria with a passing proof: the first proving entry and the first lines (at most 30) of its test's source in the head (repository content).",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["criterion", "entry", "path", "line", "source"],
+        "properties": {
+          "criterion": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/CriterionId" },
+          "entry": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/EntryId" },
+          "path": { "type": "string" },
+          "line": { "type": "integer", "minimum": 1 },
+          "source": { "type": "string" }
+        }
+      }
+    },
+    "uncovered": {
+      "description": "The receipt's uncovered with up to 1000 paths: source files the head changed that no check could exercise (repository-derived).",
+      "$ref": "#/$defs/Listing"
+    },
+    "unbuilt": {
+      "description": "The uncovered Rust files whose change is inside code under #[cfg(feature)] that no Cargo check covering them builds: the package, the features a check would need to enable and, through them, the command a check would run (repository-derived).",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "package", "features"],
+        "properties": {
+          "path": { "type": "string" },
+          "package": { "type": "string" },
+          "features": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "review": {
+      "description": "For a receipt with CHANGED entries: the unified diff of each test or harness file behind them, at most 10 files of about 4000 bytes each (repository content).",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "diff"],
+        "properties": {
+          "path": { "type": "string" },
+          "diff": { "type": "string" }
+        }
+      }
+    },
+    "necessity": {
+      "description": "Hunk necessity, for a verdict that would be PASS (ARCHITECTURE.md §1.9.4): each source hunk of the change reverted alone and only the proving tests run on what is left. checked lists every hunk in head line numbers with what its reversion did (killed: a proving test failed; survived: every proving test passed; uncompilable: none ran, so it was tried again with the hunks sharing the names it introduces, coupled); a hunk with reason untested_hunk held the verdict at UNPROVEN. not_checked says why the phase did not run. Paths are repository data.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "hunks"],
+          "properties": {
+            "status": { "const": "checked" },
+            "hunks": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 8,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["path", "start", "end", "outcome"],
+                "properties": {
+                  "path": { "type": "string" },
+                  "start": { "type": "integer", "minimum": 1 },
+                  "end": { "type": "integer", "minimum": 1 },
+                  "outcome": { "$ref": "#/$defs/Ablated" },
+                  "coupled": { "$ref": "#/$defs/Ablated" },
+                  "reason": { "const": "untested_hunk" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "why", "hunks"],
+          "properties": {
+            "status": { "const": "not_checked" },
+            "hunks": { "type": "integer", "minimum": 1 },
+            "why": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["kind"],
+                  "properties": { "kind": { "enum": ["no_proving_tests", "too_many_hunks"] } }
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["kind", "check"],
+                  "properties": {
+                    "kind": { "const": "no_selection" },
+                    "check": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/CheckId" }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "narrowed": {
+      "description": "Per check, whether its transplant and head-tests runs ran only the test targets the head's test files make (ran, of the full command's of), the other targets' results taken from the base and the judged head, or ran in full and why (full). The receipt is the full runs' either way.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["check", "side"],
+        "properties": {
+          "check": { "type": "string" },
+          "side": { "enum": ["transplant", "head_tests"] },
+          "ran": {
+            "description": "The libtest labels of the targets the narrowed run ran (repository-derived).",
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "of": { "type": "integer", "minimum": 0 },
+          "full": { "type": "string" }
+        }
+      }
+    },
+    "timings": {
+      "description": "Where the time of an aver ci call went, for tracking compute. Sandbox times are wall clock from start to removal; a cache hit, or a run already counted on an earlier side, is 0.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total_ms", "install_ms", "sandbox_ms", "runs"],
+      "properties": {
+        "total_ms": { "type": "integer", "minimum": 0 },
+        "install_ms": { "type": "integer", "minimum": 0 },
+        "sandbox_ms": { "type": "integer", "minimum": 0 },
+        "runs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["side", "check", "index", "run", "cache_hit", "install_ms", "sandbox_ms"],
+            "properties": {
+              "side": { "enum": ["base", "head", "head_tests", "transplant", "ablation"] },
+              "check": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/CheckId" },
+              "index": { "enum": [1, 2, 3] },
+              "run": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/RunId" },
+              "cache_hit": { "type": "boolean" },
+              "install_ms": { "type": "integer", "minimum": 0 },
+              "sandbox_ms": { "type": "integer", "minimum": 0 }
+            }
+          }
+        }
+      }
+    },
+    "import": {
+      "description": "What the imports of the two commits let through with a warning, in aver ci only: possible secrets (the path and pattern name, never the matched bytes) and files over the 64 MiB blob limit that were imported empty. At most 1000 items each, in path order; the omitted counts give the rest.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["secrets", "secrets_omitted", "placeholders", "placeholders_omitted"],
+      "properties": {
+        "secrets": {
+          "type": "array",
+          "maxItems": 1000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "pattern", "severity", "sides"],
+            "properties": {
+              "path": { "type": "string" },
+              "pattern": { "type": "string" },
+              "severity": { "enum": ["low", "high"] },
+              "sides": { "$ref": "#/$defs/Sides" }
+            }
+          }
+        },
+        "secrets_omitted": { "type": "integer", "minimum": 0 },
+        "placeholders": {
+          "type": "array",
+          "maxItems": 1000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "bytes", "sides"],
+            "properties": {
+              "path": { "type": "string" },
+              "bytes": { "type": "integer", "minimum": 0 },
+              "sides": { "$ref": "#/$defs/Sides" }
+            }
+          }
+        },
+        "placeholders_omitted": { "type": "integer", "minimum": 0 }
+      }
+    }
+  },
+  "$defs": {
+    "Ablated": { "enum": ["killed", "survived", "uncompilable"] },
+    "Sides": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 2,
+      "items": { "enum": ["base", "head"] }
+    },
+    "Listing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["items", "omitted"],
+      "properties": {
+        "items": { "type": "array", "maxItems": 1000, "items": { "type": "string" } },
+        "omitted": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aver.build/schemas/tree/v0",
+  "title": "Tree",
+  "description": "A directory. Entries are a set sorted by name bytes with unique names (ARCHITECTURE.md §1.3).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "entries"],
+  "properties": {
+    "schema": { "const": "aver.tree/v0" },
+    "entries": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "kind", "id"],
+        "properties": {
+          "name": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/Name" },
+          "kind": { "enum": ["file", "exec", "symlink", "tree"] },
+          "id": { "type": "string" }
+        },
+        "if": { "properties": { "kind": { "const": "tree" } } },
+        "then": { "properties": { "id": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/TreeId" } } },
+        "else": { "properties": { "id": { "$ref": "https://aver.build/schemas/defs/v0#/$defs/BlobId" } } }
+      }
+    }
+  }
+}

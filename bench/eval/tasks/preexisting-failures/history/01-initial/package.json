@@ -1,0 +1,13 @@
+{
+  "name": "tally-billing",
+  "version": "1.0.0",
+  "description": "Invoice computation, tax and export helpers for the Tally billing service",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}

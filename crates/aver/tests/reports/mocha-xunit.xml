@@ -1,0 +1,20 @@
+<testsuite name="Mocha Tests" tests="3" failures="0" errors="1" skipped="1" timestamp="0" time="0.002">
+<testcase classname="calc" name="skipped" file="/work/test/a.test.js" time="0"><skipped/></testcase>
+<testcase classname="calc add" name="adds" file="/work/test/a.test.js" time="0"/>
+<testcase classname="calc add" name="fails" file="/work/test/a.test.js" time="0"><failure>Expected values to be strictly equal:
+
+2 !== 3
+
+
+      + expected - actual
+
+      -2
+      +3
+      
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+2 !== 3
+
+    at Context.&#x3C;anonymous&#x3E; (test/a.test.js:5:32)
+    at process.processImmediate (node:internal/timers:484:21)</failure></testcase>
+</testsuite>

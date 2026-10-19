@@ -1,0 +1,13 @@
+{
+  "name": "basket",
+  "version": "1.8.0",
+  "description": "Checkout pricing for the web shop: line amounts, shipping and tax",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}

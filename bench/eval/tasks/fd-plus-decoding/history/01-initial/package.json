@@ -1,0 +1,13 @@
+{
+  "name": "urlkit",
+  "version": "3.1.2",
+  "description": "Small, dependency-free URL, query string and cookie helpers",
+  "type": "module",
+  "exports": "./src/index.ts",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}

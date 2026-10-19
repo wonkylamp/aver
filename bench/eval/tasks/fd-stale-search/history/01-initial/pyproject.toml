@@ -1,0 +1,5 @@
+[project]
+name = "catalog"
+version = "2.0.1"
+description = "The shop's product catalog: items, search, the admin API and the CSV importer"
+requires-python = ">=3.10"

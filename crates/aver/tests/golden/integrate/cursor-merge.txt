@@ -1,0 +1,13 @@
+=== .cursor/rules/aver.mdc
+---
+description: Team notes on Aver
+alwaysApply: true
+---
+
+Ask before accepting a run.
+
+<!-- BEGIN aver: written by `aver integrate`; running it again replaces this block -->
+
+{{AVER_INSTRUCTIONS}}
+
+<!-- END aver -->

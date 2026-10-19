@@ -1,0 +1,9 @@
+# Cloudflare Pages redirects. Sources here are paths only: Pages does not
+# support domain-level rules such as
+#
+#   https://www.aver.build/* https://aver.build/:splat 301
+#
+# in this file, so the www.aver.build -> https://aver.build 301 is a Redirect
+# Rule on the aver.build zone instead. site/README.md lists the steps.
+#
+# Pages already serves /index.html as / and /receipt.html as /receipt.

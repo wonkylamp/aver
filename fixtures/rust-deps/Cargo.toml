@@ -1,0 +1,12 @@
+# Aver test fixture: a Rust crate whose code needs a crate from Cargo.lock,
+# fetched into a CARGO_HOME layer and built without network in the check.
+[package]
+name = "deps"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+itoa = "1"
+
+[workspace]

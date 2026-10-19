@@ -1,0 +1,10 @@
+# Aver test fixture: a Python package with pytest tests and no aver.toml, so
+# generic mode detects it. Its only dependency is pytest, pinned with hashes
+# in requirements-dev.txt (the install sandbox downloads it once per layer).
+[project]
+name = "calc"
+version = "0.1.0"
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

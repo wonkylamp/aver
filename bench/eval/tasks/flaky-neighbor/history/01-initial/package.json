@@ -1,0 +1,13 @@
+{
+  "name": "tempo-kit",
+  "version": "1.0.0",
+  "description": "Small timing and async utilities with an injectable clock.",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}

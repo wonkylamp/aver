@@ -1,0 +1,3 @@
+# Build outputs committed so that the site needs no build step to deploy.
+site/viewer.js linguist-generated=true
+site/landing.js linguist-generated=true

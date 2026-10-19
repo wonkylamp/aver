@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aver.build/schemas/defs/v0",
+  "title": "Aver v0 shared definitions",
+  "description": "Scalar and shared types referenced by every aver.<kind>.v0 schema. Byte limits in ARCHITECTURE.md are approximated by maxLength, which counts code points. Set-typed arrays must also be sorted by key, which JSON Schema cannot express; uniqueItems is the closest check.",
+  "$defs": {
+    "BlobId": { "type": "string", "pattern": "^blob_[a-z2-7]{51}[aq]$" },
+    "TreeId": { "type": "string", "pattern": "^tree_[a-z2-7]{51}[aq]$" },
+    "EnvId": { "type": "string", "pattern": "^env_[a-z2-7]{51}[aq]$" },
+    "SnapshotId": { "type": "string", "pattern": "^snap_[a-z2-7]{51}[aq]$" },
+    "TransitionId": { "type": "string", "pattern": "^tran_[a-z2-7]{51}[aq]$" },
+    "TaskId": { "type": "string", "pattern": "^task_[a-z2-7]{51}[aq]$" },
+    "RunId": { "type": "string", "pattern": "^run_[a-z2-7]{51}[aq]$" },
+    "ReceiptId": { "type": "string", "pattern": "^rcpt_[a-z2-7]{51}[aq]$" },
+    "AttemptRecordId": { "type": "string", "pattern": "^atr_[a-z2-7]{51}[aq]$" },
+    "LedgerId": { "type": "string", "pattern": "^ledg_[a-z2-7]{51}[aq]$" },
+    "AgentId": { "type": "string", "pattern": "^agent_[a-z2-7]{51}[aq]$" },
+    "WorkspaceId": { "type": "string", "pattern": "^ws_[0-7][0-9A-HJKMNP-TV-Z]{25}$" },
+    "AttemptId": { "type": "string", "pattern": "^att_[0-7][0-9A-HJKMNP-TV-Z]{25}$" },
+    "Path": {
+      "type": "string",
+      "maxLength": 4096,
+      "pattern": "^(?!(.*/)?(\\.\\.?|\\.[gG][iI][tT])(/|$))[^/\\x00]+(/[^/\\x00]+)*$"
+    },
+    "Name": {
+      "type": "string",
+      "maxLength": 4096,
+      "pattern": "^(?!(\\.\\.?|\\.[gG][iI][tT])$)[^/\\x00]+$"
+    },
+    "CheckId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$" },
+    "TestCheckId": {
+      "type": "string",
+      "maxLength": 1090,
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,63}::[\\s\\S]+$"
+    },
+    "EntryId": {
+      "anyOf": [{ "$ref": "#/$defs/CheckId" }, { "$ref": "#/$defs/TestCheckId" }]
+    },
+    "CriterionId": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$" },
+    "Timestamp": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"
+    },
+    "Digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "GitSha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "RefName": {
+      "type": "string",
+      "maxLength": 255,
+      "pattern": "^(?!(.*/)?\\.\\.?(/|$))[A-Za-z0-9._:-]+(/[A-Za-z0-9._:-]+)*$"
+    },
+    "EnvVarName": {
+      "type": "string",
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+      "not": {
+        "pattern": "[Tt][Oo][Kk][Ee][Nn]|[Ss][Ee][Cc][Rr][Ee][Tt]|[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]|[Pp][Aa][Ss][Ss][Ww][Dd]|[Aa][Pp][Ii][_-]?[Kk][Ee][Yy]|[Pp][Rr][Ii][Vv][Aa][Tt][Ee]|[Cc][Rr][Ee][Dd][Ee][Nn][Tt][Ii][Aa][Ll]|[Aa][Uu][Tt][Hh]"
+      }
+    },
+    "ReportPath": {
+      "type": "string",
+      "pattern": "^/aver/out/(?!(.*/)?(\\.\\.?|\\.[gG][iI][tT])(/|$))[^/\\x00]+(/[^/\\x00]+)*$"
+    },
+    "U32": { "type": "integer", "minimum": 0, "maximum": 4294967295 },
+    "I32": { "type": "integer", "minimum": -2147483648, "maximum": 2147483647 },
+    "Argv": { "type": "array", "items": { "type": "string" } },
+    "Signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["alg", "key", "sig"],
+      "properties": {
+        "alg": { "const": "ed25519" },
+        "key": { "$ref": "#/$defs/AgentId" },
+        "sig": { "type": "string", "pattern": "^[A-Za-z0-9_-]{85}[AQgw]$" }
+      }
+    },
+    "Report": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format", "path"],
+      "properties": {
+        "format": { "const": "junit" },
+        "path": { "$ref": "#/$defs/ReportPath" }
+      }
+    },
+    "CheckDef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "argv"],
+      "properties": {
+        "id": { "$ref": "#/$defs/CheckId" },
+        "argv": { "$ref": "#/$defs/Argv" },
+        "cwd": { "$ref": "#/$defs/Path" },
+        "timeout_ms": { "$ref": "#/$defs/U32" },
+        "report": { "$ref": "#/$defs/Report" }
+      }
+    },
+    "Criteria": {
+      "description": "Ordered; ids unique.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "text"],
+        "properties": {
+          "id": { "$ref": "#/$defs/CriterionId" },
+          "text": { "type": "string" }
+        }
+      }
+    },
+    "CriterionSet": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/CriterionId" }
+    },
+    "Verdict": { "enum": ["PASS", "FAIL_OWN", "BLOCKED_NOT_OWN", "UNPROVEN"] }
+  }
+}

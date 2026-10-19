@@ -1,0 +1,60 @@
+# Makes Aver a required check that a maintainer's approval can clear.
+#
+# The verify job runs on every pull request with review: approve: it posts a
+# check run named Aver on the head commit, success for an acceptable
+# verdict, failure for a failing one, and action_required for REVIEW or
+# UNPROVEN (nothing broke, nothing proved the change safe). Require the
+# check named Aver in branch protection, not the job.
+#
+# The approve job runs when someone submits a review. It runs no check. It
+# reads the pull request's reviews and, when a person other than the author
+# approved the current head commit, posts Aver as success on that commit
+# and uploads approval.json (reviewer, review id, head commit and tree). A
+# push after the approval moves the head, so the verify job runs again and
+# the old approval does not carry over.
+#
+# A pull request from a fork gets a read-only token on both events, so no
+# check run can be posted there; use fail-on and review: fail for forks.
+# Replace `uses: ./action` with `uses: wonkylamp/aver/action@<full commit SHA> # vX.Y.Z`.
+name: Aver
+
+on:
+  pull_request:
+  pull_request_review:
+    types: [submitted, dismissed]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+    steps:
+      # The head, not the test merge commit: the checks run in this checkout.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: ./action
+        with:
+          fail-on: unexplained
+          review: approve
+
+  approve:
+    if: github.event_name == 'pull_request_review'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: ./action
+        with:
+          mode: approve

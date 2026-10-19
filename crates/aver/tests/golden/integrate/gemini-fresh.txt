@@ -1,0 +1,6 @@
+=== GEMINI.md
+<!-- BEGIN aver: written by `aver integrate`; running it again replaces this block -->
+
+{{AVER_INSTRUCTIONS}}
+
+<!-- END aver -->

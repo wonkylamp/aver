@@ -1,0 +1,23 @@
+name: Feature request
+description: Propose a change to what Aver does.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What you or your agents are trying to do, and what gets in the way today.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: What Aver should do instead. Name the commands, receipt fields or ARCHITECTURE.md sections it touches, if you know them.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: Other ways to solve it, including ones that need no change to Aver.
