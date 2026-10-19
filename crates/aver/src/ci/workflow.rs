@@ -23,7 +23,7 @@ pub const PATH: &str = ".github/workflows/aver.yml";
 /// action has every input the workflow uses.
 pub const ACTION_SHA: &str = match option_env!("AVER_ACTION_SHA") {
     Some(sha) => sha,
-    None => "65bb7f027f56f2454778a3db9e11e704b654f0a5",
+    None => "c7adef53d49afd28fe2e8ded8733a70dd607369a",
 };
 const ACTION: &str = "wonkylamp/aver/action";
 const CHECKOUT: &str = "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1";
