@@ -994,7 +994,14 @@ fn a_second_ctrl_c_kills_the_agents_before_exiting() {
         assert!(std::time::Instant::now() < deadline, "aver run still runs");
         std::thread::sleep(std::time::Duration::from_millis(20));
     };
-    assert_eq!(status.code(), Some(130));
+    let mut said = String::new();
+    if let Some(mut out) = child.stdout.take() {
+        let _ = std::io::Read::read_to_string(&mut out, &mut said);
+    }
+    if let Some(mut err) = child.stderr.take() {
+        let _ = std::io::Read::read_to_string(&mut err, &mut said);
+    }
+    assert_eq!(status.code(), Some(130), "{said}");
     std::thread::sleep(std::time::Duration::from_millis(200));
     // SAFETY: signal 0 only checks; the agent's shell led its group.
     let alive = unsafe { libc::kill(-agent, 0) } == 0;

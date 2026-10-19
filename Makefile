@@ -19,7 +19,7 @@ up:
 ci-local: lint test test-native
 
 test: site-deps test-action test-install test-eval plugin-check
-	cargo test --workspace
+	cargo test --workspace --no-fail-fast
 	AVER=$${CARGO_TARGET_DIR:-target}/debug/aver action/test/e2e-local.sh
 	$(MAKE) test-custody
 	cd site && npm test
