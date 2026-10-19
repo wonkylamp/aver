@@ -571,7 +571,7 @@ impl Sides {
         let keep = globs(&source.keep)?;
         let seed = globs(&source.seed)?;
         fs::create_dir_all(to)?;
-        copy_walk(source.dir, to, "", &keep, &seed)?;
+        copy_walk(source.dir, source.dir, to, "", &keep, &seed)?;
         Ok(())
     }
 
@@ -774,6 +774,7 @@ fn walk_inputs(
 }
 
 fn copy_walk(
+    from_root: &FsPath,
     from: &FsPath,
     to: &FsPath,
     rel: &str,
@@ -792,15 +793,67 @@ fn copy_walk(
         }
         let dst = to.join(&name);
         if keep.iter().any(|g| g.matches(&path)) {
-            std::os::unix::fs::symlink(e.path(), &dst)?;
+            let needle = from_root.as_os_str().as_encoded_bytes();
+            let mut naming = Vec::new();
+            names_source(&e.path(), &path, needle, &mut naming)?;
+            link_kept(&e.path(), &dst, &path, &naming)?;
             continue;
         }
         let meta = fs::symlink_metadata(e.path())?;
         if meta.is_dir() {
             fs::create_dir(&dst)?;
-            copy_walk(&e.path(), &dst, &path, keep, seed)?;
+            copy_walk(from_root, &e.path(), &dst, &path, keep, seed)?;
         } else {
             clone::clone_entry(CloneStrategy::Copy, &e.path(), &dst)?;
+        }
+    }
+    Ok(())
+}
+
+/// The paths under kept directory `dir` (at `rel`) that [`relocate`]
+/// would point at the slot: text files of a [`relocatable`] name holding
+/// `needle`, and absolute symlinks into it.
+fn names_source(dir: &FsPath, rel: &str, needle: &[u8], out: &mut Vec<String>) -> io::Result<()> {
+    for e in fs::read_dir(dir)?.flatten() {
+        let path = format!("{rel}/{}", e.file_name().to_string_lossy());
+        let meta = fs::symlink_metadata(e.path())?;
+        if meta.file_type().is_symlink() {
+            let target = fs::read_link(e.path())?;
+            if target.is_absolute() && target.as_os_str().as_encoded_bytes().starts_with(needle) {
+                out.push(path);
+            }
+        } else if meta.is_dir() {
+            names_source(&e.path(), &path, needle, out)?;
+        } else if meta.is_file()
+            && meta.len() <= 8 << 20
+            && relocatable(&path)
+            && find(&fs::read(e.path())?, needle).is_some()
+        {
+            out.push(path);
+        }
+    }
+    Ok(())
+}
+
+/// Links kept directory `from` (at `rel`) at `to`, but along the way to
+/// each of `naming` builds real directories and copies the entry: linked,
+/// an editable install's `.pth` or finder would still import the source's
+/// code, and [`relocate`] may not write the source's copy.
+fn link_kept(from: &FsPath, to: &FsPath, rel: &str, naming: &[String]) -> io::Result<()> {
+    let inside = format!("{rel}/");
+    if !naming.iter().any(|n| n.starts_with(&inside)) {
+        return std::os::unix::fs::symlink(from, to);
+    }
+    fs::create_dir(to)?;
+    for e in fs::read_dir(from)?.flatten() {
+        let path = format!("{rel}/{}", e.file_name().to_string_lossy());
+        let dst = to.join(e.file_name());
+        if naming.contains(&path) {
+            clone::clone_entry(CloneStrategy::Copy, &e.path(), &dst)?;
+        } else if fs::symlink_metadata(e.path())?.is_dir() {
+            link_kept(&e.path(), &dst, &path, naming)?;
+        } else {
+            std::os::unix::fs::symlink(e.path(), &dst)?;
         }
     }
     Ok(())
@@ -961,8 +1014,11 @@ fn relocate_walk(
             }
             let target = fs::read_link(e.path())?;
             let bytes = target.as_os_str().as_encoded_bytes();
-            if target.is_absolute() && bytes.starts_with(needle) {
-                let rest = &bytes[needle.len()..];
+            let rest = bytes.strip_prefix(needle).unwrap_or_default();
+            // A plain copy links a kept directory to the source's own;
+            // re-pointed, that link would name itself.
+            let own = rest.strip_prefix(b"/") == Some(path.as_bytes());
+            if target.is_absolute() && bytes.starts_with(needle) && !own {
                 let mut new = with.to_vec();
                 new.extend_from_slice(rest);
                 fs::remove_file(e.path())?;

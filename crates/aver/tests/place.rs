@@ -2418,6 +2418,20 @@ if grep -q HANG calc.sh && [ -n "$HANG_MARK" ]; then touch "$HANG_MARK"; sleep 6
         assert_eq!(snapshot(&repo.path()), before);
     }
 
+    /// Defect: under a plain copy (Linux without reflink), a slot's kept
+    /// `node_modules`, linked to the checkout's, was re-pointed at itself.
+    #[test]
+    fn a_copied_slot_still_reaches_the_kept_dependencies() {
+        let repo = repo(|_| {}, add_sub);
+        let out = tempfile::tempdir().unwrap();
+        let run = ci(&repo, out.path(), &["--slots"])
+            .env("AVER_CLONE", "copy")
+            .output()
+            .unwrap();
+        assert_eq!(run.status.code(), Some(0), "{run:?}");
+        assert!(!logs(out.path()).contains("NO-KEPT"));
+    }
+
     /// Waits for `mark`, checks the run hangs in the checkout at the base,
     /// then sends `signal` to `child`.
     fn signal_at(child: &std::process::Child, repo: &Repo, mark: &Path, signal: i32) {

@@ -623,8 +623,18 @@ fn b12b_an_issue_cannot_close_the_repo_data_fence() {
 // B9: workspace speed, rewind and fixture secrets. Driven through the CLI on `fixtures/sh-calc` (shell checks).
 
 fn b9_aver(home: &std::path::Path, cwd: &std::path::Path, args: &[&str]) -> std::process::Output {
+    b9_aver_env(home, cwd, args, &[])
+}
+
+fn b9_aver_env(
+    home: &std::path::Path,
+    cwd: &std::path::Path,
+    args: &[&str],
+    env: &[(&str, &str)],
+) -> std::process::Output {
     std::process::Command::new(env!("CARGO_BIN_EXE_aver"))
         .args(args)
+        .envs(env.iter().copied())
         .current_dir(cwd)
         .env("AVER_HOME", home)
         // B12's run_support sets it for this whole test process.
@@ -1281,8 +1291,20 @@ fn b14_ci(
     head: &str,
     extra: &[&str],
 ) -> (i32, Receipt) {
-    let out = root.join(format!("out{}", extra.join("")));
-    let run = b9_aver(
+    b14_ci_env(root, repo, base, head, extra, &[])
+}
+
+fn b14_ci_env(
+    root: &std::path::Path,
+    repo: &std::path::Path,
+    base: &str,
+    head: &str,
+    extra: &[&str],
+    env: &[(&str, &str)],
+) -> (i32, Receipt) {
+    let tag: String = env.iter().map(|(k, v)| format!("{k}{v}")).collect();
+    let out = root.join(format!("out{}{tag}", extra.join("")));
+    let run = b9_aver_env(
         &root.join("home"),
         repo,
         &[
@@ -1299,6 +1321,7 @@ fn b14_ci(
             extra,
         ]
         .concat(),
+        env,
     );
     let text = format!("{run:?}");
     #[derive(serde::Deserialize)]
@@ -2150,15 +2173,21 @@ fn b16_an_editable_install_tests_each_sides_own_code() {
         let dir = tempfile::tempdir().unwrap();
         let root = std::fs::canonicalize(dir.path()).unwrap();
         let (repo, base, head) = b16_repo(&root, install);
-        for extra in [&[][..], &["--slots"][..]] {
-            let (code, receipt) = b14_ci(&root, &repo, &base, &head, extra);
+        // A plain copy (Linux without reflink) links kept directories.
+        let copy = [("AVER_CLONE", "copy")];
+        for (extra, env) in [
+            (&[][..], &[][..]),
+            (&["--slots"][..], &[][..]),
+            (&["--slots"][..], &copy[..]),
+        ] {
+            let (code, receipt) = b14_ci_env(&root, &repo, &base, &head, extra, env);
             let tool = receipt.body.checks.get("tool").expect("the tool entry");
             assert_eq!(
                 (tool.base, tool.cause, receipt.body.verdict),
                 (BaseStatus::Pass, Some(Cause::New), Verdict::FailOwn),
-                "{install} {extra:?}: {tool:?}"
+                "{install} {extra:?} {env:?}: {tool:?}"
             );
-            assert_eq!(code, 1, "{install} {extra:?}");
+            assert_eq!(code, 1, "{install} {extra:?} {env:?}");
         }
     }
 }
