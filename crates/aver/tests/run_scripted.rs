@@ -233,6 +233,35 @@ fn a_timeout_kills_the_whole_process_group_crit_linux_green() {
     );
 }
 
+/// Defect: an agent whose shell exited (on Ctrl-C's SIGTERM under dash,
+/// say) left the processes it started editing the directory after the
+/// run ended.
+#[test]
+fn an_agent_that_exits_takes_its_process_group_with_it() {
+    let d = TestHome::start();
+    let repo = d.calc();
+    let pid_file = d.root.join("child.pid");
+    let script = d.script(
+        "leaves.sh",
+        &format!(
+            "sh -c 'trap \"\" TERM; sleep 60' &\necho $! > {}\n",
+            pid_file.display()
+        ),
+    );
+    let (_, transcript) = run(&d, spec(&repo, &sh(&script, ""), None, 1));
+    let child: u32 = std::fs::read_to_string(&pid_file)
+        .unwrap()
+        .trim()
+        .parse()
+        .unwrap();
+    let alive = aver::run::state::process_alive(child);
+    if alive {
+        // SAFETY: the test's own leftover; cleans up before failing.
+        unsafe { libc::kill(child as i32, libc::SIGKILL) };
+    }
+    assert!(!alive, "the agent's child outlived it: {transcript}");
+}
+
 /// `aver verify --last` reprints the latest receipt's report: the same
 /// verdict first and last, no new receipt (the verifies used stay), the
 /// receipt's exit code, and a stale mark once the directory changes.
@@ -957,7 +986,9 @@ fn a_second_ctrl_c_kills_the_agents_before_exiting() {
             "-n",
             "1",
             "--agent-cmd",
-            &sh(&script, ""),
+            // `exec`: dash keeps a `-c` shell that SIGTERM ends, so the
+            // first Ctrl-C would end the run before the second came.
+            &format!("exec {}", sh(&script, "")),
             "--no-deps",
             "--no-tui",
         ])

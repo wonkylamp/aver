@@ -719,6 +719,10 @@ impl<'a> Supervisor<'a> {
                     match child.try_wait() {
                         Ok(Some(status)) => {
                             live.child = None;
+                            // What the agent left in its group would keep
+                            // editing the directory while it is checked,
+                            // or after `aver` exits.
+                            signal_group(agent.pgid, libc::SIGKILL);
                             if let Some(pgid) = agent.pgid {
                                 interrupt::LIVE.clear(pgid);
                             }
