@@ -38,7 +38,7 @@ refuse() {
 # The commits are fetched by now (resolve-revs.sh), so the token
 # actions/checkout persisted for that has done its job.
 repo_dir=${WORKING_DIRECTORY:-.}
-for key in $(git -C "$repo_dir" config --local --name-only --get-regexp '^http\..*\.extraheader$' 2>/dev/null || true); do
+for key in $(git -C "$repo_dir" config --local --no-includes --name-only --get-regexp '^http\..*\.extraheader$' 2>/dev/null || true); do
   git -C "$repo_dir" config --local --unset-all "$key"
   echo "aver: removed $key from .git/config before native checks run (persist-credentials: false avoids writing it)"
 done
@@ -54,14 +54,14 @@ if [ -n "$common" ]; then
     < <(find "$common" -type f \( -name config -o -name config.worktree \) -print0)
 fi
 for config in ${configs[@]+"${configs[@]}"}; do
-  for key in $(git config --file "$config" --name-only --get-regexp '^http\..*\.extraheader$' 2>/dev/null || true); do
+  for key in $(git config --file "$config" --no-includes --name-only --get-regexp '^http\..*\.extraheader$' 2>/dev/null || true); do
     git config --file "$config" --unset-all "$key"
     echo "aver: removed $key from ${config#"$common"/} before native checks run (persist-credentials: false avoids writing it)"
   done
-  for included in $(git config --file "$config" --get-regexp '^include(if\..*)?\.path$' 2>/dev/null | awk '{print $2}' || true); do
+  for included in $(git config --file "$config" --no-includes --get-regexp '^include(if\..*)?\.path$' 2>/dev/null | awk '{print $2}' || true); do
     case $included in /*) ;; *) included=$(dirname "$config")/$included ;; esac
     [ -f "$included" ] || continue
-    for key in $(git config --file "$included" --name-only --get-regexp '^http\..*\.extraheader$' 2>/dev/null || true); do
+    for key in $(git config --file "$included" --no-includes --name-only --get-regexp '^http\..*\.extraheader$' 2>/dev/null || true); do
       git config --file "$included" --unset-all "$key"
       echo "aver: removed $key from $included, which ${config#"$common"/} includes, before native checks run (persist-credentials: false avoids writing it)"
     done
@@ -74,7 +74,7 @@ for config in ${configs[@]+"${configs[@]}"}; do
   if grep -qi 'extraheader' "$config"; then
     refuse "native checks would run next to a Git credential header in ${config#"$common"/}; set persist-credentials: false on actions/checkout."
   fi
-  for included in $(git config --file "$config" --get-regexp '^include(if\..*)?\.path$' 2>/dev/null | awk '{print $2}' || true); do
+  for included in $(git config --file "$config" --no-includes --get-regexp '^include(if\..*)?\.path$' 2>/dev/null | awk '{print $2}' || true); do
     case $included in /*) ;; *) included=$(dirname "$config")/$included ;; esac
     if [ -f "$included" ] && grep -qi 'extraheader' "$included"; then
       refuse "native checks would run next to a Git credential header in $included, which ${config#"$common"/} includes; set persist-credentials: false on actions/checkout."

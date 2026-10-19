@@ -16,7 +16,7 @@ Your agent says "done". Aver checks. Every agent gets an instant copy-on-write w
 ## 1. Quickstart
 
 ```bash
-curl -fsSL https://aver.build/install.sh | sh     # or: /plugin install aver@aver in Claude Code, then /aver
+curl -fsSL https://raw.githubusercontent.com/wonkylamp/aver/main/site/install.sh | sh     # or: /plugin install aver@aver in Claude Code, then /aver
 aver demo                                         # about 2 s, offline, in a throwaway directory
 ```
 
@@ -37,12 +37,19 @@ It finds your test runner and writes `aver.toml` (what to run), `.github/workflo
 **② Give each agent a workspace.**
 
 ```bash
+claude --worktree pagination    # with the hooks from ①, Claude Code opens an Aver workspace by itself
+aver workspace new              # or make one for any agent and start it in the directory printed
+```
+
+To give each agent a task Aver checks by name, add a label and a criterion:
+
+```bash
 aver workspace new --label pagination -c "pagination: the last page lists the remaining items"
 aver workspace new --label dates -c "dates: parseDate accepts ISO weeks"
 aver workspace new --label export -c "export: CSV export quotes commas"
 ```
 
-Each prints a directory, a copy-on-write clone made in tens of milliseconds, with `node_modules`, `.venv` or `target` cloned in and `.aver/BRIEF.md` holding the task. Start `claude` or `codex` there. Or skip this step: with the hooks in place, `claude --worktree <name>` opens an Aver workspace by itself. `--count 3` gives one task three competing attempts instead.
+Each prints a directory, a copy-on-write clone made in tens of milliseconds, with `node_modules`, `.venv` or `target` cloned in and `.aver/BRIEF.md` holding the task. Start `claude` or `codex` there. `--count 3` gives one task three competing attempts instead.
 
 **③ Inside the workspace, the agent works in a loop.**
 
@@ -162,12 +169,12 @@ Checks run natively in clones swapped to each side's code, never in the agent's 
 - **15 of 15 scenarios, 10 of 10 runs each** on [`bench/verify-10-of-10.sh`](bench/results/verify-10-of-10.md): a pass, a regression, a test command that runs nothing, a runner that crashes, a rewritten built test, a deleted test, an agent approving its own review, unstable test ids, a rewind, a four-way combine, a commit through the Git view, an untested hunk and an untested branch (B13), a missing tool, a test module that cannot import, and an edited CI workflow.
 - **Hunk necessity costs seconds**: 0.5 to 1.3 s on small projects and 18 s on anyhow, running only the tests that prove the change ([docs/VERDICTS.md](docs/VERDICTS.md#untested-code-in-a-passing-change)).
 
-Aver is a prototype: use it on code you can afford to lose. Agents run on your machine as you, in copies, without a sandbox ([docs/SECURITY-MODEL.md](docs/SECURITY-MODEL.md)). A verify proves only what some test checks.
+Early release (0.4.x). Agents work in copies, and Aver writes to your repository only when you run `aver accept` or `aver combine`, which add a branch. Agents and checks run natively as your user, without a container sandbox ([docs/SECURITY-MODEL.md](docs/SECURITY-MODEL.md)). A verify proves only what some test checks.
 
 ## Install, CI and documentation
 
 ```bash
-curl -fsSL https://aver.build/install.sh | sh                      # macOS, Linux, WSL2
+curl -fsSL https://raw.githubusercontent.com/wonkylamp/aver/main/site/install.sh | sh                      # macOS, Linux, WSL2
 cargo install --locked --git https://github.com/wonkylamp/aver aver    # from source, Rust 1.94+
 aver doctor                                                        # checks what Aver needs, with a fix for each problem
 ```
@@ -185,7 +192,7 @@ jobs:
   aver:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v7
       - uses: wonkylamp/aver/action@v0.4.1
 ```
 

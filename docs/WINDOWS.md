@@ -37,7 +37,7 @@ node --version
 ## 4. Install Aver
 
 ```bash
-curl -fsSL https://aver.build/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/wonkylamp/aver/main/site/install.sh | sh
 ```
 
 It installs `aver` to `~/.local/bin`. If the script says that directory is not on your `PATH`, run the line it prints and open a new shell.

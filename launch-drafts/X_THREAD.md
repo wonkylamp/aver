@@ -40,7 +40,7 @@ Prototype: Node/TS, Python, Rust, Go. Agents are not sandboxed. MIT.
 
 Try it. aver demo takes about 2 seconds, offline: an agent games its tests, Aver catches it, a restore rewinds it, the real fix passes.
 
-curl -fsSL https://aver.build/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/wonkylamp/aver/main/site/install.sh | sh
 aver demo
 aver init
 

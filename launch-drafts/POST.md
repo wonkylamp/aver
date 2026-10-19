@@ -58,7 +58,7 @@ Aver is a prototype. It verifies Node and TypeScript (npm), Python, Rust and Go 
 ## Try it in 2 minutes
 
 ```bash
-curl -fsSL https://aver.build/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/wonkylamp/aver/main/site/install.sh | sh
 aver demo
 ```
 

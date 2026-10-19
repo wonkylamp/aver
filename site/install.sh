@@ -1,7 +1,7 @@
 #!/bin/sh
 # Installs the aver binary from a GitHub release of wonkylamp/aver.
 #
-#   curl -fsSL https://aver.build/install.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/wonkylamp/aver/main/site/install.sh | sh
 #
 # Environment:
 #   AVER_VERSION           release tag to install, e.g. v0.3.0 (default: the latest release)

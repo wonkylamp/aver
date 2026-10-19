@@ -7,7 +7,7 @@ allowed-tools: Bash(command -v aver), Bash(aver doctor:*), Bash(aver init:*)
 Set up Aver for this repository.
 
 1. Run `command -v aver`. If it prints nothing, the `aver` CLI is not installed. Tell the user so and offer the two ways to install it, then wait for their choice:
-   - The release install script, which puts `aver` in `~/.local/bin` without `sudo`: `curl -fsSL https://aver.build/install.sh | sh`
+   - The release install script, which puts `aver` in `~/.local/bin` without `sudo`: `curl -fsSL https://raw.githubusercontent.com/wonkylamp/aver/main/site/install.sh | sh`
    - From a checkout of the Aver repository: `cargo install --path crates/aver`
 
    Run the one the user picks only after they say yes. Offer only these two. If `~/.local/bin` is not on `PATH` afterwards, say how to add it for their shell, then run `command -v aver` again.
