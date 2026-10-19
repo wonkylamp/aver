@@ -1701,6 +1701,26 @@ mod slots {
         assert_eq!(profiles[0], profiles[1]);
         assert_eq!(fs::read_to_string(&calls).unwrap().lines().count(), 1);
     }
+
+    /// Defect: a tool slower than 5 s to print its version (a JVM tool on a
+    /// loaded CI runner) was cut off, so two `aver ci` jobs on one runner
+    /// keyed their base records under different runner ids.
+    #[test]
+    fn a_slow_version_probe_still_gives_its_answer() {
+        let dir = tempfile::tempdir().unwrap();
+        executable(
+            &dir.path().join("bin/node"),
+            "#!/bin/sh\n/bin/sleep 6\necho v24\n",
+        );
+        let vars = BTreeMap::from([(
+            "PATH".to_owned(),
+            dir.path().join("bin").display().to_string(),
+        )]);
+        let slow = aver::place::host::profile(&vars, &[], &dir.path().join("a/versions.json"));
+        executable(&dir.path().join("bin/node"), "#!/bin/sh\necho v24\n");
+        let fast = aver::place::host::profile(&vars, &[], &dir.path().join("b/versions.json"));
+        assert_eq!(slow, fast);
+    }
 }
 
 // ---- seed_workspace ----

@@ -121,7 +121,8 @@ pub fn profile(vars: &BTreeMap<String, String>, extra: &[&str], versions: &FsPat
 }
 
 /// What a tool prints for `--version` under the caller's environment,
-/// bounded by a few seconds.
+/// bounded by 30 seconds: a JVM tool on a loaded CI runner can take more
+/// than 5, and a cut-off answer is another profile, so another runner key.
 fn version_output(tool: &FsPath, env: &[(String, String)]) -> Vec<u8> {
     let Ok(mut child) = Command::new(tool)
         .arg("--version")
@@ -135,7 +136,7 @@ fn version_output(tool: &FsPath, env: &[(String, String)]) -> Vec<u8> {
     else {
         return Vec::new();
     };
-    let deadline = Instant::now() + Duration::from_secs(5);
+    let deadline = Instant::now() + Duration::from_secs(30);
     loop {
         match child.try_wait() {
             Ok(Some(_)) => break,
