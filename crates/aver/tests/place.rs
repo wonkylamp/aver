@@ -1042,17 +1042,20 @@ fn a_slot_is_reused_until_the_sources_lockfile_changes() {
     let t = tree(&store, &[("package-lock.json", "v1")]);
     let sides = Sides::new(home.path(), store.clone()).with_strategy(CloneStrategy::Reflink);
     let src = source(agent.path(), &["node_modules"], &[], &["package-lock.json"]);
-    let ino = |d: &Path| fs::metadata(d.join("node_modules/sentinel")).unwrap().ino();
+    // A mark in the slot, not an inode: ext4 hands a reclone the inode
+    // its removal just freed.
+    let mark = |d: &Path| d.join("node_modules/slot-mark");
     let first = sides
         .enter(agent.path(), &SlotName::Base(t), &src, t)
         .unwrap();
-    let (dir, before) = (first.dir.clone(), ino(&first.dir));
+    let dir = first.dir.clone();
+    fs::write(mark(&dir), "m").unwrap();
     assert!(!first.deps_differ);
     drop(first);
     let again = sides
         .enter(agent.path(), &SlotName::Base(t), &src, t)
         .unwrap();
-    assert_eq!(ino(&again.dir), before, "reused");
+    assert!(mark(&again.dir).exists(), "reused");
     drop(again);
     write(agent.path(), "package-lock.json", "v2");
     let t2 = tree(&store, &[("package-lock.json", "v2")]);
@@ -1060,7 +1063,7 @@ fn a_slot_is_reused_until_the_sources_lockfile_changes() {
         .enter(agent.path(), &SlotName::Base(t), &src, t2)
         .unwrap();
     assert_eq!(fresh.dir, dir);
-    assert_ne!(ino(&fresh.dir), before, "recloned");
+    assert!(!mark(&fresh.dir).exists(), "recloned");
     drop(fresh);
     // The slot's tree asks for other inputs than the source installed from.
     let slot = sides
