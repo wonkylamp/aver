@@ -10,8 +10,9 @@
 # serves it as the Linux release asset install-aver.sh downloads, so the
 # install step runs as on a Linux runner, also on macOS. Checks run as the
 # runner's own user: a sudo that always fails is put on PATH, so run-user.sh
-# never creates a user here; AVER_E2E_SUDO=1 leaves the real sudo (a Linux
-# runner with passwordless sudo then exercises --run-as).
+# never creates a user here; AVER_E2E_SUDO=1 leaves the real sudo, and a
+# Linux runner with passwordless sudo then runs the checks as aver-run
+# (--run-as), which the receipts must record.
 set -euo pipefail
 
 if [ "$(uname)" = Darwin ] && [ -d /opt/homebrew/bin ]; then
@@ -61,9 +62,11 @@ EOF
 mkdir -p "$T/bin" "$MOCK/www" "$T/cache"
 printf '#!/usr/bin/env bash\nexec python3 %q gh "$@"\n' "$HERE/mock-github.py" >"$T/bin/gh"
 chmod +x "$T/bin/gh"
+CHECK_UID=separate
 if [ -z "${AVER_E2E_SUDO:-}" ]; then
   printf '#!/bin/sh\nexit 1\n' >"$T/bin/sudo"
   chmod +x "$T/bin/sudo"
+  CHECK_UID=same
 fi
 export PATH="$T/bin:$PATH"
 
@@ -273,6 +276,7 @@ equals "$(count POST '^/repos/o/r/issues/1/comments$')" 1 "comments posted"
 requests POST '^/repos/o/r/issues/1/comments$' | jq -r .body.body | head -n 1 | grep -qF '<!-- aver-receipt -->' || fail "the comment lacks the marker"
 equals "$(count POST 'check-runs')" 0 "check runs with review: fail"
 [ "$(receipt '.receipt.criteria | length')" -ge 1 ] || fail "the receipt has no criteria"
+equals "$(receipt '.receipt.provenance.uid')" "$CHECK_UID" "the checks' user"
 passed
 
 FLOW="2 pull_request, a regression"

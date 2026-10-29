@@ -896,9 +896,14 @@ pub(super) fn reported(runs: &[ExecutedRun]) -> Option<Vec<&CheckRun>> {
         .map(|r| &r.run)
         .filter(|r| !r.result.ending().is_infra())
         .collect();
-    let complete =
-        !ended_infra && !results.is_empty() && results.iter().all(|r| r.report.is_some());
+    let complete = !ended_infra && !results.is_empty() && results.iter().all(|r| has_report(r));
     complete.then_some(results)
+}
+
+/// Whether a run carries a report that says what its tests did (§1.9.1):
+/// one that only says nothing built is a report of none.
+fn has_report(run: &CheckRun) -> bool {
+    run.report.is_some() && !built_nothing(run)
 }
 
 /// Whether the head side lost the per-test report every base run produced
@@ -912,7 +917,7 @@ pub(super) fn lost_report(base: &[ExecutedRun], head: &[ExecutedRun]) -> bool {
         && !ended_infra
         && head
             .iter()
-            .any(|r| !r.run.result.ending().is_infra() && r.run.report.is_none())
+            .any(|r| !r.run.result.ending().is_infra() && !has_report(&r.run))
 }
 
 /// The receipt entries of one check, each with the run its detail came
@@ -1577,10 +1582,8 @@ fn base_ran_no_tests(
             break;
         }
     }
-    let unreported = def.report.is_some()
-        && runs
-            .iter()
-            .all(|r| r.report.is_none() || r.tests.is_empty());
+    let unreported =
+        def.report.is_some() && runs.iter().all(|r| !has_report(r) || r.tests.is_empty());
     Ok((refusal.is_some() || unreported, refusal))
 }
 
@@ -2799,9 +2802,24 @@ fn package_unbuilt(runs: &[ExecutedRun], test: &TestCheckId) -> Option<Vec<Strin
         .filter_map(|r| r.run.tests.get(id.as_str()))
         .filter(|t| t.status == TestStatus::Fail)
         .map(|t| t.message.as_ref().map_or("", |m| m.as_str()).to_owned())
-        .filter(|m| m.contains("[build failed]") || !toolchain::build_errors(m, 1).is_empty())
+        .filter(|m| says_unbuilt(m))
         .collect();
     (!messages.is_empty()).then_some(messages)
+}
+
+/// Whether a `(package)` entry's message says its package did not build.
+fn says_unbuilt(message: &str) -> bool {
+    message.contains("[build failed]") || !toolchain::build_errors(message, 1).is_empty()
+}
+
+/// Whether a go-json run reported no test, only packages that did not
+/// build: Go 1.24 and later report a build failure as events, where
+/// earlier versions wrote none, and either way no test ran.
+fn built_nothing(run: &CheckRun) -> bool {
+    let failures = package_failures(run);
+    !failures.is_empty()
+        && failures.len() == run.tests.len()
+        && failures.iter().all(|m| says_unbuilt(m))
 }
 
 /// How an entry fared in the head-tests runs of its check (§1.9.3), strictly

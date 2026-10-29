@@ -172,6 +172,62 @@ async fn go_a_base_that_does_not_compile_blocks_with_one_message() {
     assert_original_unbuilt(&dry, "go");
 }
 
+/// A go-json check that prints the tree's `events.json` as `go test -json`
+/// would and exits with the code in `code`, so it needs no Go.
+const GO_EVENTS_CONTRACT: &str =
+    "[[check]]\nid = \"go\"\nrun = \"sh go-test.sh\"\nreport = \"go-json\"\nmin_tests = 1\n";
+const GO_TEST_SH: &str = "cat events.json\nexit $(cat code)\n";
+
+/// What Go 1.24 and later print for a package that does not compile: the
+/// build failure as events, and no test.
+const GO_UNBUILT_EVENTS: &str = r##"{"ImportPath":"example.com/calc [example.com/calc.test]","Action":"build-output","Output":"# example.com/calc [example.com/calc.test]\n"}
+{"ImportPath":"example.com/calc [example.com/calc.test]","Action":"build-output","Output":"./calc.go:3:38: syntax error: unexpected }, expected expression\n"}
+{"ImportPath":"example.com/calc [example.com/calc.test]","Action":"build-fail"}
+{"Action":"start","Package":"example.com/calc"}
+{"Action":"output","Package":"example.com/calc","Output":"FAIL\texample.com/calc [build failed]\n"}
+{"Action":"fail","Package":"example.com/calc","Elapsed":0,"FailedBuild":"example.com/calc [example.com/calc.test]"}
+"##;
+const GO_PASS_EVENTS: &str = r#"{"Action":"run","Package":"example.com/calc","Test":"TestAdd"}
+{"Action":"pass","Package":"example.com/calc","Test":"TestAdd"}
+{"Action":"run","Package":"example.com/calc","Test":"TestMul_crit_mul"}
+{"Action":"pass","Package":"example.com/calc","Test":"TestMul_crit_mul"}
+{"Action":"pass","Package":"example.com/calc"}
+"#;
+
+#[tokio::test]
+async fn go_build_failure_events_on_the_base_block_with_one_message() {
+    let w = World::new();
+    let base = w.snapshot_under(
+        GO_EVENTS_CONTRACT,
+        &[
+            ("go.mod", GO_MOD),
+            (
+                "calc.go",
+                "package calc\n\nfunc Add(a, b int) int { return a + }\n",
+            ),
+            ("calc_test.go", GO_ADD_TEST),
+            ("go-test.sh", GO_TEST_SH),
+            ("events.json", GO_UNBUILT_EVENTS),
+            ("code", "1\n"),
+        ],
+    );
+    let head = w.snapshot_under(
+        GO_EVENTS_CONTRACT,
+        &[
+            ("go.mod", GO_MOD),
+            ("calc.go", GO_MUL),
+            ("calc_test.go", GO_ADD_TEST),
+            ("mul_test.go", GO_MUL_TEST),
+            ("go-test.sh", GO_TEST_SH),
+            ("events.json", GO_PASS_EVENTS),
+            ("code", "0\n"),
+        ],
+    );
+    let (dry, real) = verify(&w, base, head).await;
+    assert_original_unbuilt(&real, "go");
+    assert_original_unbuilt(&dry, "go");
+}
+
 const CARGO_TOML: &str =
     "[package]\nname = \"calc\"\nversion = \"0.1.0\"\nedition = \"2021\"\npublish = false\n\n[workspace]\n";
 const RS_ADD: &str = "pub fn add(a: i64, b: i64) -> i64 {\n    a + b\n}\n";

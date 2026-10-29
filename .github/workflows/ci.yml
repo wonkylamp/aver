@@ -108,6 +108,14 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/setup
       - run: make -o test-eval test
+      # make test runs the action with sudo stubbed, so every check runs as
+      # the runner. Here the checks run as aver-run, as in a real job, under
+      # RUNNER_TEMP inside the runner's home.
+      - name: The action end to end with checks as a separate user
+        env:
+          AVER_E2E_SUDO: "1"
+          TMPDIR: ${{ runner.temp }}
+        run: AVER=target/debug/aver action/test/e2e-local.sh
 
   # The eval harness with scripted agents and a stub aver: Node and Git only.
   eval:

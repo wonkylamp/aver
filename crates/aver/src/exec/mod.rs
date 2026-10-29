@@ -713,7 +713,10 @@ impl Executor {
                 if failure.message.starts_with(output::DISK_FULL) {
                     note(&mut output, &failure.message);
                 } else {
-                    note(&mut output, &format!("sandbox error: {}", failure.message));
+                    note(
+                        &mut output,
+                        &format!("could not run the check: {}", failure.message),
+                    );
                 }
                 Concluded::infra(output)
             }

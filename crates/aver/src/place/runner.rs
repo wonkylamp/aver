@@ -393,9 +393,9 @@ impl SlotRunner {
                 vars.insert(name.to_owned(), value.clone());
             }
         }
+        let home = fresh.join("home");
         if self.run_as.is_some() {
             // The run user cannot read the caller's home.
-            let home = fresh.join("home");
             fs::create_dir_all(&home)?;
             vars.insert("HOME".into(), home.to_string_lossy().into_owned());
         }
@@ -451,7 +451,9 @@ impl SlotRunner {
             nice: place.nice,
             record: (&slot.record, &tag),
             report,
-            own: &[&slot.dir, &fresh, &tmp],
+            // Not `fresh` itself: the log in it stays the verifier's, which
+            // opens it for each command and notes into it.
+            own: &[&slot.dir, &out, &home, &tmp],
             withheld: &slot.withheld,
             run_as: self.run_as.as_ref(),
         });
