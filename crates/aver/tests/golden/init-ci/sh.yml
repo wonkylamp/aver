@@ -42,7 +42,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
-      - uses: wonkylamp/aver/action@{{ACTION_SHA}} # v0.4.1
+      - uses: wonkylamp/aver/action@{{ACTION_SHA}} # v0.4.2
         with:
           review: approve
 
@@ -59,6 +59,6 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
           persist-credentials: false
-      - uses: wonkylamp/aver/action@{{ACTION_SHA}} # v0.4.1
+      - uses: wonkylamp/aver/action@{{ACTION_SHA}} # v0.4.2
         with:
           mode: approve
