@@ -100,6 +100,7 @@ unset CI GITHUB_ACTIONS AVER_HOME AVER_URL ACTIONS_ID_TOKEN_REQUEST_URL
 fail() {
   echo "FAIL [$FLOW]: $*" >&2
   [ -z "${J:-}" ] || { echo "--- job log $J/log" >&2; tail -n 60 "$J/log" >&2; }
+  [ ! -s "${J:-}/summary" ] || { echo "--- job summary $J/summary" >&2; tail -n 60 "$J/summary" >&2; }
   exit 1
 }
 contains() { grep -qF -- "$2" "$1" || fail "$(basename "$1") does not contain '$2'"; }

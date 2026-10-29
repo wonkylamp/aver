@@ -151,6 +151,14 @@ jobs:
           free-disk: ${{ matrix.shard == 'rest' && 'wait' || 'background' }}
           cache-key: aver-tests
           save-cache: ${{ matrix.shard == 'rest' }}
+      # The pytest tests need pytest on PATH, which the runner image lacks:
+      # the fixture's pinned and hashed requirements, in a venv of their own.
+      - name: Install pytest
+        if: matrix.shard == 'rest'
+        run: |
+          python3 -m venv "$RUNNER_TEMP/pytest"
+          "$RUNNER_TEMP/pytest/bin/pip" install --quiet --require-hashes -r fixtures/py-calc/requirements-dev.txt
+          echo "$RUNNER_TEMP/pytest/bin" >>"$GITHUB_PATH"
       - run: scripts/test-native-shard.sh ${{ matrix.shard }}
 
 
