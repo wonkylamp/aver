@@ -108,6 +108,13 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/setup
       - run: make -o test-eval test
+      # make test runs the action with sudo stubbed, so every check runs as
+      # the runner. Here the checks run as aver-run, as in a real job, with
+      # TMPDIR unset as there, so the slots are under /tmp.
+      - name: The action end to end with checks as a separate user
+        env:
+          AVER_E2E_SUDO: "1"
+        run: AVER=target/debug/aver action/test/e2e-local.sh
 
   # The eval harness with scripted agents and a stub aver: Node and Git only.
   eval:
@@ -143,6 +150,14 @@ jobs:
           free-disk: ${{ matrix.shard == 'rest' && 'wait' || 'background' }}
           cache-key: aver-tests
           save-cache: ${{ matrix.shard == 'rest' }}
+      # The pytest tests need pytest on PATH, which the runner image lacks:
+      # the fixture's pinned and hashed requirements, in a venv of their own.
+      - name: Install pytest
+        if: matrix.shard == 'rest'
+        run: |
+          python3 -m venv "$RUNNER_TEMP/pytest"
+          "$RUNNER_TEMP/pytest/bin/pip" install --quiet --require-hashes -r fixtures/py-calc/requirements-dev.txt
+          echo "$RUNNER_TEMP/pytest/bin" >>"$GITHUB_PATH"
       - run: scripts/test-native-shard.sh ${{ matrix.shard }}
 
 

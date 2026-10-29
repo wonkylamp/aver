@@ -388,7 +388,7 @@ async fn infra_runs_are_stored_but_never_served_from_cache() {
         (
             Box::new(|_| Err(SandboxError::Malformed("no result".into()))),
             RunResult::Sandbox,
-            "[aver] sandbox error: malformed sandbox result: no result",
+            "[aver] could not run the check: malformed sandbox result: no result",
         ),
         (
             Box::new(|_| {

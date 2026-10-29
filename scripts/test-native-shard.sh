@@ -16,7 +16,7 @@ named=(cli_workspace ci_cli)
 
 case "${1:-}" in
   workspace)
-    cargo test -p aver --test cli_workspace --test ci_cli -- --ignored --test-threads="$threads"
+    cargo test -p aver --no-fail-fast --test cli_workspace --test ci_cli -- --ignored --test-threads="$threads"
     ;;
   rest)
     args=()
@@ -27,8 +27,8 @@ case "${1:-}" in
     done < <(cargo metadata --no-deps --format-version 1 |
       jq -r '.packages[] | select(.name == "aver") | .targets[] | select(.kind == ["test"]) | select((.["required-features"] // []) | length == 0) | .name')
     [ "${#args[@]}" -gt 0 ] || { echo "no test targets found" >&2; exit 1; }
-    cargo test -p aver --lib --bins "${args[@]}" -- --ignored --test-threads="$threads"
-    cargo test -p aver --doc -- --ignored --test-threads="$threads"
+    cargo test -p aver --no-fail-fast --lib --bins "${args[@]}" -- --ignored --test-threads="$threads"
+    cargo test -p aver --no-fail-fast --doc -- --ignored --test-threads="$threads"
     ;;
   *)
     echo "usage: $0 workspace|rest" >&2
