@@ -17,7 +17,7 @@
     "@noble/hashes": "2.4.0",
     "@types/node": "26.6.5",
     "esbuild": "0.28.2",
-    "linkedom": "0.18.13",
+    "linkedom": "0.18.14",
     "typescript": "7.0.2"
   }
 }
