@@ -12,12 +12,13 @@
 # a re-run after a failed install, a prerelease, the gate's refusals (tag
 # and version differ, ci-ok missing, failed or from another app, a commit
 # off main, a run on a branch), and a series tag that starts no release.
-# ci.yml's tag job, with CI's own jobs stubbed and release-plz's action
-# replaced by a stand-in with its inputs and outputs: a merge that changes
-# no version, a version bump that tags and dispatches a release (then run),
-# the same push again, a bump whose CI failed, and a version that went
-# down. aver.yml: a pull request, a review, a push to main, and a push
-# elsewhere.
+# ci.yml's tag job, with the steps of CI's own jobs stubbed (their `if:`
+# still skips docs, eval and test-native on a push, as on GitHub) and
+# release-plz's action replaced by a stand-in with its inputs and outputs:
+# a merge that changes no version, a version bump that tags and dispatches
+# a release (then run), the same push again, a bump whose CI failed, and a
+# version that went down. aver.yml: a pull request, a review, a push to
+# main, and a push elsewhere.
 set -euo pipefail
 
 if [ "$(uname)" = Darwin ] && [ -d /opt/homebrew/bin ]; then
@@ -364,8 +365,10 @@ run_workflow release.yml workflow_dispatch refs/heads/main "$(git -C "$ORIGIN" r
 refused "refs/heads/main is not a tag. Run the release on its tag: gh workflow run release.yml --ref v0.99.5"
 passed
 
-# ci.yml on a push to main. CI's own jobs are stubbed (STUBS); ci-ok and
-# tag run, and every job leaves its check run in the mock as GitHub would.
+# ci.yml on a push to main. The steps of CI's own jobs are stubbed (STUBS),
+# but their `if:` runs, so docs, eval and test-native are skipped as on a
+# real push; ci-ok and tag run, and every job leaves its check run in the
+# mock as GitHub would.
 # release-plz's action is a stand-in with the real one's inputs and
 # outputs, whose release-plz follows the documented git_only rules: the
 # packages release-plz.toml does not exclude, tagged git_tag_name through
@@ -401,7 +404,7 @@ runs:
 YAML
 cp "$HERE/release-plz-stand-in.py" "$T/bin/release-plz"
 chmod +x "$T/bin/release-plz"
-STUBS='{"changes": "success", "docs": "success", "lint": "success", "test": "success", "eval": "success", "test-native": "success"}'
+STUBS='{"changes": {"result": "success", "outputs": {"code": "true"}}, "docs": "success", "lint": "success", "test": "success", "eval": "success", "test-native": "success"}'
 ci_push() { # <sha> [stubbed job results]
   jq -n --arg before "$(git -C "$ORIGIN" rev-parse "$1^")" --arg after "$1" \
     '{ref: "refs/heads/main", before: $before, after: $after, repository: {full_name: "o/r", default_branch: "main"}}' >"$T/push-ci.json"
@@ -435,7 +438,7 @@ FLOW=merge-a-bump
 release_commit 0.101.0 -
 ci_push "$SHA"
 equals "$(cat "$J/exit")" 0 "exit"
-equals "$(result tag)" success "tag"
+equals "$(results)" "changes=success docs=skipped lint=success test=success eval=skipped test-native=skipped ci-ok=success tag=success" "jobs"
 equals "$(git -C "$ORIGIN" cat-file -t v0.101.0)" tag "an annotated tag"
 equals "$(git -C "$ORIGIN" rev-parse 'v0.101.0^{commit}')" "$SHA" "the tagged commit"
 equals "$(count POST '^/repos/o/r/git/refs$')" 1 "tags created"
