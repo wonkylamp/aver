@@ -73,9 +73,9 @@ test("the rerun policy always terminates within bounds", () => {
     assert.ok(results <= MAX_RUNS, `${runs} has more than three results`);
     assert.ok(runs.length <= 2 * MAX_RUNS, `${runs} retried infra more than once per run`);
     assert.ok(!runs.some((_, i) => i >= 2 && isInfra(runs[i]) && isInfra(runs[i - 1]) && isInfra(runs[i - 2])), `${runs} retried infra twice in a row`);
-    const stableFailure = results === MAX_RUNS && !runs.includes(P);
+    const stableFailure: boolean = results === MAX_RUNS && !runs.includes(P);
     const endedInfra = runs.length >= 2 && isInfra(runs.at(-1)) && isInfra(runs.at(-2));
-    const ended = runs.at(-1) === P || endedInfra || (runs.includes(P) && runs.includes(F)) || stableFailure;
+    const ended: boolean = runs.at(-1) === P || endedInfra || (runs.includes(P) && runs.includes(F)) || stableFailure;
     assert.ok(ended, `${runs} stopped without a terminal condition`);
   }
 });
