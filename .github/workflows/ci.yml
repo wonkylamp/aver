@@ -187,10 +187,12 @@ jobs:
   # tags v<version> when the tag does not exist yet, so a merge that does
   # not change the version does nothing. A tag made with GITHUB_TOKEN starts
   # no workflow, but a workflow_dispatch does, so this job dispatches
-  # release.yml on the new tag.
+  # release.yml on the new tag. A push skips docs, eval and test-native.
+  # Without a status function in `if:`, GitHub then skips this job too,
+  # although ci-ok passed, because it checks every job upstream.
   tag:
     needs: ci-ok
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: ${{ !cancelled() && needs.ci-ok.result == 'success' && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write

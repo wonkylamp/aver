@@ -8,10 +8,13 @@ and GITHUB_SHA; GITHUB_REPOSITORY names the repository. The workflow's `on:`
 filters decide whether it runs at all. Jobs run in `needs` order, one at a
 time, each matrix combination in turn, with the github, needs, matrix,
 steps, env, runner, vars and secrets contexts (WORKFLOW_SECRETS and
-WORKFLOW_VARS, JSON objects). A secret in a job's `if:` is an error, as it
-is on GitHub. Each job gets a fresh RUNNER_TEMP directory and checkout, and
-github.token is `token-<job id>`, so a mock can tell which job sent a
-request. Steps are `run:` steps (bash) and these `uses:`:
+WORKFLOW_VARS, JSON objects). As on GitHub, a job whose `if:` calls no
+status function (always(), success(), failure(), cancelled()) runs only
+when every job it needs, directly or through others, succeeded, so a job
+skipped anywhere upstream skips it too. A secret in a job's `if:` is an
+error, as it is on GitHub. Each job gets a fresh RUNNER_TEMP directory and
+checkout, and github.token is `token-<job id>`, so a mock can tell which
+job sent a request. Steps are `run:` steps (bash) and these `uses:`:
 
   actions/checkout             clones WORKFLOW_REPO at `ref` or GITHUB_SHA
   actions/upload-artifact      copies into $E2E_ARTIFACTS_DIR/<name>
@@ -27,7 +30,8 @@ request. Steps are `run:` steps (bash) and these `uses:`:
 A job whose `uses:` is ./<workflow> runs that workflow (workflow_call) with
 its `with:` as inputs and its secrets inherited or mapped; its jobs are
 <job>/<called job> and may not ask for more permissions than the caller.
-WORKFLOW_STUB_JOBS ({job: result}) skips running the jobs it names, and
+WORKFLOW_STUB_JOBS ({job: result, or {result, outputs}}) stands in for the
+steps of the jobs it names, whose `if:` still decides whether they run, and
 WORKFLOW_CHECK_RUNS (a mock state file) gets each job's check run, named
 as GitHub names it.
 
@@ -328,18 +332,19 @@ def run_jobs(wf, wf_path, github, secrets, inputs, done, prefix="", caller_perms
         job_github = dict(github, token=f"token-{key}")
         ctx = {"github": job_github, "needs": {n: {"result": d["result"], "outputs": d["outputs"]} for n, d in needs.items()},
                "vars": json.loads(os.environ.get("WORKFLOW_VARS", "{}")), "inputs": inputs}
-        ev = Expr(dict(ctx, env={}), failed=any(d["result"] != "success" for d in needs.values()))
+        ev = Expr(dict(ctx, env={}), failed=any(mine[n]["result"] != "success" for n in upstream(jobs, job_id)))
         check = prefix.replace("/", " / ") + (job.get("name") or job_id)
         record = {"result": "skipped", "outputs": {}, "permissions": perms, "runs": []}
         mine[job_id] = done[key] = record
-        if key in stubs:
-            record["result"] = stubs[key]
-            print(f"== {key}: {stubs[key]} (stubbed)", flush=True)
-            record_check_run(check, github["sha"], stubs[key])
-            continue
         if not ra.condition(raw_if, ev):
             print(f"== {key}: skipped", flush=True)
             record_check_run(check, github["sha"], "skipped")
+            continue
+        if key in stubs:
+            stub = stubs[key] if isinstance(stubs[key], dict) else {"result": stubs[key]}
+            record.update(result=stub["result"], outputs=stub.get("outputs", {}))
+            print(f"== {key}: {stub['result']} (stubbed)", flush=True)
+            record_check_run(check, github["sha"], stub["result"])
             continue
         ctx["secrets"] = Secrets(secrets, GITHUB_TOKEN=job_github["token"])
         started = time.monotonic()
@@ -413,6 +418,17 @@ def main():
 
 def as_list(v):
     return [] if v is None else [v] if isinstance(v, str) else list(v)
+
+
+def upstream(jobs, job_id):
+    """Every job job_id needs, directly or through the jobs it needs."""
+    seen, todo = set(), as_list(jobs[job_id].get("needs"))
+    while todo:
+        n = todo.pop()
+        if n not in seen:
+            seen.add(n)
+            todo += as_list(jobs[n].get("needs"))
+    return seen
 
 
 if __name__ == "__main__":
