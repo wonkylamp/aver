@@ -86,6 +86,11 @@ if [ -n "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ]; then
 fi
 if [ -n "${RUN_AS:-}" ]; then
   args+=(--run-as "$RUN_AS")
+  # Under --run-as a check gets a HOME of its own, where rustup would find
+  # no toolchain and cargo none of the crates the job fetched; run-user.sh
+  # let the run user reach these.
+  [ -n "${RUSTUP_HOME:-}" ] || [ ! -d "$HOME/.rustup" ] || export RUSTUP_HOME=$HOME/.rustup
+  [ -n "${CARGO_HOME:-}" ] || [ ! -d "$HOME/.cargo" ] || export CARGO_HOME=$HOME/.cargo
 fi
 if [ -n "${CI_HOME:-}" ] && [ -n "${RUN_AS:-}" ]; then
   args+=(--home "$CI_HOME")

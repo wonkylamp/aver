@@ -137,6 +137,8 @@ runs:
       id: runuser
       if: steps.revs.outputs.skip != 'true' && inputs.mode != 'approve'
       shell: bash
+      env:
+        WORKING_DIRECTORY: ${{ inputs.working-directory }}
       run: bash "$GITHUB_ACTION_PATH/run-user.sh"
 
     # Base records (5B.3): a push to the default branch or a merge queue run

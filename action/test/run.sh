@@ -60,6 +60,7 @@ cat >"$T/bin/aver" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 printf '%s\n' "$@" >"$AVER_LOG"
+env >"$AVER_LOG.env"
 if [ "${1:-} ${2:-}" = "ci keys" ]; then
   [ "${AVER_STUB_KEYS_EXIT:-0}" = 0 ] || exit "$AVER_STUB_KEYS_EXIT"
   printf 'base=aver-base-stubbase\nhead=aver-base-stubhead\n'
@@ -114,6 +115,8 @@ die() {
 }
 contains() { grep -qF -- "$2" "$1" || die "$1 does not contain '$2'"; }
 lacks() { ! grep -qF -- "$2" "$1" || die "$1 contains '$2'"; }
+has_line() { grep -qxF -- "$2" "$1" || die "$1 has no line '$2'"; }
+lacks_line() { ! grep -qxF -- "$2" "$1" || die "$1 has the line '$2'"; }
 equals() { [ "$1" = "$2" ] || die "expected '$2', got '$1'"; }
 out() { grep "^$1=" "$W/output" | tail -n 1 | cut -d= -f2-; }
 gh_calls() { ls "$W/gh" | grep -c '^call\.' || true; }
@@ -660,20 +663,30 @@ test_run_native_arguments() {
   make_repo "$W/repo"
   pr_event o/r o/r
   export AVER_STUB_EXIT=0 AVER_STUB_VERDICT=PASS
+  mkdir -p "$W/runner/.rustup" "$W/runner/.cargo"
   OUT_DIR="$W/out" CI_HOME="$W/home" WORKING_DIRECTORY="$W/repo" BASE_REV=b HEAD_REV=h RUN_AS=aver-run \
-    bash "$ACTION/run.sh" >/dev/null
+    HOME="$W/runner" RUSTUP_HOME= CARGO_HOME= bash "$ACTION/run.sh" >/dev/null
   tr '\n' ' ' <"$AVER_LOG" >"$W/argv"
   contains "$W/argv" "--run-as aver-run"
   contains "$W/argv" "--home $W/home"
+  # The run user's checks get a HOME of their own: rustup and cargo are
+  # pointed back at the runner's toolchain, unless the job chose its own.
+  has_line "$AVER_LOG.env" "RUSTUP_HOME=$W/runner/.rustup"
+  has_line "$AVER_LOG.env" "CARGO_HOME=$W/runner/.cargo"
+  OUT_DIR="$W/out" CI_HOME="$W/home" WORKING_DIRECTORY="$W/repo" BASE_REV=b HEAD_REV=h RUN_AS=aver-run \
+    HOME="$W/runner" RUSTUP_HOME=/opt/rustup CARGO_HOME= bash "$ACTION/run.sh" >/dev/null
+  has_line "$AVER_LOG.env" "RUSTUP_HOME=/opt/rustup"
 
   fresh
   make_repo "$W/repo"
   pr_event o/r o/r
+  mkdir -p "$W/runner/.rustup"
   OUT_DIR="$W/out" CI_HOME="$W/home" WORKING_DIRECTORY="$W/repo" BASE_REV=b HEAD_REV=h \
-    bash "$ACTION/run.sh" >/dev/null
+    HOME="$W/runner" RUSTUP_HOME= bash "$ACTION/run.sh" >/dev/null
   tr '\n' ' ' <"$AVER_LOG" >"$W/argv"
   lacks "$W/argv" "--run-as"
   lacks "$W/argv" "--home"
+  has_line "$AVER_LOG.env" "RUSTUP_HOME="
 }
 
 # A token actions/checkout persisted, or an OIDC request URL, would be
@@ -754,6 +767,48 @@ test_run_user_without_sudo_warns() {
   PATH="$W/nosudo:$PATH" bash "$ACTION/run-user.sh" >"$W/log"
   contains "$W/log" "uid \"same\""
   equals "$(out user)" ""
+}
+
+# On GitHub's images the checkout and the toolchains are in the runner's
+# home (0750). The run user may pass through each directory above them and
+# is denied everything else there, such as the runner's credentials and
+# $RUNNER_TEMP.
+test_run_user_reaches_the_checkout_and_toolchains_only() {
+  fresh
+  mkdir -p "$W/linux" "$W/runner/work/r/r/sub" "$W/runner/work/_temp" "$W/runner/work/_actions" \
+    "$W/runner/.rustup" "$W/runner/.cargo/registry" "$W/runner/actions-runner/cached" \
+    "$W/runner/.local/share/uv/python" "$W/runner/.local/share/uv/tools" "$W/runner/.local/bin" "$W/elsewhere/home"
+  touch "$W/runner/.bashrc"
+  ln -s /usr "$W/runner/.ghcup"
+  printf '#!/bin/sh\necho Linux\n' >"$W/linux/uname"
+  printf '#!/bin/sh\nexit 0\n' >"$W/linux/sudo"
+  printf '#!/bin/sh\nexit 0\n' >"$W/linux/setfacl"
+  chmod +x "$W/linux"/*
+  local home
+  home=$(cd "$W/runner" && pwd -P)
+  (cd "$home/work/r/r" && HOME="$home" PATH="$W/linux:$PATH" AVER_DRY_RUN=1 \
+    RUSTUP_HOME= CARGO_HOME= UV_PYTHON_INSTALL_DIR= XDG_DATA_HOME= bash "$ACTION/run-user.sh") >"$W/log"
+  equals "$(out user)" aver-run
+  local dir
+  for dir in "" /work /work/r /.local /.local/share /.local/share/uv; do
+    has_line "$W/log" "+ sudo -n setfacl -m u:aver-run:--x $home$dir"
+  done
+  for dir in /actions-runner /.bashrc /work/_temp /work/_actions /.local/bin /.local/share/uv/tools; do
+    has_line "$W/log" "+ sudo -n setfacl -m u:aver-run:--- $home$dir"
+  done
+  for dir in /work /work/r /work/r/r /work/r/r/sub /.rustup /.cargo /.cargo/registry /.local/share/uv/python /.ghcup; do
+    lacks_line "$W/log" "+ sudo -n setfacl -m u:aver-run:--- $home$dir"
+  done
+  for dir in /work/r/r /.rustup /.cargo /.local/share/uv/python; do
+    lacks_line "$W/log" "+ sudo -n setfacl -m u:aver-run:--x $home$dir"
+  done
+
+  # A checkout outside the home and no toolchain in it: nothing to open.
+  : >"$W/output"
+  (cd "$W/elsewhere" && HOME="$W/elsewhere/home" PATH="$W/linux:$PATH" AVER_DRY_RUN=1 \
+    RUSTUP_HOME= CARGO_HOME= UV_PYTHON_INSTALL_DIR= XDG_DATA_HOME= bash "$ACTION/run-user.sh") >"$W/log"
+  equals "$(out user)" aver-run
+  lacks "$W/log" "setfacl"
 }
 
 sha256_of() {
