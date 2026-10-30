@@ -665,14 +665,18 @@ test_run_native_arguments() {
   export AVER_STUB_EXIT=0 AVER_STUB_VERDICT=PASS
   mkdir -p "$W/runner/.rustup" "$W/runner/.cargo"
   OUT_DIR="$W/out" CI_HOME="$W/home" WORKING_DIRECTORY="$W/repo" BASE_REV=b HEAD_REV=h RUN_AS=aver-run \
-    HOME="$W/runner" RUSTUP_HOME= CARGO_HOME= bash "$ACTION/run.sh" >/dev/null
+    HOME="$W/runner" RUSTUP_HOME= CARGO_HOME= XDG_CONFIG_HOME="$W/runner/.config" XDG_CACHE_HOME=/var/cache/ci \
+    bash "$ACTION/run.sh" >/dev/null
   tr '\n' ' ' <"$AVER_LOG" >"$W/argv"
   contains "$W/argv" "--run-as aver-run"
   contains "$W/argv" "--home $W/home"
   # The run user's checks get a HOME of their own: rustup and cargo are
-  # pointed back at the runner's toolchain, unless the job chose its own.
+  # pointed back at the runner's toolchain, unless the job chose its own,
+  # and XDG directories in the runner's home are dropped.
   has_line "$AVER_LOG.env" "RUSTUP_HOME=$W/runner/.rustup"
   has_line "$AVER_LOG.env" "CARGO_HOME=$W/runner/.cargo"
+  lacks "$AVER_LOG.env" "XDG_CONFIG_HOME="
+  has_line "$AVER_LOG.env" "XDG_CACHE_HOME=/var/cache/ci"
   OUT_DIR="$W/out" CI_HOME="$W/home" WORKING_DIRECTORY="$W/repo" BASE_REV=b HEAD_REV=h RUN_AS=aver-run \
     HOME="$W/runner" RUSTUP_HOME=/opt/rustup CARGO_HOME= bash "$ACTION/run.sh" >/dev/null
   has_line "$AVER_LOG.env" "RUSTUP_HOME=/opt/rustup"
@@ -682,11 +686,12 @@ test_run_native_arguments() {
   pr_event o/r o/r
   mkdir -p "$W/runner/.rustup"
   OUT_DIR="$W/out" CI_HOME="$W/home" WORKING_DIRECTORY="$W/repo" BASE_REV=b HEAD_REV=h \
-    HOME="$W/runner" RUSTUP_HOME= bash "$ACTION/run.sh" >/dev/null
+    HOME="$W/runner" RUSTUP_HOME= XDG_CONFIG_HOME="$W/runner/.config" bash "$ACTION/run.sh" >/dev/null
   tr '\n' ' ' <"$AVER_LOG" >"$W/argv"
   lacks "$W/argv" "--run-as"
   lacks "$W/argv" "--home"
   has_line "$AVER_LOG.env" "RUSTUP_HOME="
+  has_line "$AVER_LOG.env" "XDG_CONFIG_HOME=$W/runner/.config"
 }
 
 # A token actions/checkout persisted, or an OIDC request URL, would be

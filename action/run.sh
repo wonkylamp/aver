@@ -91,6 +91,12 @@ if [ -n "${RUN_AS:-}" ]; then
   # let the run user reach these.
   [ -n "${RUSTUP_HOME:-}" ] || [ ! -d "$HOME/.rustup" ] || export RUSTUP_HOME=$HOME/.rustup
   [ -n "${CARGO_HOME:-}" ] || [ ! -d "$HOME/.cargo" ] || export CARGO_HOME=$HOME/.cargo
+  # The rest of the runner's home stays closed to the run user, so XDG
+  # directories in it (GitHub's images set XDG_CONFIG_HOME=~/.config, where
+  # pnpm and Yarn stop at EACCES) follow the check's own HOME instead.
+  for var in XDG_CONFIG_HOME XDG_CACHE_HOME XDG_DATA_HOME XDG_STATE_HOME; do
+    case ${!var:-} in "$HOME" | "$HOME"/*) unset "$var" ;; esac
+  done
 fi
 if [ -n "${CI_HOME:-}" ] && [ -n "${RUN_AS:-}" ]; then
   args+=(--home "$CI_HOME")
