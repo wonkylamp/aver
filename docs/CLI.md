@@ -8,7 +8,7 @@ This page covers installing Aver and using it from your terminal: `aver run` for
 curl -fsSL https://raw.githubusercontent.com/wonkylamp/aver/main/site/install.sh | sh
 ```
 
-[`site/install.sh`](../site/install.sh) detects the platform (Linux x86_64 or aarch64, macOS arm64 or x86_64), downloads the matching `aver-<os>-<arch>` binary from the latest GitHub release, checks it against the release's `SHA256SUMS`, and installs it to `~/.local/bin` without `sudo`. On native Windows (MINGW, MSYS, Cygwin) it stops and points to [WINDOWS.md](WINDOWS.md); after installing it warns when `git` is missing, and prints the next steps. Set `AVER_VERSION=v0.4.1` to pin a release and `AVER_INSTALL_DIR` to install elsewhere.
+[`site/install.sh`](../site/install.sh) detects the platform (Linux x86_64 or aarch64, macOS arm64 or x86_64), downloads the matching `aver-<os>-<arch>` binary from the latest GitHub release, checks it against the release's `SHA256SUMS`, and installs it to `~/.local/bin` without `sudo`. On native Windows (MINGW, MSYS, Cygwin) it stops and points to [WINDOWS.md](WINDOWS.md); after installing it warns when `git` is missing, and prints the next steps. Set `AVER_VERSION=v0.4.2` to pin a release and `AVER_INSTALL_DIR` to install elsewhere.
 
 With Homebrew, once the `wonkylamp/homebrew-tap` repository exists (its formula is generated from [`packaging/homebrew/aver.rb`](../packaging/homebrew/aver.rb) by `packaging/homebrew/update-formula.sh <version>`):
 
