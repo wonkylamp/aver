@@ -59,7 +59,7 @@ jobs:
           rustup default stable
       - name: Fetch the Rust dependencies
         run: cargo fetch --locked
-      - uses: wonkylamp/aver/action@c7adef53d49afd28fe2e8ded8733a70dd607369a # v0.4.1
+      - uses: wonkylamp/aver/action@3fc8b8919ac16587d336c36f76f4376253e0b977 # v0.4.2
         with:
           review: approve
 
@@ -76,6 +76,6 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
           persist-credentials: false
-      - uses: wonkylamp/aver/action@c7adef53d49afd28fe2e8ded8733a70dd607369a # v0.4.1
+      - uses: wonkylamp/aver/action@3fc8b8919ac16587d336c36f76f4376253e0b977 # v0.4.2
         with:
           mode: approve
