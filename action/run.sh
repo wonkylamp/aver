@@ -97,6 +97,17 @@ if [ -n "${RUN_AS:-}" ]; then
   for var in XDG_CONFIG_HOME XDG_CACHE_HOME XDG_DATA_HOME XDG_STATE_HOME; do
     case ${!var:-} in "$HOME" | "$HOME"/*) unset "$var" ;; esac
   done
+  # A directory on PATH the run user cannot search (~/.dotnet/tools on
+  # GitHub's images) turns a missing command's "not found" into "Permission
+  # denied", which Aver does not read as a missing tool.
+  if sudo -n -u "$RUN_AS" -- true 2>/dev/null; then
+    check_path=""
+    IFS=: read -r -a entries <<<"$PATH"
+    for dir in ${entries[@]+"${entries[@]}"}; do
+      sudo -n -u "$RUN_AS" -- test -x "$dir" 2>/dev/null || continue
+      check_path=${check_path:+$check_path:}$dir
+    done
+  fi
 fi
 if [ -n "${CI_HOME:-}" ] && [ -n "${RUN_AS:-}" ]; then
   args+=(--home "$CI_HOME")
@@ -120,8 +131,9 @@ fi
 # A stale summary.md from an earlier run would be reported as this run's.
 rm -rf -- "$out_dir"
 
+aver=$(command -v aver) || aver=aver
 set +e
-aver "${args[@]}"
+PATH=${check_path:-$PATH} "$aver" "${args[@]}"
 code=$?
 set -e
 

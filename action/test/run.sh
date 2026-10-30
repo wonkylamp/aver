@@ -694,6 +694,27 @@ test_run_native_arguments() {
   has_line "$AVER_LOG.env" "XDG_CONFIG_HOME=$W/runner/.config"
 }
 
+# A directory on PATH the run user cannot search is left off the PATH aver
+# and its checks get, so a missing command there reads "not found".
+test_run_native_path_has_only_what_the_run_user_can_search() {
+  fresh
+  make_repo "$W/repo"
+  pr_event o/r o/r
+  export AVER_STUB_EXIT=0 AVER_STUB_VERDICT=PASS
+  mkdir -p "$W/sudo" "$W/open" "$W/shut"
+  printf '#!/bin/sh\nwhile [ $# -gt 0 ] && [ "$1" != -- ]; do shift; done\nshift\nexec "$@"\n' >"$W/sudo/sudo"
+  chmod +x "$W/sudo/sudo"
+  chmod 000 "$W/shut"
+  OUT_DIR="$W/out" WORKING_DIRECTORY="$W/repo" BASE_REV=b HEAD_REV=h RUN_AS=aver-run \
+    PATH="$W/sudo:$W/open:$W/shut:$PATH" bash "$ACTION/run.sh" >/dev/null
+  chmod 755 "$W/shut"
+  grep '^PATH=' "$AVER_LOG.env" >"$W/path"
+  contains "$W/path" "$W/open:"
+  lacks "$W/path" "$W/shut"
+  tr '\n' ' ' <"$AVER_LOG" >"$W/argv"
+  contains "$W/argv" "--run-as aver-run"
+}
+
 # A token actions/checkout persisted, or an OIDC request URL, would be
 # readable by the code native checks run: the persisted token is removed
 # from .git/config first, and an OIDC request URL refuses the run (exit 2).
@@ -774,46 +795,94 @@ test_run_user_without_sudo_warns() {
   equals "$(out user)" ""
 }
 
+# Runs run-user.sh from $1 with HOME=$2 on a simulated Linux runner with
+# passwordless sudo, printing each privileged command (AVER_DRY_RUN=1).
+run_user_in() {
+  mkdir -p "$W/linux"
+  printf '#!/bin/sh\necho Linux\n' >"$W/linux/uname"
+  printf '#!/bin/sh\nexit 0\n' >"$W/linux/sudo"
+  printf '#!/bin/sh\nexit 0\n' >"$W/linux/setfacl"
+  chmod +x "$W/linux"/*
+  : >"$W/output"
+  (cd "$1" && HOME="$2" PATH="$W/linux:$PATH" AVER_DRY_RUN=1 RUSTUP_HOME= UV_PYTHON_INSTALL_DIR= XDG_DATA_HOME= \
+    CARGO_HOME="${CARGO_HOME:-}" RUNNER_TOOL_CACHE="${RUNNER_TOOL_CACHE:-}" AGENT_TOOLSDIRECTORY= \
+    bash "$ACTION/run-user.sh") >"$W/log"
+}
+
 # On GitHub's images the checkout and the toolchains are in the runner's
 # home (0750). The run user may pass through each directory above them and
 # is denied everything else there, such as the runner's credentials and
 # $RUNNER_TEMP.
 test_run_user_reaches_the_checkout_and_toolchains_only() {
   fresh
-  mkdir -p "$W/linux" "$W/runner/work/r/r/sub" "$W/runner/work/_temp" "$W/runner/work/_actions" \
-    "$W/runner/.rustup" "$W/runner/.cargo/registry" "$W/runner/actions-runner/cached" \
+  mkdir -p "$W/runner/work/r/r/sub" "$W/runner/work/r/r/node_modules" "$W/runner/work/_temp" "$W/runner/work/_actions" \
+    "$W/runner/work/_tool" "$W/runner/.rustup" "$W/runner/.cargo/registry" "$W/runner/actions-runner/cached" \
     "$W/runner/.local/share/uv/python" "$W/runner/.local/share/uv/tools" "$W/runner/.local/bin" "$W/elsewhere/home"
   touch "$W/runner/.bashrc"
   ln -s /usr "$W/runner/.ghcup"
-  printf '#!/bin/sh\necho Linux\n' >"$W/linux/uname"
-  printf '#!/bin/sh\nexit 0\n' >"$W/linux/sudo"
-  printf '#!/bin/sh\nexit 0\n' >"$W/linux/setfacl"
-  chmod +x "$W/linux"/*
-  local home
+  chmod 750 "$W/runner"
+  local home dir
   home=$(cd "$W/runner" && pwd -P)
-  (cd "$home/work/r/r" && HOME="$home" PATH="$W/linux:$PATH" AVER_DRY_RUN=1 \
-    RUSTUP_HOME= CARGO_HOME= UV_PYTHON_INSTALL_DIR= XDG_DATA_HOME= bash "$ACTION/run-user.sh") >"$W/log"
+  RUNNER_TOOL_CACHE="$home/work/_tool" run_user_in "$home/work/r/r" "$home"
   equals "$(out user)" aver-run
-  local dir
   for dir in "" /work /work/r /.local /.local/share /.local/share/uv; do
     has_line "$W/log" "+ sudo -n setfacl -m u:aver-run:--x $home$dir"
   done
   for dir in /actions-runner /.bashrc /work/_temp /work/_actions /.local/bin /.local/share/uv/tools; do
     has_line "$W/log" "+ sudo -n setfacl -m u:aver-run:--- $home$dir"
   done
-  for dir in /work /work/r /work/r/r /work/r/r/sub /.rustup /.cargo /.cargo/registry /.local/share/uv/python /.ghcup; do
+  for dir in /work /work/r /work/r/r /work/r/r/sub /work/_tool /.rustup /.cargo /.cargo/registry /.local/share/uv/python /.ghcup; do
     lacks_line "$W/log" "+ sudo -n setfacl -m u:aver-run:--- $home$dir"
   done
-  for dir in /work/r/r /.rustup /.cargo /.local/share/uv/python; do
+  for dir in /work/r/r /work/_tool /.rustup /.cargo /.local/share/uv/python; do
     lacks_line "$W/log" "+ sudo -n setfacl -m u:aver-run:--x $home$dir"
+    # What an earlier job on this runner denied, this one opens.
+    has_line "$W/log" "+ sudo -n setfacl -x u:aver-run $home$dir"
   done
+  # Every deny before the first way in.
+  local first_grant last_deny
+  first_grant=$(grep -n -- ':--x ' "$W/log" | head -n 1 | cut -d: -f1)
+  last_deny=$(grep -n -- ':--- ' "$W/log" | tail -n 1 | cut -d: -f1)
+  [ "$last_deny" -lt "$first_grant" ] || die "a deny comes after a grant: $(cat "$W/log")"
 
-  # A checkout outside the home and no toolchain in it: nothing to open.
-  : >"$W/output"
-  (cd "$W/elsewhere" && HOME="$W/elsewhere/home" PATH="$W/linux:$PATH" AVER_DRY_RUN=1 \
-    RUSTUP_HOME= CARGO_HOME= UV_PYTHON_INSTALL_DIR= XDG_DATA_HOME= bash "$ACTION/run-user.sh") >"$W/log"
+  # A CARGO_HOME in the checkout is reached through the checkout, whose own
+  # entries stay open.
+  mkdir -p "$home/work/r/r/.cargo-home"
+  CARGO_HOME="$home/work/r/r/.cargo-home" run_user_in "$home/work/r/r" "$home"
+  has_line "$W/log" "+ sudo -n setfacl -m u:aver-run:--x $home/work/r"
+  lacks "$W/log" "$home/work/r/r/"
+
+  # A home other users can enter (Debian's 0755, a self-hosted runner's) is
+  # left as it is, its tool cache included.
+  chmod 755 "$W/runner"
+  RUNNER_TOOL_CACHE="$home/work/_tool" run_user_in "$home/work/r/r" "$home"
   equals "$(out user)" aver-run
   lacks "$W/log" "setfacl"
+
+  # A checkout outside the home and no toolchain in it: nothing to open.
+  run_user_in "$W/elsewhere" "$W/elsewhere/home"
+  equals "$(out user)" aver-run
+  lacks "$W/log" "setfacl"
+}
+
+# A deny that fails leaves the runner's home closed: no grant is made, and
+# the job goes on to a verdict.
+test_run_user_opens_nothing_when_a_deny_fails() {
+  fresh
+  mkdir -p "$W/linux" "$W/runner/work/r/r" "$W/runner/actions-runner"
+  chmod 750 "$W/runner"
+  printf '#!/bin/sh\necho Linux\n' >"$W/linux/uname"
+  printf '#!/bin/sh\n[ "$1" = -n ] && shift\nexec "$@"\n' >"$W/linux/sudo"
+  printf '#!/bin/sh\necho "$*" >>"%s"\ncase "$*" in *actions-runner*) echo "Operation not supported" >&2; exit 1 ;; esac\n' "$W/setfacl.log" >"$W/linux/setfacl"
+  chmod +x "$W/linux"/*
+  local home
+  home=$(cd "$W/runner" && pwd -P)
+  (cd "$home/work/r/r" && HOME="$home" PATH="$W/linux:$PATH" AVER_RUN_USER="$(id -un)" RUSTUP_HOME= CARGO_HOME= \
+    UV_PYTHON_INSTALL_DIR= XDG_DATA_HOME= RUNNER_TOOL_CACHE= AGENT_TOOLSDIRECTORY= bash "$ACTION/run-user.sh") >"$W/log" 2>&1
+  equals "$(out user)" "$(id -un)"
+  contains "$W/log" "could not deny"
+  contains "$W/setfacl.log" "actions-runner"
+  lacks "$W/setfacl.log" ":--x"
 }
 
 sha256_of() {
