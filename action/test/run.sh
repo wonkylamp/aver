@@ -702,17 +702,26 @@ test_run_native_path_has_only_what_the_run_user_can_search() {
   pr_event o/r o/r
   export AVER_STUB_EXIT=0 AVER_STUB_VERDICT=PASS
   mkdir -p "$W/sudo" "$W/open" "$W/shut"
-  printf '#!/bin/sh\nwhile [ $# -gt 0 ] && [ "$1" != -- ]; do shift; done\nshift\nexec "$@"\n' >"$W/sudo/sudo"
-  chmod +x "$W/sudo/sudo"
-  chmod 000 "$W/shut"
+  # The run user cannot search $W/shut; the runner can, and its aver is there.
+  printf '#!/bin/sh\nwhile [ $# -gt 0 ] && [ "$1" != -- ]; do shift; done\nshift\n[ "$1 $2 $3" = "test -x %s" ] && exit 1\nexec "$@"\n' "$W/shut" >"$W/sudo/sudo"
+  printf '#!/bin/sh\nAVER_FROM=shut exec "%s" "$@"\n' "$(command -v aver)" >"$W/shut/aver"
+  chmod +x "$W/sudo/sudo" "$W/shut/aver"
   OUT_DIR="$W/out" WORKING_DIRECTORY="$W/repo" BASE_REV=b HEAD_REV=h RUN_AS=aver-run \
     PATH="$W/sudo:$W/open:$W/shut:$PATH" bash "$ACTION/run.sh" >/dev/null
-  chmod 755 "$W/shut"
   grep '^PATH=' "$AVER_LOG.env" >"$W/path"
   contains "$W/path" "$W/open:"
   lacks "$W/path" "$W/shut"
+  has_line "$AVER_LOG.env" "AVER_FROM=shut"
   tr '\n' ' ' <"$AVER_LOG" >"$W/argv"
   contains "$W/argv" "--run-as aver-run"
+
+  # Aver runs git as the runner, so the git it would run keeps PATH whole.
+  printf '#!/bin/sh\nexec "%s" "$@"\n' "$(command -v git)" >"$W/shut/git"
+  chmod +x "$W/shut/git"
+  OUT_DIR="$W/out" WORKING_DIRECTORY="$W/repo" BASE_REV=b HEAD_REV=h RUN_AS=aver-run \
+    PATH="$W/sudo:$W/open:$W/shut:$PATH" bash "$ACTION/run.sh" >/dev/null
+  grep '^PATH=' "$AVER_LOG.env" >"$W/path"
+  contains "$W/path" "$W/shut"
 }
 
 # A token actions/checkout persisted, or an OIDC request URL, would be
@@ -795,18 +804,20 @@ test_run_user_without_sudo_warns() {
   equals "$(out user)" ""
 }
 
-# Runs run-user.sh from $1 with HOME=$2 on a simulated Linux runner with
+# Runs run-user.sh from $1 with HOME=$2 and the variables after them
+# (NAME=value), none of the caller's, on a simulated Linux runner with
 # passwordless sudo, printing each privileged command (AVER_DRY_RUN=1).
 run_user_in() {
+  local dir=$1 home=$2
+  shift 2
   mkdir -p "$W/linux"
   printf '#!/bin/sh\necho Linux\n' >"$W/linux/uname"
   printf '#!/bin/sh\nexit 0\n' >"$W/linux/sudo"
   printf '#!/bin/sh\nexit 0\n' >"$W/linux/setfacl"
   chmod +x "$W/linux"/*
   : >"$W/output"
-  (cd "$1" && HOME="$2" PATH="$W/linux:$PATH" AVER_DRY_RUN=1 RUSTUP_HOME= UV_PYTHON_INSTALL_DIR= XDG_DATA_HOME= \
-    CARGO_HOME="${CARGO_HOME:-}" RUNNER_TOOL_CACHE="${RUNNER_TOOL_CACHE:-}" AGENT_TOOLSDIRECTORY= \
-    bash "$ACTION/run-user.sh") >"$W/log"
+  (cd "$dir" && env HOME="$home" PATH="$W/linux:$PATH" AVER_DRY_RUN=1 RUSTUP_HOME= CARGO_HOME= UV_PYTHON_INSTALL_DIR= \
+    XDG_DATA_HOME= RUNNER_TOOL_CACHE= AGENT_TOOLSDIRECTORY= RUNNER_TEMP= "$@" bash "$ACTION/run-user.sh") >"$W/log"
 }
 
 # On GitHub's images the checkout and the toolchains are in the runner's
@@ -823,7 +834,7 @@ test_run_user_reaches_the_checkout_and_toolchains_only() {
   chmod 750 "$W/runner"
   local home dir
   home=$(cd "$W/runner" && pwd -P)
-  RUNNER_TOOL_CACHE="$home/work/_tool" run_user_in "$home/work/r/r" "$home"
+  run_user_in "$home/work/r/r" "$home" RUNNER_TOOL_CACHE="$home/work/_tool" RUNNER_TEMP="$home/work/_temp"
   equals "$(out user)" aver-run
   for dir in "" /work /work/r /.local /.local/share /.local/share/uv; do
     has_line "$W/log" "+ sudo -n setfacl -m u:aver-run:--x $home$dir"
@@ -848,14 +859,20 @@ test_run_user_reaches_the_checkout_and_toolchains_only() {
   # A CARGO_HOME in the checkout is reached through the checkout, whose own
   # entries stay open.
   mkdir -p "$home/work/r/r/.cargo-home"
-  CARGO_HOME="$home/work/r/r/.cargo-home" run_user_in "$home/work/r/r" "$home"
+  run_user_in "$home/work/r/r" "$home" CARGO_HOME="$home/work/r/r/.cargo-home"
   has_line "$W/log" "+ sudo -n setfacl -m u:aver-run:--x $home/work/r"
   lacks "$W/log" "$home/work/r/r/"
 
+  # A CARGO_HOME under $RUNNER_TEMP is not opened: $RUNNER_TEMP stays denied.
+  mkdir -p "$home/work/_temp/cargo"
+  run_user_in "$home/work/r/r" "$home" CARGO_HOME="$home/work/_temp/cargo" RUNNER_TEMP="$home/work/_temp"
+  has_line "$W/log" "+ sudo -n setfacl -m u:aver-run:--- $home/work/_temp"
+  lacks "$W/log" "u:aver-run:--x $home/work/_temp"
+
   # A home other users can enter (Debian's 0755, a self-hosted runner's) is
   # left as it is, its tool cache included.
-  chmod 755 "$W/runner"
-  RUNNER_TOOL_CACHE="$home/work/_tool" run_user_in "$home/work/r/r" "$home"
+  find "$W/runner" -type d -exec chmod 755 {} +
+  run_user_in "$home/work/r/r" "$home" RUNNER_TOOL_CACHE="$home/work/_tool"
   equals "$(out user)" aver-run
   lacks "$W/log" "setfacl"
 
@@ -865,8 +882,9 @@ test_run_user_reaches_the_checkout_and_toolchains_only() {
   lacks "$W/log" "setfacl"
 }
 
-# A deny that fails leaves the runner's home closed: no grant is made, and
-# the job goes on to a verdict.
+# A deny that fails leaves the runner's home closed: no grant is made, the
+# ways in an earlier job left are taken back, and the job goes on to a
+# verdict.
 test_run_user_opens_nothing_when_a_deny_fails() {
   fresh
   mkdir -p "$W/linux" "$W/runner/work/r/r" "$W/runner/actions-runner"
@@ -878,11 +896,13 @@ test_run_user_opens_nothing_when_a_deny_fails() {
   local home
   home=$(cd "$W/runner" && pwd -P)
   (cd "$home/work/r/r" && HOME="$home" PATH="$W/linux:$PATH" AVER_RUN_USER="$(id -un)" RUSTUP_HOME= CARGO_HOME= \
-    UV_PYTHON_INSTALL_DIR= XDG_DATA_HOME= RUNNER_TOOL_CACHE= AGENT_TOOLSDIRECTORY= bash "$ACTION/run-user.sh") >"$W/log" 2>&1
+    UV_PYTHON_INSTALL_DIR= XDG_DATA_HOME= RUNNER_TOOL_CACHE= AGENT_TOOLSDIRECTORY= RUNNER_TEMP= bash "$ACTION/run-user.sh") >"$W/log" 2>&1
   equals "$(out user)" "$(id -un)"
   contains "$W/log" "could not deny"
   contains "$W/setfacl.log" "actions-runner"
   lacks "$W/setfacl.log" ":--x"
+  has_line "$W/setfacl.log" "-x u:$(id -un) $home"
+  has_line "$W/setfacl.log" "-x u:$(id -un) $home/work"
 }
 
 sha256_of() {

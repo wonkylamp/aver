@@ -107,6 +107,12 @@ if [ -n "${RUN_AS:-}" ]; then
       sudo -n -u "$RUN_AS" -- test -x "$dir" 2>/dev/null || continue
       check_path=${check_path:+$check_path:}$dir
     done
+    # Aver itself runs git and sudo by name, as the runner: rather than hide
+    # the ones it would run, PATH stays whole.
+    for tool in git sudo; do
+      found=$(command -v "$tool") || continue
+      case ":$check_path:" in *":$(dirname "$found"):"*) ;; *) check_path="" ;; esac
+    done
   fi
 fi
 if [ -n "${CI_HOME:-}" ] && [ -n "${RUN_AS:-}" ]; then

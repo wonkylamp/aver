@@ -40,6 +40,7 @@ if ! id "$user" >/dev/null 2>&1; then
 fi
 
 home=$(cd "${HOME:-/nonexistent}" 2>/dev/null && pwd -P) || home=""
+temp=$(cd "${RUNNER_TEMP:-/nonexistent}" 2>/dev/null && pwd -P) || temp=""
 wanted=()
 if [ -n "$home" ]; then
   for dir in "${WORKING_DIRECTORY:-.}" "${RUSTUP_HOME:-$home/.rustup}" "${CARGO_HOME:-$home/.cargo}" \
@@ -47,6 +48,9 @@ if [ -n "$home" ]; then
     "${RUNNER_TOOL_CACHE:-}" "${AGENT_TOOLSDIRECTORY:-}"; do
     [ -n "$dir" ] || continue
     dir=$(cd "$dir" 2>/dev/null && pwd -P) || continue
+    # Nothing under $RUNNER_TEMP: a way through it would also reach what
+    # later steps write there, which no deny set now covers.
+    [ -z "$temp" ] || case $dir in "$temp" | "$temp"/*) continue ;; esac
     case $dir in "$home"/*) wanted+=("$dir") ;; esac
   done
 fi
@@ -108,6 +112,10 @@ elif [ ${#grants[@]} -gt 0 ]; then
     privileged sudo -n setfacl -m "u:$user:---" "$entry" || [ ! -e "$entry" ] || failed=$entry
   done
   if [ -n "$failed" ]; then
+    # Ways in an earlier job on this runner left go too.
+    for dir in "${grants[@]}"; do
+      privileged sudo -n setfacl -x "u:$user" "$dir" 2>/dev/null || true
+    done
     echo "::warning title=aver::could not deny $user $failed, so it gets no way into $home: checks there would fail to start"
   else
     for dir in "${grants[@]}"; do
