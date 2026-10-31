@@ -1,7 +1,7 @@
 {
   "name": "aver",
   "displayName": "Aver",
-  "version": "0.4.1",
+  "version": "0.4.3",
   "description": "Aver's workflow in Claude Code: /aver installs the aver CLI and sets up the repository, a skill that teaches aver check and aver verify, the /aver-check, /aver-verify, /aver-status and /aver-run commands, and the session brief and verify gate in Aver workspaces.",
   "author": { "name": "Aver", "url": "https://aver.build" },
   "homepage": "https://aver.build",

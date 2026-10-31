@@ -9,7 +9,7 @@
       "name": "aver",
       "source": "./integrations/claude-code",
       "description": "Aver's workflow in Claude Code: /aver installs the aver CLI and sets up the repository, the aver skill, /aver-check, /aver-verify, /aver-status and /aver-run, and the session brief and verify gate in Aver workspaces.",
-      "version": "0.4.1",
+      "version": "0.4.3",
       "homepage": "https://aver.build",
       "repository": "https://github.com/wonkylamp/aver",
       "license": "MIT",
