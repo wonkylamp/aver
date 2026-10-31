@@ -58,6 +58,6 @@ Include an Aver receipt. From your branch:
 aver ci --base origin/main --head HEAD --pr-body pr.md
 ```
 
-`pr.md` holds your pull request description, with an `aver` criteria block if the change has testable criteria ([docs/INTERFACE.md](docs/INTERFACE.md) §2 gives the format). Paste `aver-out/summary.md` into the pull request and attach `aver-out/receipt.json` and `aver-out/public-key.txt`, so a reviewer can check the receipt in the viewer at [aver.build/receipt](https://aver.build/receipt).
+`pr.md` holds your pull request description, with an `aver` criteria block if the change has testable criteria ([docs/INTERFACE.md](docs/INTERFACE.md) §2 gives the format). Paste `aver-out/summary.md` into the pull request and attach `aver-out/receipt.json` and `aver-out/public-key.txt`, so a reviewer can check the receipt in the receipt viewer, `site/receipt.html` served locally as [site/README.md](site/README.md) describes.
 
 Aver runs Node and TypeScript checks today, and this repository has no `aver.toml` yet, so a receipt on it does not cover the Rust crates. It still records which files and tests changed, and whether tests were removed or skipped or harness files edited. `make test` and `make lint` remain required.

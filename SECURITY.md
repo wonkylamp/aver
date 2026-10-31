@@ -25,7 +25,7 @@ In scope:
 - **Key exposure.** The CLI revealing a private key, or accepting a key file others can read.
 - **Prompt injection across the data boundary.** Repository content (files, test names, failure output) reaching an agent outside a fenced block in the CLI's agent reports, or outside a `content`, `diff`, `detail` or `output` field in JSON output.
 - **`aver ci` and the GitHub Action.** Running untrusted pull request code with write tokens or secrets, or a workflow path that defeats the action's refusal of `pull_request_target`.
-- **Supply chain.** `site/install.sh`, the release workflow and the checksums it publishes, and the receipt viewer on aver.build.
+- **Supply chain.** `site/install.sh`, the release workflow and the checksums it publishes, and the receipt viewer in `site/`.
 
 Out of scope:
 
