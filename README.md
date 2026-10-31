@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
-  <img alt="Version 0.4.2" src="https://img.shields.io/badge/version-0.4.2-informational.svg">
+  <img alt="Version 0.4.3" src="https://img.shields.io/badge/version-0.4.3-informational.svg">
   <img alt="Platforms: macOS, Linux, WSL2" src="https://img.shields.io/badge/platforms-macOS%20%7C%20Linux%20%7C%20WSL2-lightgrey.svg">
   <img alt="Languages: TS/JS, Python, Rust, Go" src="https://img.shields.io/badge/languages-TS%2FJS%20%7C%20Python%20%7C%20Rust%20%7C%20Go-success.svg">
 </p>
@@ -282,7 +282,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-      - uses: wonkylamp/aver/action@v0.4.2
+      - uses: wonkylamp/aver/action@v0.4.3
 ```
 
 | Page | Contents |

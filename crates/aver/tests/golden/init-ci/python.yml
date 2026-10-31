@@ -49,7 +49,7 @@ jobs:
           uv venv
           uv pip install -r requirements-dev.txt
           echo "$PWD/.venv/bin" >>"$GITHUB_PATH"
-      - uses: wonkylamp/aver/action@{{ACTION_SHA}} # v0.4.2
+      - uses: wonkylamp/aver/action@{{ACTION_SHA}} # v0.4.3
         with:
           review: approve
 
@@ -66,6 +66,6 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
           persist-credentials: false
-      - uses: wonkylamp/aver/action@{{ACTION_SHA}} # v0.4.2
+      - uses: wonkylamp/aver/action@{{ACTION_SHA}} # v0.4.3
         with:
           mode: approve

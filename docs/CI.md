@@ -32,7 +32,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-      - uses: wonkylamp/aver/action@v0.4.2
+      - uses: wonkylamp/aver/action@v0.4.3
 ```
 
 Without criteria, the run is regression-only: the verdict is `PASS` unless a check fails only with the change (`NEW`), for infrastructure reasons (`ENV`), or in a way that hides the change (a check with no per-test results that fails on both sides is `BLOCKED_NOT_OWN`). To declare criteria, put an `aver` block in the pull request description:

@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-      - uses: wonkylamp/aver/action@v0.4.2
+      - uses: wonkylamp/aver/action@v0.4.3
 ```
 
 `aver init --ci` writes a complete workflow for your repository instead: the verify, base record, merge queue and approve jobs, with the steps that install its dependencies ([docs/CI.md](../docs/CI.md#set-up-in-5-minutes)). The checkout's `ref:` is the pull request's head, so the checks run in the job's checkout rather than GitHub's test merge commit. Pin the action to a full commit SHA in production, as the checkout line does, and keep the tag in a comment. To use the action from a private copy of this repository, allow other repositories of the same owner to use its actions (Settings, Actions, General, Access: "Accessible from repositories owned by the user", or `gh api -X PUT repos/<owner>/<repo>/actions/permissions/access -f access_level=user`); the action then builds aver from that copy's source, as [Security](#security) describes. [examples/aver-verify.yml](examples/aver-verify.yml) is a complete workflow that also verifies pushes to `main`.
