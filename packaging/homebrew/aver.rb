@@ -4,7 +4,7 @@
 # release's SHA256SUMS.
 class Aver < Formula
   desc "Version control and verification for AI coding agents"
-  homepage "https://aver.build"
+  homepage "https://github.com/wonkylamp/aver"
   version "@VERSION@"
   license "MIT"
 

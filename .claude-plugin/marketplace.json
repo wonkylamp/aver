@@ -1,6 +1,6 @@
 {
   "name": "aver",
-  "owner": { "name": "Aver", "url": "https://aver.build" },
+  "owner": { "name": "Aver", "url": "https://github.com/wonkylamp/aver" },
   "metadata": {
     "description": "Aver's plugins for agent tools."
   },
@@ -10,7 +10,7 @@
       "source": "./integrations/claude-code",
       "description": "Aver's workflow in Claude Code: /aver installs the aver CLI and sets up the repository, the aver skill, /aver-check, /aver-verify, /aver-status and /aver-run, and the session brief and verify gate in Aver workspaces.",
       "version": "0.4.3",
-      "homepage": "https://aver.build",
+      "homepage": "https://github.com/wonkylamp/aver",
       "repository": "https://github.com/wonkylamp/aver",
       "license": "MIT",
       "category": "development"
