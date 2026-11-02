@@ -19,7 +19,7 @@ ed25519-dalek = { version = "3.0.0", features = ["rand_core"] }
 ignore = "0.4.33"
 jsonschema = { version = "0.58.6", default-features = false }
 libc = "0.2.190"
-parking_lot = "0.12.5"
+parking_lot = "0.13.0"
 quick-xml = "0.42.0"
 rand = "0.10.3"
 rayon = "1.12.0"
